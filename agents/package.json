@@ -1,0 +1,18 @@
+{
+  "name": "vsg-agents",
+  "version": "1.0.0",
+  "description": "VSG AI agents — write results to Supabase, dashboard reads live",
+  "main": "agent-reply-detection.js",
+  "scripts": {
+    "replies": "node agent-reply-detection.js",
+    "signals": "node agent-signal-monitor.js",
+    "prospects": "node agent-auto-prospect.js",
+    "all": "node agent-reply-detection.js && node agent-signal-monitor.js && node agent-auto-prospect.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
