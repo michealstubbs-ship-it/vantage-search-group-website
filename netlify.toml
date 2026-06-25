@@ -2,6 +2,12 @@
   publish = "."
   functions = "netlify/functions"
 
+[[redirects]]
+  from = "/"
+  to = "/bd-dashboard.html"
+  status = 302
+  conditions = {Host = ["vsg-bd-dashboard.netlify.app"]}
+
 [[headers]]
   for = "/*"
   [headers.values]
