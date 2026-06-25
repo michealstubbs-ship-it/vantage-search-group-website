@@ -26,7 +26,19 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { messages, contactContext, mode } = JSON.parse(event.body || '{}');
+    const { messages, contactContext, mode, systemOverride, maxTokens } = JSON.parse(event.body || '{}');
+
+    // Use caller-supplied system prompt override if provided (e.g. Today's Actions)
+    if (systemOverride) {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: maxTokens || 2048, system: systemOverride, messages: messages || [{ role: 'user', content: 'Generate now.' }] }),
+      });
+      if (!response.ok) { const err = await response.text(); throw new Error(`Claude API error: ${response.status} — ${err}`); }
+      const data = await response.json();
+      return { statusCode: 200, headers: { ...cors, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: data.content[0].text }) };
+    }
 
     // Build system prompt with injected context
     let systemPrompt = `You are an AI BD assistant for Michael at Vantage Search Group, a boutique executive search firm in the GCC (UAE, Saudi Arabia, Qatar).
