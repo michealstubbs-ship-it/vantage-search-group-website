@@ -33,7 +33,7 @@ exports.handler = async (event) => {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: maxTokens || 2048, system: systemOverride, messages: messages || [{ role: 'user', content: 'Generate now.' }] }),
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: maxTokens || 2048, system: systemOverride, messages: messages || [{ role: 'user', content: 'Generate now.' }] }),
       });
       if (!response.ok) { const err = await response.text(); throw new Error(`Claude API error: ${response.status} — ${err}`); }
       const data = await response.json();
