@@ -3886,8 +3886,8 @@ async function runTodaysActions(){
       else if(jobCount>=2)modeData.mode='mixed';
       else modeData.mode='prospecting';
 
-      // All pipeline contacts — real data
-      const{data:contacts}=await db.from('contacts').select('name,title,company,stage,followup_date,last_contact,notes,linkedin,email').neq('name','Michael Stubbs').order('followup_date',{ascending:true,nullsFirst:false}).limit(50);
+      // All pipeline contacts — real data (capped at 20 to keep prompt within timeout)
+      const{data:contacts}=await db.from('contacts').select('name,title,company,stage,followup_date,last_contact,notes,linkedin').neq('name','Michael Stubbs').order('followup_date',{ascending:true,nullsFirst:false}).limit(20);
       if(contacts&&contacts.length){
         const today=new Date().toISOString().slice(0,10);
         const overdue=contacts.filter(c=>c.followup_date&&c.followup_date<today);
@@ -3895,25 +3895,25 @@ async function runTodaysActions(){
         const noDate=contacts.filter(c=>!c.followup_date);
         let lines=[];
         if(overdue.length){
-          lines.push('OVERDUE FOLLOW-UPS (must act today):');
+          lines.push('OVERDUE FOLLOW-UPS:');
           overdue.forEach(c=>{
             const days=Math.floor((new Date(today)-new Date(c.followup_date))/(86400000));
-            lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) | Stage: ${c.stage} | Follow-up was due ${c.followup_date} (${days} day${days!==1?'s':''} overdue) | Last contact: ${c.last_contact||'unknown'} | LinkedIn: ${c.linkedin||'unknown'} | Notes: ${c.notes||'none'}`);
+            lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) Stage:${c.stage} Due:${c.followup_date}(${days}d ago) LI:${c.linkedin||'?'} Notes:${(c.notes||'none').slice(0,100)}`);
           });
         }
         if(upcoming.length){
-          lines.push('UPCOMING FOLLOW-UPS (due soon):');
-          upcoming.slice(0,5).forEach(c=>lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) | Due: ${c.followup_date} | Stage: ${c.stage} | Notes: ${c.notes||'none'}`));
+          lines.push('UPCOMING FOLLOW-UPS:');
+          upcoming.slice(0,5).forEach(c=>lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) Due:${c.followup_date} Stage:${c.stage} Notes:${(c.notes||'none').slice(0,80)}`));
         }
         if(noDate.length){
-          lines.push('PIPELINE CONTACTS (no scheduled follow-up):');
-          noDate.forEach(c=>lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) | Stage: ${c.stage} | Last contact: ${c.last_contact||'unknown'} | LinkedIn: ${c.linkedin||'unknown'} | Notes: ${c.notes||'none'}`));
+          lines.push('PIPELINE (no date):');
+          noDate.slice(0,8).forEach(c=>lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) Stage:${c.stage} LI:${c.linkedin||'?'} Notes:${(c.notes||'none').slice(0,80)}`));
         }
         pipelineContext=lines.join('\n');
       }
 
-      // LinkedIn replies — real signals from outreach
-      const{data:liReplies}=await db.from('linkedin_outreach').select('full_name,title,linkedin_url,status,date_replied,notes').eq('status','replied').order('date_replied',{ascending:false}).limit(20);
+      // LinkedIn replies — capped at 10 most recent
+      const{data:liReplies}=await db.from('linkedin_outreach').select('full_name,title,linkedin_url,status,date_replied,notes').eq('status','replied').order('date_replied',{ascending:false}).limit(10);
       if(liReplies&&liReplies.length){
         linkedinRepliesContext='LINKEDIN OUTREACH REPLIES (people who replied to VSG outreach — needs BD follow-up):\n'+liReplies.map(r=>`  - ${r.full_name} (${r.title||'?'}) | Replied: ${r.date_replied?new Date(r.date_replied).toLocaleDateString('en-GB'):'recently'} | LinkedIn: ${r.linkedin_url||'unknown'} | Notes: ${r.notes||'basic reply received'}`).join('\n');
       }
@@ -3984,7 +3984,7 @@ Rules:
     const resp=await fetch('/.netlify/functions/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt,maxTokens:8000})
+      body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt,maxTokens:4000})
     });
     const data=await resp.json();
     clearInterval(ticker);bar.style.width='100%';
