@@ -4065,6 +4065,7 @@ async function runTodaysActions(){
   let prospectsContext='';
   let signalContext='';
   let feedbackContext='';
+  let warmLeadsContext='';
   try{
     const db=_db();
     if(db){
@@ -4140,10 +4141,21 @@ async function runTodaysActions(){
         emailContext='BD-RELEVANT EMAILS (from Vantage Search inbox):\n'+emails.map(e=>`  - ${new Date(e.received_at).toLocaleDateString('en-GB')}: From ${e.sender_name||'?'} | Subject: "${e.subject}" | ${e.summary||''}`).join('\n');
       }
 
-      // Company intelligence signals (populated by signal monitor 2x daily)
+      // Company intelligence signals (populated by signal monitor 3x daily)
       const{data:signals}=await db.from('company_signals').select('company_name,signal_type,title,summary,source_url,importance').eq('actioned',false).order('created_at',{ascending:false}).limit(12);
       if(signals&&signals.length){
         signalContext='COMPANY INTELLIGENCE SIGNALS (from GCC signal monitor — act on these):\n'+signals.map(s=>`  - [${s.importance||'medium'}] ${s.company_name}: ${s.signal_type} — "${s.title}" | ${s.summary||''} ${s.source_url?'| URL:'+s.source_url:''}`).join('\n');
+      }
+
+      // Warm LinkedIn leads — cross-reference with active signals
+      const{data:liLeads}=await db.from('linkedin_leads').select('full_name,title,company,linkedin_url,notes,follow_up_date').eq('status','replied').order('created_at',{ascending:false}).limit(20);
+      if(liLeads&&liLeads.length&&signals&&signals.length){
+        const signalCompanies=new Set(signals.map(s=>(s.company_name||'').toLowerCase()));
+        const hotLeads=liLeads.filter(l=>l.company&&signalCompanies.has(l.company.toLowerCase()));
+        if(hotLeads.length){
+          warmLeadsContext='WARM LINKEDIN LEADS WITH ACTIVE SIGNALS (already replied to your outreach + their company has a live signal — HIGHEST PRIORITY):\n'+
+            hotLeads.map(l=>`  - ${l.full_name} (${l.title||'?'}, ${l.company||'?'}) | LinkedIn: ${l.linkedin_url||'?'} | Follow-up due: ${l.follow_up_date||'soon'} | Notes: ${(l.notes||'').slice(0,120)}`).join('\n');
+        }
       }
 
       // Feedback learning from rated actions (last 30 days)
@@ -4183,7 +4195,10 @@ ${modeDescriptions[modeData.mode]}
 
 TODAY'S DATE: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
 
-=== LIVE INTELLIGENCE SIGNALS (from VSG signal monitor, runs 8am and 4pm daily) ===
+=== WARM LINKEDIN LEADS + ACTIVE SIGNALS (already replied to your outreach AND company has a live signal) ===
+${warmLeadsContext||'No warm leads with matching signals today.'}
+
+=== LIVE INTELLIGENCE SIGNALS (from VSG signal monitor, runs 8am, 12pm and 4pm daily) ===
 ${signalContext||'No signals loaded yet — use only named companies from the GCC tier list below.'}
 
 === BD-RELEVANT EMAILS (inbound interest or appointment triggers) ===
@@ -4193,6 +4208,8 @@ ${emailContext||'No BD emails today.'}
 ${prospectsContext||'No prospects queued.'}
 === END LIVE DATA ===
 ${feedbackContext}
+WARM LEAD RULE: If WARM LINKEDIN LEADS has entries, generate a "Warm lead — signal match" action for each one FIRST, ranked #1, #2 etc. These are your highest-priority actions — the person has already replied to you AND their company has a live signal. Do NOT include LinkedIn leads whose company has no active signal.
+
 GENERATE ONE BD ACTION per live signal above — if there are 13 signals, generate 13 actions. Do NOT generate fewer than the signal count. New opportunities only — no pipeline follow-ups (those are in the Follow-ups panel).
 
 CRITICAL — REAL COMPANIES ONLY: Every action must target a real, named company from the signals list above or the tier list below. NEVER write generic categories like "Regional fintech sector", "UAE or Saudi digital bank", "Regional asset manager", "Regional consulting firm", "UAE infrastructure developer", or any similar placeholder. If you cannot name a specific real company, skip that action entirely.
@@ -4443,6 +4460,94 @@ function showToast(msg){
   if(!t){t=document.createElement('div');t.id='vsg-toast';t.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 18px;border-radius:var(--rs);font-size:13px;font-weight:600;z-index:9999;box-shadow:var(--sh-lg);transition:opacity .3s';document.body.appendChild(t);}
   t.textContent=msg;t.style.opacity='1';
   setTimeout(()=>{t.style.opacity='0';},2500);
+}
+
+/* ═══════════════════════════════════════════════════
+   LINKEDIN LEADS
+════════════════════════════════════════════════════ */
+async function loadLeads(){
+  const db=_db();
+  const allEl=document.getElementById('leads-all');
+  const overdueSec=document.getElementById('leads-overdue-section');
+  const soonSec=document.getElementById('leads-soon-section');
+  const metricsEl=document.getElementById('leads-metrics');
+  if(allEl)allEl.innerHTML='<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite;font-size:28px"></i><p style="margin-top:8px">Loading leads...</p></div>';
+  if(!db){if(allEl)allEl.innerHTML='<div class="empty"><i class="ti ti-brand-linkedin"></i><p>Not connected to database.</p></div>';return;}
+
+  try{
+    // Load leads and active signals in parallel
+    const[leadsRes,signalsRes]=await Promise.all([
+      db.from('linkedin_leads').select('*').order('follow_up_date',{ascending:true,nullsFirst:false}),
+      db.from('company_signals').select('company_name').eq('actioned',false)
+    ]);
+    const leads=leadsRes.data||[];
+    const signalCompanies=new Set((signalsRes.data||[]).map(s=>(s.company_name||'').toLowerCase()));
+
+    // Update nav badge
+    const badge=document.getElementById('nb-leads');
+    const activeCt=leads.filter(l=>l.status==='replied').length;
+    if(badge){if(activeCt>0){badge.textContent=activeCt;badge.style.display='inline-flex';}else{badge.style.display='none';}}
+
+    if(!leads.length){
+      if(allEl)allEl.innerHTML='<div class="empty"><i class="ti ti-user-star"></i><p>No LinkedIn leads yet. When someone replies to your outreach, they\'ll appear here for nurturing.</p></div>';
+      if(overdueSec)overdueSec.style.display='none';
+      if(soonSec)soonSec.style.display='none';
+      if(metricsEl)metricsEl.innerHTML='';
+      return;
+    }
+
+    const today=new Date().toISOString().slice(0,10);
+    const in30=new Date(Date.now()+30*864e5).toISOString().slice(0,10);
+    const overdue=leads.filter(l=>l.follow_up_date&&l.follow_up_date<today);
+    const soon=leads.filter(l=>l.follow_up_date&&l.follow_up_date>=today&&l.follow_up_date<=in30);
+    const promoted=leads.filter(l=>l.company&&signalCompanies.has(l.company.toLowerCase()));
+
+    // Metrics
+    if(metricsEl){
+      metricsEl.innerHTML=`
+        <div class="card" style="text-align:center;padding:16px"><div style="font-size:24px;font-weight:800;color:var(--gold)">${leads.length}</div><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:4px">Total leads</div></div>
+        <div class="card" style="text-align:center;padding:16px"><div style="font-size:24px;font-weight:800;color:var(--red)">${overdue.length}</div><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:4px">Overdue</div></div>
+        <div class="card" style="text-align:center;padding:16px"><div style="font-size:24px;font-weight:800;color:#3b82f6">${promoted.length}</div><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:4px">In Today's Actions</div></div>
+      `;
+    }
+
+    const renderLead=(l)=>{
+      const isPromoted=l.company&&signalCompanies.has(l.company.toLowerCase());
+      const daysUntil=l.follow_up_date?Math.floor((new Date(l.follow_up_date)-new Date(today))/(864e5)):null;
+      const overdueDays=daysUntil!==null&&daysUntil<0?Math.abs(daysUntil):null;
+      return `<div class="action-item medium" style="${isPromoted?'border-left:3px solid #3b82f6;':''}margin-bottom:10px">
+        <div class="action-body">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:700;color:var(--navy)">${esc(l.full_name||'Unknown')}</span>
+            ${isPromoted?`<span style="font-size:10px;font-weight:700;color:#3b82f6;padding:1px 6px;border:1px solid #3b82f6;border-radius:4px">⚡ In Today's Actions</span>`:''}
+            ${overdueDays?`<span class="b b-high" style="font-size:10px">⚠ ${overdueDays}d overdue</span>`:''}
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:5px">${esc(l.title||'')+'  '+(l.company?'· '+esc(l.company):'')}</div>
+          ${l.notes?`<div style="font-size:12px;color:var(--text);margin-bottom:6px;border-left:2px solid var(--border);padding-left:8px">${esc(l.notes.slice(0,200))}</div>`:''}
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            ${l.follow_up_date?`<span style="font-size:11px;color:${overdueDays?'var(--red)':daysUntil<=7?'var(--amber)':'var(--muted)'}"><i class="ti ti-calendar" style="font-size:10px"></i> Follow up: ${new Date(l.follow_up_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</span>`:''}
+            ${l.linkedin_url?`<a href="${esc(l.linkedin_url.startsWith('http')?l.linkedin_url:'https://'+l.linkedin_url)}" target="_blank" class="btn btn-xs btn-outline" style="font-size:11px"><i class="ti ti-brand-linkedin" style="color:#0077b5"></i> View profile</a>`:''}
+          </div>
+        </div>
+      </div>`;
+    };
+
+    // Overdue section
+    if(overdue.length&&overdueSec){
+      overdueSec.style.display='block';
+      document.getElementById('leads-overdue').innerHTML=overdue.map(renderLead).join('');
+    }else if(overdueSec){overdueSec.style.display='none';}
+
+    // Soon section
+    if(soon.length&&soonSec){
+      soonSec.style.display='block';
+      document.getElementById('leads-soon').innerHTML=soon.filter(l=>!overdue.includes(l)).map(renderLead).join('');
+    }else if(soonSec){soonSec.style.display='none';}
+
+    // All leads
+    if(allEl)allEl.innerHTML=leads.length?leads.map(renderLead).join(''):'<div class="empty"><i class="ti ti-user-star"></i><p>No leads yet.</p></div>';
+
+  }catch(e){console.warn('loadLeads error:',e);if(allEl)allEl.innerHTML='<div class="empty"><i class="ti ti-alert-circle"></i><p>Error loading leads.</p></div>';}
 }
 
 /* ═══════════════════════════════════════════════════

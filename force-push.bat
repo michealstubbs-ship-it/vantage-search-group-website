@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "Fix Today's Actions quality: real companies only, no generic CHROs, nav badge, signal actioned flag, source signal link, salary_benchmarks, sidebar cleanup, sequence templates"
+git commit -m "Wire LinkedIn leads: reply detection writes to linkedin_leads, warm leads promoted to Today's Actions when signal matches, loadLeads() built, signal monitor 3x daily"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...
