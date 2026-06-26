@@ -987,6 +987,7 @@ textarea{resize:vertical;min-height:80px}
         <button class="btn btn-gold" onclick="runTodaysActions()"><i class="ti ti-bolt"></i> Generate Today's Actions</button>
       </div>
 
+      <div id="carry-forward-section" style="display:none;margin-bottom:16px;padding:14px;background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.25);border-radius:10px"></div>
       <div id="actions-list"></div>
     </div>
 
@@ -4015,6 +4016,7 @@ window.openDetail=function(id){
 ════════════════════════════════════════════════════ */
 let _actionsGenerated=false;
 async function loadTodaysActions(){
+  loadCarryForward();
   if(_actionsGenerated)return;
   // Try loading today's saved actions from Supabase first
   try{
@@ -4062,6 +4064,7 @@ async function runTodaysActions(){
   let vipContext='';
   let prospectsContext='';
   let signalContext='';
+  let feedbackContext='';
   try{
     const db=_db();
     if(db){
@@ -4143,6 +4146,23 @@ async function runTodaysActions(){
         signalContext='COMPANY INTELLIGENCE SIGNALS (from GCC signal monitor — act on these):\n'+signals.map(s=>`  - [${s.importance||'medium'}] ${s.company_name}: ${s.signal_type} — "${s.title}" | ${s.summary||''} ${s.source_url?'| URL:'+s.source_url:''}`).join('\n');
       }
 
+      // Feedback learning from rated actions (last 30 days)
+      const thirtyDaysAgo=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+      const{data:fbRows}=await db.from('todays_actions').select('actions').gte('action_date',thirtyDaysAgo);
+      if(fbRows&&fbRows.length){
+        const allRated=(fbRows.flatMap(r=>r.actions||[])).filter(a=>a.feedback);
+        if(allRated.length>=3){
+          const ups=allRated.filter(a=>a.feedback==='up');
+          const downs=allRated.filter(a=>a.feedback==='down');
+          const tagCounts=downs.reduce((acc,a)=>{const t=a.feedback_tag||'general';acc[t]=(acc[t]||0)+1;return acc;},{});
+          feedbackContext=`\n=== VSG FEEDBACK PREFERENCES (${allRated.length} rated actions — apply these) ===\n`;
+          if(ups.length)feedbackContext+=`Positively rated: ${ups.slice(0,6).map(a=>a.type+' at '+a.company).join('; ')}\n`;
+          if(tagCounts.too_generic)feedbackContext+=`AVOID generic signals (marked poor ${tagCounts.too_generic}x) — be specific, use real data\n`;
+          if(tagCounts.wrong_person)feedbackContext+=`AVOID wrong contact (marked poor ${tagCounts.wrong_person}x) — find actual hiring manager, not CHRO\n`;
+          if(tagCounts.already_know)feedbackContext+=`AVOID already-known contacts (marked poor ${tagCounts.already_know}x) — fresh targets only\n`;
+        }
+      }
+
       // Overdue tasks
       const{data:taskData}=await db.from('tasks').select('title,due,contact,notes,priority').eq('done',false).not('due','is',null).lte('due',new Date().toISOString().slice(0,10)).order('due',{ascending:true}).limit(5);
       if(taskData&&taskData.length){
@@ -4172,7 +4192,7 @@ ${emailContext||'No BD emails today.'}
 === PROSPECTS QUEUED (auto-discovered, awaiting approval) ===
 ${prospectsContext||'No prospects queued.'}
 === END LIVE DATA ===
-
+${feedbackContext}
 GENERATE EXACTLY 8 BD ACTIONS. New opportunities only — no pipeline follow-ups (those are in the Follow-ups panel).
 
 Use these GCC company tiers for targets:
@@ -4265,27 +4285,100 @@ function renderTodaysActions(data,modeData){
   if(!data.actions||!data.actions.length){list.innerHTML='<div class="empty"><i class="ti ti-bolt"></i><p>No actions generated. Try again.</p></div>';return;}
 
   const priorityColors={critical:'var(--red)',high:'var(--amber)',medium:'#3b82f6',low:'var(--border)'};
-  list.innerHTML=data.actions.map((a,i)=>`
-    <div class="action-item ${a.priority}" id="action-${i}">
-      <div class="action-rank">${a.rank||i+1}</div>
+  list.innerHTML=data.actions.map((a,i)=>{
+    const st=a.status||'active';
+    const rank=a.rank||i+1;
+    const isCompleted=st==='completed';
+    const isSnoozed=st==='snoozed';
+    const cardStyle=(isCompleted?'opacity:0.55;border-left:4px solid #22c55e;':isSnoozed?'border-left:4px solid var(--amber);':'')+(st==='deleted'?'display:none;':'');
+    return `
+    <div class="action-item ${a.priority}" id="action-${i}" style="${cardStyle}">
+      <div class="action-rank" style="${isCompleted?'background:#22c55e;color:#fff;':''}">${rank}</div>
       <div class="action-body">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap">
           <span class="b b-${a.priority==='critical'?'high':a.priority==='high'?'followup':a.priority==='medium'?'contacted':'cold'}">${esc(a.type||'Action')}</span>
           ${a.contact?`<span style="font-size:12px;color:var(--muted)">${esc(a.contact)}${a.company?' — '+esc(a.company):''}</span>`:''}
+          <div style="margin-left:auto;display:flex;gap:4px;flex-shrink:0">
+            <button class="btn btn-xs btn-outline" onclick="updateActionStatus(${rank},${i},'completed',this)" title="Mark complete" style="${isCompleted?'background:#22c55e;color:#fff;border-color:#22c55e':''}"><i class="ti ti-check"></i></button>
+            <button class="btn btn-xs btn-outline" onclick="updateActionStatus(${rank},${i},'snoozed',this)" title="Carry to tomorrow" style="${isSnoozed?'background:var(--amber);color:#fff;border-color:var(--amber)':''}"><i class="ti ti-clock-pause"></i></button>
+            <button class="btn btn-xs btn-outline" onclick="updateActionStatus(${rank},${i},'deleted',this)" title="Remove" style="color:var(--red)"><i class="ti ti-trash"></i></button>
+          </div>
         </div>
         <div class="action-title">${esc(a.title)}</div>
         ${a.signal?`<div style="display:flex;align-items:flex-start;gap:6px;margin:5px 0 4px;padding:6px 10px;background:rgba(59,130,246,0.07);border-left:3px solid #3b82f6;border-radius:0 6px 6px 0"><i class="ti ti-eye" style="font-size:12px;color:#3b82f6;margin-top:1px;flex-shrink:0"></i><span style="font-size:12px;color:#1e3a5f;font-weight:500;flex:1">${esc(a.signal)}</span>${a.source_url?`<a href="${esc(a.source_url)}" target="_blank" rel="noopener" style="flex-shrink:0;font-size:11px;color:#3b82f6;font-weight:700;white-space:nowrap;text-decoration:none;padding:1px 6px;border:1px solid #3b82f6;border-radius:4px;margin-left:6px"><i class="ti ti-external-link" style="font-size:10px"></i> View</a>`:''}</div>`:''}
         <div class="action-sub">${esc(a.why)}</div>
-        ${(a.contacts_to_reach&&a.contacts_to_reach.length)?`<div style="margin:7px 0 5px;padding:8px 10px;background:rgba(201,168,76,0.07);border-left:3px solid var(--gold);border-radius:0 6px 6px 0"><div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Who to contact</div>${a.contacts_to_reach.map(c=>`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;flex-wrap:wrap"><div><div style="font-size:12px;font-weight:700;color:var(--navy)">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.title||'')}${c.company?' — '+esc(c.company):''}</div>${c.approach?`<div style="font-size:11px;color:var(--text);margin-top:2px;font-style:italic">${esc(c.approach)}</div>`:''}</div><div style="display:flex;gap:6px;align-items:center;margin-left:auto">${c.linkedin?`<a href="${c.linkedin.startsWith('http')?c.linkedin:'https://'+c.linkedin}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-brand-linkedin" style="color:#0077b5"></i> LinkedIn</a>`:''} ${c.email?`<a href="mailto:${c.email}" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-mail"></i> Email</a>`:''}</div></div>`).join('')}</div>`:'' }
+        ${(a.contacts_to_reach&&a.contacts_to_reach.length)?`<div style="margin:7px 0 5px;padding:8px 10px;background:rgba(201,168,76,0.07);border-left:3px solid var(--gold);border-radius:0 6px 6px 0"><div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Who to contact</div>${a.contacts_to_reach.map(c=>`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;flex-wrap:wrap"><div><div style="font-size:12px;font-weight:700;color:var(--navy)">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.title||'')}${c.company?' — '+esc(c.company):''}</div>${c.activity?`<div style="font-size:11px;color:#3b82f6;margin-top:2px"><i class="ti ti-pencil" style="font-size:10px"></i> Posts about: ${esc(c.activity)}</div>`:''}</div><div style="display:flex;gap:6px;align-items:center;margin-left:auto">${c.linkedin?`<a href="${c.linkedin.startsWith('http')?c.linkedin:'https://'+c.linkedin}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-brand-linkedin" style="color:#0077b5"></i> LinkedIn</a>`:''} ${c.email?`<a href="mailto:${c.email}" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-mail"></i> Email</a>`:''}</div></div>`).join('')}</div>`:'' }
         ${a.suggested_message?`<div class="action-msg">"${esc(a.suggested_message)}"</div>`:''}
         <div class="action-ft">
           <span class="effort-tag"><i class="ti ti-clock" style="font-size:10px"></i> ${esc(a.effort_label||'5 min')}</span>
           ${a.suggested_message?`<button class="btn btn-xs btn-outline" onclick="copyAction(${i})"><i class="ti ti-copy"></i> Copy</button>`:''}
           <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask Annie</button>
+          <div style="margin-left:auto;display:flex;gap:4px;align-items:center">
+            <span style="font-size:11px;color:var(--muted)">Rate:</span>
+            <button class="btn btn-xs btn-outline" id="fb-up-${i}" onclick="saveActionFeedback(${rank},${i},'up',this)" title="Good signal" style="${a.feedback==='up'?'background:#22c55e;color:#fff;border-color:#22c55e':''}">👍</button>
+            <button class="btn btn-xs btn-outline" id="fb-dn-${i}" onclick="showThumbsDownTags(${i},this)" title="Not useful" style="${a.feedback==='down'?'background:var(--red);color:#fff;border-color:var(--red)':''}">👎</button>
+          </div>
+        </div>
+        <div id="fb-tags-${i}" style="display:none;margin-top:6px;padding:8px;background:rgba(239,68,68,0.05);border-radius:6px;border:1px solid rgba(239,68,68,0.2)">
+          <span style="font-size:11px;color:var(--muted);margin-right:6px">Why not useful?</span>
+          <button class="btn btn-xs btn-outline" onclick="saveActionFeedback(${rank},${i},'down',this,'too_generic')" style="font-size:11px;margin:2px">Too generic</button>
+          <button class="btn btn-xs btn-outline" onclick="saveActionFeedback(${rank},${i},'down',this,'wrong_person')" style="font-size:11px;margin:2px">Wrong person</button>
+          <button class="btn btn-xs btn-outline" onclick="saveActionFeedback(${rank},${i},'down',this,'already_know')" style="font-size:11px;margin:2px">Already know them</button>
         </div>
       </div>
     </div>
-  `).join('');
+  `; }).join('');
+}
+
+async function updateActionStatus(rank,i,status,btn){
+  const db=_db();
+  const today=new Date().toISOString().slice(0,10);
+  if(db){try{const{data}=await db.from('todays_actions').select('id,actions').eq('action_date',today).order('generated_at',{ascending:false}).limit(1).single();if(data){const updated=(data.actions||[]).map(a=>a.rank===rank?{...a,status,actioned_at:new Date().toISOString()}:a);await db.from('todays_actions').update({actions:updated}).eq('id',data.id);}}catch(e){console.warn('Status update failed:',e);}}
+  if(window._todaysActionsData&&window._todaysActionsData[i])window._todaysActionsData[i].status=status;
+  const card=document.getElementById('action-'+i);if(!card)return;
+  if(status==='completed'){card.style.opacity='0.55';card.style.borderLeft='4px solid #22c55e';const rk=card.querySelector('.action-rank');if(rk)rk.style.cssText='background:#22c55e;color:#fff;';if(btn){btn.style.background='#22c55e';btn.style.color='#fff';btn.style.borderColor='#22c55e';}showToast('Action completed ✓');}
+  else if(status==='deleted'){card.style.transition='opacity 0.3s';card.style.opacity='0';setTimeout(()=>{card.style.display='none';},300);}
+  else if(status==='snoozed'){card.style.borderLeft='4px solid var(--amber)';if(btn){btn.style.background='var(--amber)';btn.style.color='#fff';btn.style.borderColor='var(--amber)';}showToast('Carried forward to tomorrow');}
+}
+
+async function saveActionFeedback(rank,i,thumbs,btn,tag){
+  const db=_db();const today=new Date().toISOString().slice(0,10);
+  if(db){try{const{data}=await db.from('todays_actions').select('id,actions').eq('action_date',today).order('generated_at',{ascending:false}).limit(1).single();if(data){const updated=(data.actions||[]).map(a=>a.rank===rank?{...a,feedback:thumbs,feedback_tag:tag||a.feedback_tag||null}:a);await db.from('todays_actions').update({actions:updated}).eq('id',data.id);}}catch(e){console.warn('Feedback save failed:',e);}}
+  if(window._todaysActionsData&&window._todaysActionsData[i]){window._todaysActionsData[i].feedback=thumbs;if(tag)window._todaysActionsData[i].feedback_tag=tag;}
+  const upBtn=document.getElementById('fb-up-'+i);const dnBtn=document.getElementById('fb-dn-'+i);const tagsDiv=document.getElementById('fb-tags-'+i);
+  if(thumbs==='up'){if(upBtn){upBtn.style.background='#22c55e';upBtn.style.color='#fff';upBtn.style.borderColor='#22c55e';}if(dnBtn){dnBtn.style.background='';dnBtn.style.color='';dnBtn.style.borderColor='';}if(tagsDiv)tagsDiv.style.display='none';showToast('Noted — good signals ranked higher next time 👍');}
+  else if(thumbs==='down'){if(dnBtn){dnBtn.style.background='var(--red)';dnBtn.style.color='#fff';dnBtn.style.borderColor='var(--red)';}if(upBtn){upBtn.style.background='';upBtn.style.color='';upBtn.style.borderColor='';}if(tag&&tagsDiv)tagsDiv.style.display='none';if(tag)showToast('Feedback saved — improving future actions');}
+}
+
+function showThumbsDownTags(i){
+  const tagsDiv=document.getElementById('fb-tags-'+i);
+  if(tagsDiv)tagsDiv.style.display=tagsDiv.style.display==='block'?'none':'block';
+}
+
+async function loadCarryForward(){
+  const db=_db();if(!db)return;
+  const today=new Date().toISOString().slice(0,10);
+  const threeDaysAgo=new Date(Date.now()-3*864e5).toISOString().slice(0,10);
+  const section=document.getElementById('carry-forward-section');if(!section)return;
+  try{
+    const{data}=await db.from('todays_actions').select('action_date,actions').gte('action_date',threeDaysAgo).lt('action_date',today).order('action_date',{ascending:false});
+    if(!data||!data.length){section.style.display='none';return;}
+    const carried=[];
+    data.forEach(row=>(row.actions||[]).forEach(a=>{const st=a.status||'active';if(st!=='completed'&&st!=='deleted')carried.push({...a,_fromDate:row.action_date});}));
+    if(!carried.length){section.style.display='none';return;}
+    window._carryForwardData=carried;
+    section.style.display='block';
+    section.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><i class="ti ti-clock-play" style="font-size:15px;color:var(--amber)"></i><span style="font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px">Carried Forward</span><span style="font-size:12px;color:var(--muted);margin-left:4px">${carried.length} unfinished action${carried.length!==1?'s':''} from previous days</span></div>`+carried.map((a,ci)=>`<div class="action-item ${a.priority||'medium'}" id="cf-action-${ci}" style="border-left:3px solid var(--amber);margin-bottom:10px;opacity:0.9"><div class="action-rank" style="background:var(--amber);color:#fff;font-size:13px">↩</div><div class="action-body"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap"><span class="b b-${a.priority==='high'?'followup':'contacted'}">${esc(a.type||'Action')}</span><span style="font-size:11px;color:var(--muted)">${new Date(a._fromDate).toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'})}</span><div style="margin-left:auto;display:flex;gap:4px"><button class="btn btn-xs btn-outline" onclick="updateCarryStatus(${ci},'completed',this)" title="Done"><i class="ti ti-check"></i></button><button class="btn btn-xs btn-outline" onclick="updateCarryStatus(${ci},'deleted',this)" title="Remove" style="color:var(--red)"><i class="ti ti-trash"></i></button></div></div><div class="action-title" style="font-size:13px">${esc(a.title)}</div>${a.contacts_to_reach&&a.contacts_to_reach.length?`<div style="font-size:12px;color:var(--muted);margin-top:4px"><i class="ti ti-user" style="font-size:11px"></i> ${esc(a.contacts_to_reach[0].name)} — ${esc(a.contacts_to_reach[0].title||'')}</div>`:''} ${a.suggested_message?`<div style="font-size:12px;color:var(--text);margin-top:5px;font-style:italic">"${esc(a.suggested_message)}"</div>`:''}<div class="action-ft" style="margin-top:6px">${a.suggested_message?`<button class="btn btn-xs btn-outline" onclick="navigator.clipboard.writeText(${JSON.stringify(a.suggested_message||'')});showToast('Copied')"><i class="ti ti-copy"></i> Copy</button>`:''}</div></div></div>`).join('');
+  }catch(e){console.warn('Carry forward failed:',e);section.style.display='none';}
+}
+
+async function updateCarryStatus(ci,status){
+  const a=window._carryForwardData&&window._carryForwardData[ci];if(!a)return;
+  const db=_db();
+  if(db){try{const{data}=await db.from('todays_actions').select('id,actions').eq('action_date',a._fromDate).single();if(data){const updated=(data.actions||[]).map(act=>act.rank===a.rank?{...act,status,actioned_at:new Date().toISOString()}:act);await db.from('todays_actions').update({actions:updated}).eq('id',data.id);}}catch(e){console.warn('Carry status update failed:',e);}}
+  const card=document.getElementById('cf-action-'+ci);if(!card)return;
+  card.style.transition='opacity 0.3s';card.style.opacity='0';
+  setTimeout(()=>{card.style.display='none';showToast(status==='completed'?'Completed ✓':'Removed');const section=document.getElementById('carry-forward-section');if(section&&!section.querySelector('.action-item:not([style*="display: none"])'))section.style.display='none';},300);
 }
 
 function copyAction(i){
