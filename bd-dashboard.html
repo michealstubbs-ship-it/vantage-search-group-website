@@ -973,7 +973,7 @@ textarea{resize:vertical;min-height:80px}
       <div id="actions-empty" style="text-align:center;padding:64px 20px;color:var(--subtle)">
         <i class="ti ti-bolt" style="font-size:48px;display:block;margin-bottom:16px;opacity:.2"></i>
         <div style="font-size:15px;font-weight:700;margin-bottom:8px">No actions generated yet</div>
-        <div style="font-size:13px;margin-bottom:20px">Click "Generate Actions" to run all 9 BD prompts and get your ranked action list for today.</div>
+        <div style="font-size:13px;margin-bottom:20px">Click "Generate Actions" to pull all live pipeline signals and generate your full BD action list for today.</div>
         <button class="btn btn-gold" onclick="runTodaysActions()"><i class="ti ti-bolt"></i> Generate Today's Actions</button>
       </div>
 
@@ -3871,61 +3871,120 @@ async function runTodaysActions(){
 
   // Assess business mode from Supabase
   let modeData={mode:'prospecting',jobs:0,pipeline:0};
+  let pipelineContext='';
+  let linkedinRepliesContext='';
+  let emailContext='';
+  let overdueTasks='';
   try{
-    const{data:jobs}=await supabase.from('jobs').select('id,status').eq('status','active');
-    const jobCount=(jobs||[]).length;
-    const{data:contacts}=await supabase.from('contacts').select('stage,value_aed');
-    const pipeline=(contacts||[]).reduce((s,c)=>s+(parseFloat(c.value_aed)||0),0);
-    modeData.jobs=jobCount;modeData.pipeline=pipeline;
-    if(jobCount>=4)modeData.mode='delivery';
-    else if(jobCount>=2)modeData.mode='mixed';
-    else modeData.mode='prospecting';
-  }catch(e){}
+    const db=_db();
+    if(db){
+      // Jobs
+      const{data:jobs}=await db.from('jobs').select('id,status,title,company').eq('status','active');
+      const jobCount=(jobs||[]).length;
+      modeData.jobs=jobCount;
+      if(jobCount>=4)modeData.mode='delivery';
+      else if(jobCount>=2)modeData.mode='mixed';
+      else modeData.mode='prospecting';
 
-  // Build the master system prompt
+      // All pipeline contacts — real data
+      const{data:contacts}=await db.from('contacts').select('name,title,company,stage,followup_date,last_contact,notes,linkedin,email').neq('name','Michael Stubbs').order('followup_date',{ascending:true,nullsFirst:false}).limit(50);
+      if(contacts&&contacts.length){
+        const today=new Date().toISOString().slice(0,10);
+        const overdue=contacts.filter(c=>c.followup_date&&c.followup_date<today);
+        const upcoming=contacts.filter(c=>c.followup_date&&c.followup_date>=today);
+        const noDate=contacts.filter(c=>!c.followup_date);
+        let lines=[];
+        if(overdue.length){
+          lines.push('OVERDUE FOLLOW-UPS (must act today):');
+          overdue.forEach(c=>{
+            const days=Math.floor((new Date(today)-new Date(c.followup_date))/(86400000));
+            lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) | Stage: ${c.stage} | Follow-up was due ${c.followup_date} (${days} day${days!==1?'s':''} overdue) | Last contact: ${c.last_contact||'unknown'} | LinkedIn: ${c.linkedin||'unknown'} | Notes: ${c.notes||'none'}`);
+          });
+        }
+        if(upcoming.length){
+          lines.push('UPCOMING FOLLOW-UPS (due soon):');
+          upcoming.slice(0,5).forEach(c=>lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) | Due: ${c.followup_date} | Stage: ${c.stage} | Notes: ${c.notes||'none'}`));
+        }
+        if(noDate.length){
+          lines.push('PIPELINE CONTACTS (no scheduled follow-up):');
+          noDate.forEach(c=>lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) | Stage: ${c.stage} | Last contact: ${c.last_contact||'unknown'} | LinkedIn: ${c.linkedin||'unknown'} | Notes: ${c.notes||'none'}`));
+        }
+        pipelineContext=lines.join('\n');
+      }
+
+      // LinkedIn replies — real signals from outreach
+      const{data:liReplies}=await db.from('linkedin_outreach').select('full_name,title,linkedin_url,status,date_replied,notes').eq('status','replied').order('date_replied',{ascending:false}).limit(20);
+      if(liReplies&&liReplies.length){
+        linkedinRepliesContext='LINKEDIN OUTREACH REPLIES (people who replied to VSG outreach — needs BD follow-up):\n'+liReplies.map(r=>`  - ${r.full_name} (${r.title||'?'}) | Replied: ${r.date_replied?new Date(r.date_replied).toLocaleDateString('en-GB'):'recently'} | LinkedIn: ${r.linkedin_url||'unknown'} | Notes: ${r.notes||'basic reply received'}`).join('\n');
+      }
+
+      // Recent emails saved to email_context
+      const{data:emails}=await db.from('email_context').select('received_at,sender_name,sender_email,subject,summary').eq('is_bd_relevant',true).order('received_at',{ascending:false}).limit(15);
+      if(emails&&emails.length){
+        emailContext='RECENT EMAILS (from Vantage Search inbox — real received messages):\n'+emails.map(e=>`  - ${new Date(e.received_at).toLocaleDateString('en-GB')}: From ${e.sender_name||'?'} (${e.sender_email||'?'}) | Subject: "${e.subject}" | ${e.summary||''}`).join('\n');
+      }
+
+      // Overdue tasks
+      const{data:taskData}=await db.from('tasks').select('title,due,contact,notes,priority').eq('done',false).not('due','is',null).lte('due',new Date().toISOString().slice(0,10)).order('due',{ascending:true}).limit(5);
+      if(taskData&&taskData.length){
+        overdueTasks='OVERDUE TASKS:\n'+taskData.map(t=>`  - "${t.title}" | Due: ${t.due} | Contact: ${t.contact||'none'} | Notes: ${t.notes||'none'}`).join('\n');
+      }
+    }
+  }catch(e){console.warn('Context load error:',e);}
+
   const modeDescriptions={
-    prospecting:`VSG currently has ${modeData.jobs} live mandate(s). This is PROSPECTING MODE — weight actions 70% opportunity triggers and new BD, 20% relationship maintenance, 10% admin.`,
-    mixed:`VSG currently has ${modeData.jobs} live mandates. This is MIXED MODE — weight actions 50% delivery, 30% BD outreach, 20% relationship maintenance.`,
-    delivery:`VSG currently has ${modeData.jobs} live mandates. This is DELIVERY MODE — weight actions 60% delivery, 25% relationship maintenance, 15% new BD.`
+    prospecting:`VSG currently has ${modeData.jobs} live mandate(s). PROSPECTING MODE: weight actions 70% opportunity triggers and new BD, 20% relationship maintenance, 10% admin.`,
+    mixed:`VSG currently has ${modeData.jobs} live mandates. MIXED MODE: weight actions 50% delivery, 30% BD outreach, 20% relationship maintenance.`,
+    delivery:`VSG currently has ${modeData.jobs} live mandates. DELIVERY MODE: weight actions 60% delivery, 25% relationship maintenance, 15% new BD.`
   };
 
-  const systemPrompt=`You are Michael Stubbs' AI BD engine at Vantage Search Group. VSG is a boutique executive search firm in the GCC.
+  const systemPrompt=`You are Michael Stubbs' AI BD engine at Vantage Search Group (VSG), a boutique executive search firm in Dubai/GCC.
 
 ${modeDescriptions[modeData.mode]}
 
-Generate Michael's Today's Actions list. Output as a JSON array of action objects. Each object has:
+=== REAL PIPELINE DATA FROM SUPABASE ===
+${pipelineContext||'No pipeline data available.'}
+
+${linkedinRepliesContext||''}
+
+${emailContext||''}
+
+${overdueTasks||''}
+=== END REAL DATA ===
+
+Generate Michael's Today's Actions list based on the REAL DATA above. Every single action must be grounded in a real signal from the data above — pipeline notes, LinkedIn replies, overdue follow-ups, emails received, or tasks. Do NOT invent communications. Do NOT fabricate signals.
+
+Generate as many actions as there are real things to do — typically 15 to 25. Every person with a recent reply, every overdue follow-up, every note indicating a pending next step is a separate action. Do not merge or skip any.
+
+Output as JSON. Each action object:
 - rank: number (1 = most urgent)
 - priority: "critical" | "high" | "medium" | "low"
-- type: e.g. "Reply needed" | "Follow-up overdue" | "Opportunity trigger" | "Relationship check-in" | "New prospect" | "Pipeline admin"
+- type: "Reply needed" | "Follow-up overdue" | "LinkedIn reply to convert" | "Meeting prep" | "Referral to chase" | "New outreach" | "Relationship check-in" | "Pipeline admin"
 - title: short action title (max 12 words)
-- contact: name of person (if applicable, else null)
-- company: company name (if applicable, else null)
-- signal: EXACTLY where this came from. Be specific and transparent. Format: "[Source type]: [what was observed]". Source types: "LinkedIn message received [date]:", "Email received [date/time]:", "LinkedIn post by [name] on [date]:", "Publicly reported [date]:", "Pipeline data:", "Follow-up date passed:", "Notes record:". Examples: "LinkedIn message received 25 Jun: Dmitry messaged asking about senior finance hiring in Abu Dhabi", "Email received 26 Jun 09:14: Subject 'CFO Search — interested in working together', from khalid@gulfcapital.com", "Publicly reported 24 Jun: ADNOC announced a new downstream expansion — likely to need transformation leadership", "Follow-up date passed 12 days ago — last contact was 14 Jun per pipeline", "Pipeline data: no contact recorded in 47 days, stage is Warm". CRITICAL: NEVER invent a communication. If you have no real signal, say "Suggested action based on [reason]:" not a fake received message.
-- why: one sentence on commercial reason to act now
-- contacts_to_reach: array of specific people Michael should contact for this action. Each entry: {"name": "Full Name", "title": "Their title", "company": "Company", "linkedin": "linkedin.com/in/profile-url or null", "email": "email if known or null", "approach": "why this person specifically"}. If no specific contacts known, return empty array.
-- suggested_message: drafted message referencing the signal naturally (max 80 words, warm, human, no em-dashes). Must mention WHY Michael is reaching out based on the actual signal — not a generic opener. Or null if not applicable.
+- contact: name (or null)
+- company: company name (or null)
+- signal: EXACTLY where this came from. Be specific. Format: "[Source type]: [what was observed]". Source types: "LinkedIn message received [date]:", "Email received [date]:", "Pipeline data:", "Follow-up date passed:", "Notes record:", "LinkedIn reply [date]:". CRITICAL: NEVER invent a communication. Quote or paraphrase the real note/signal from the data above.
+- source_url: URL linking to the source of this lead. Use the LinkedIn URL from contacts_to_reach if it is a person. For company news use the real news article URL. For pipeline contacts use their LinkedIn URL from the data. null if no URL available.
+- why: one sentence commercial reason to act now
+- contacts_to_reach: array — each: {"name":"Full Name","title":"Title","company":"Company","linkedin":"url or null","email":"email or null","approach":"why this person"}. Use the LinkedIn URL from the data if available.
+- suggested_message: drafted message referencing the actual signal (max 80 words, warm, human, no em-dashes). Must reference what was actually said or what the real situation is. Null if not applicable.
 - effort_mins: 2 | 5 | 15 | 30
 - effort_label: "2 min" | "5 min" | "15 min" | "30 min"
-
-Business mode label to show: ${modeData.mode.toUpperCase()} MODE
-Mode sub-text: ${modeDescriptions[modeData.mode]}
 
 Rules:
 - Never criticise the UAE, Saudi Arabia, or any GCC government
 - No em-dashes anywhere
-- Maximum 9 actions
-- Start with any pending replies, then overdue follow-ups, then opportunity triggers ranked by recency
-- Add a "daily_effort_total" field at the root of the response (number of total minutes)
-- Wrap everything in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
-- CRITICAL: Return ONLY raw JSON. No markdown. No code fences. No backticks. The first character of your response must be { and the last must be }.
-
-Since you cannot currently query Supabase directly, generate example actions for a GCC executive search firm. Be honest about sources: prefix all signals correctly. For company news signals, use "Publicly reported [date]:" and cite a real, plausible recent GCC business event. For relationship suggestions, use "Suggested action:". For each action, populate contacts_to_reach with the most relevant real people Michael should contact — include realistic LinkedIn URLs (linkedin.com/in/firstname-lastname format). The suggested_message must reference the signal directly so it reads as informed and specific, not generic.`;
+- Start with replies needed and overdue follow-ups, then referrals to chase, then LinkedIn replies to convert, then new outreach
+- Add "daily_effort_total" at root (total minutes)
+- Wrap in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
+- Today's date is ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}. Any company news or market signals you include must be from the last 7 days only. Do NOT reference events from January or any date older than 7 days. If you cannot recall a genuinely recent (last 7 days) GCC news event, do not invent one — only use pipeline data from above.
+- CRITICAL: Return ONLY raw JSON. No markdown. No code fences. No backticks. First character must be { and last must be }.`;
 
   try{
     const resp=await fetch('/.netlify/functions/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt,maxTokens:4096})
+      body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt,maxTokens:8000})
     });
     const data=await resp.json();
     clearInterval(ticker);bar.style.width='100%';
@@ -3999,7 +4058,7 @@ function renderTodaysActions(data,modeData){
           ${a.contact?`<span style="font-size:12px;color:var(--muted)">${esc(a.contact)}${a.company?' — '+esc(a.company):''}</span>`:''}
         </div>
         <div class="action-title">${esc(a.title)}</div>
-        ${a.signal?`<div style="display:flex;align-items:flex-start;gap:6px;margin:5px 0 4px;padding:6px 10px;background:rgba(59,130,246,0.07);border-left:3px solid #3b82f6;border-radius:0 6px 6px 0"><i class="ti ti-eye" style="font-size:12px;color:#3b82f6;margin-top:1px;flex-shrink:0"></i><span style="font-size:12px;color:#1e3a5f;font-weight:500">${esc(a.signal)}</span></div>`:''}
+        ${a.signal?`<div style="display:flex;align-items:flex-start;gap:6px;margin:5px 0 4px;padding:6px 10px;background:rgba(59,130,246,0.07);border-left:3px solid #3b82f6;border-radius:0 6px 6px 0"><i class="ti ti-eye" style="font-size:12px;color:#3b82f6;margin-top:1px;flex-shrink:0"></i><span style="font-size:12px;color:#1e3a5f;font-weight:500;flex:1">${esc(a.signal)}</span>${a.source_url?`<a href="${esc(a.source_url)}" target="_blank" rel="noopener" style="flex-shrink:0;font-size:11px;color:#3b82f6;font-weight:700;white-space:nowrap;text-decoration:none;padding:1px 6px;border:1px solid #3b82f6;border-radius:4px;margin-left:6px"><i class="ti ti-external-link" style="font-size:10px"></i> View</a>`:''}</div>`:''}
         <div class="action-sub">${esc(a.why)}</div>
         ${(a.contacts_to_reach&&a.contacts_to_reach.length)?`<div style="margin:7px 0 5px;padding:8px 10px;background:rgba(201,168,76,0.07);border-left:3px solid var(--gold);border-radius:0 6px 6px 0"><div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Who to contact</div>${a.contacts_to_reach.map(c=>`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;flex-wrap:wrap"><div><div style="font-size:12px;font-weight:700;color:var(--navy)">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.title||'')}${c.company?' — '+esc(c.company):''}</div>${c.approach?`<div style="font-size:11px;color:var(--text);margin-top:2px;font-style:italic">${esc(c.approach)}</div>`:''}</div><div style="display:flex;gap:6px;align-items:center;margin-left:auto">${c.linkedin?`<a href="${c.linkedin.startsWith('http')?c.linkedin:'https://'+c.linkedin}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-brand-linkedin" style="color:#0077b5"></i> LinkedIn</a>`:''} ${c.email?`<a href="mailto:${c.email}" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-mail"></i> Email</a>`:''}</div></div>`).join('')}</div>`:'' }
         ${a.suggested_message?`<div class="action-msg">"${esc(a.suggested_message)}"</div>`:''}
