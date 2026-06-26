@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "Enrich system prompt with VSG client history (SWFs, real estate, consulting, energy)"
+git commit -m "Fix Today's Actions quality: real companies only, no generic CHROs, nav badge, signal actioned flag, source signal link, salary_benchmarks, sidebar cleanup, sequence templates"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...

@@ -680,7 +680,7 @@ textarea{resize:vertical;min-height:80px}
     <div class="nav-section">Finance</div>
     <button class="nav-btn" onclick="goPage('finance',this)"><i class="ti ti-receipt"></i>Invoices<span class="nav-badge amber" id="nb-inv" style="display:none"></span></button>
     <div class="sidebar-footer">
-      <p><strong>Tip:</strong> Hit Save backup after every session. Download the JSON and keep it safe.</p>
+      <p id="sidebar-last-signal" style="color:var(--muted);font-size:11px"><i class="ti ti-antenna" style="margin-right:4px"></i>Signal monitor: 8am &amp; 4pm daily</p>
     </div>
   </div>
 
@@ -4184,7 +4184,7 @@ ${modeDescriptions[modeData.mode]}
 TODAY'S DATE: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
 
 === LIVE INTELLIGENCE SIGNALS (from VSG signal monitor, runs 8am and 4pm daily) ===
-${signalContext||'No signals today — generate GCC market intelligence actions from your knowledge.'}
+${signalContext||'No signals loaded yet — use only named companies from the GCC tier list below.'}
 
 === BD-RELEVANT EMAILS (inbound interest or appointment triggers) ===
 ${emailContext||'No BD emails today.'}
@@ -4193,22 +4193,26 @@ ${emailContext||'No BD emails today.'}
 ${prospectsContext||'No prospects queued.'}
 === END LIVE DATA ===
 ${feedbackContext}
-GENERATE EXACTLY 8 BD ACTIONS. New opportunities only — no pipeline follow-ups (those are in the Follow-ups panel).
+GENERATE ONE BD ACTION per live signal above — if there are 13 signals, generate 13 actions. Do NOT generate fewer than the signal count. New opportunities only — no pipeline follow-ups (those are in the Follow-ups panel).
 
-Use these GCC company tiers for targets:
+CRITICAL — REAL COMPANIES ONLY: Every action must target a real, named company from the signals list above or the tier list below. NEVER write generic categories like "Regional fintech sector", "UAE or Saudi digital bank", "Regional asset manager", "Regional consulting firm", "UAE infrastructure developer", or any similar placeholder. If you cannot name a specific real company, skip that action entirely.
+
+GCC target tier list (for actions beyond the signal list only):
 SWFs: Mubadala, ADQ, PIF, ADIA, ADNOC, TAQA, ICD, QIA
 Giga-projects: NEOM, Red Sea Global, Diriyah Gate, Qiddiya, ROSHN, RCU
 Consulting: Kearney, Strategy&, Oliver Wyman, A&M, Roland Berger, FTI
-Digital/AI: SDAIA, ADDA, G42, Core42, e&, STC, ZATCA
+Digital/AI: SDAIA, G42, Core42, e&, STC, Presight
 FinTech/Banking: FAB, Emirates NBD, ADCB, Mashreq, Riyad Bank, Tabby, Tamara, Wio Bank
 
-NAMED CONTACT RULE: If a signal summary contains "CONTACT: [Name], [Title]" — use that exact person in contacts_to_reach. Do NOT substitute a generic CHRO or default title. The named contact is the person actively building that team or most recently appointed — they are the right door to knock on.
+CRITICAL — CONTACTS: NEVER use "Group CHRO", "Chief Human Resources Officer", "Chief People Officer", "Head of Talent", or any generic HR title unless the signal is explicitly about an HR mandate. Always target the functional decision-maker:
+- AI/data signals → CDO, Head of AI, Chief Data Officer, VP Data
+- Trading/markets signals → Head of Trading, Chief Markets Officer
+- Digital/tech signals → CTO, Chief Digital Officer, Head of Technology
+- Finance/expansion → CFO, Head of Corporate Finance, Chief Investment Officer
+- Strategy signals → CEO, COO, Chief Strategy Officer
+- If signal summary contains "CONTACT: [Name], [Title]" — use that exact person, do not substitute.
 
-If no named contact in the signal, choose the most function-specific decision-maker (e.g., for AI hiring → CDO or Head of AI, not CHRO; for FinTech growth → CFO or Head of Products, not CEO).
-
-Signals with a named contact who is actively posting on LinkedIn = rank these highest. They self-selected as approachable.
-
-If LIVE INTELLIGENCE SIGNALS has entries, use those first as type="Signal trigger". Otherwise use type="Opportunity trigger".
+Signals with a named contact actively posting on LinkedIn = rank highest. All live signals = type="Signal trigger". Tier list additions = type="Opportunity trigger".
 
 OUTPUT — ultra-compact JSON, STRICT token budget:
 {"rank":N,"priority":"high|medium","type":"Signal trigger|Opportunity trigger","title":"6 words max","company":"name","signal":"specific trigger: 10 words max","source_url":null,"why":"10 words max","contacts_to_reach":[{"name":"Full Name","title":"Exact Title","activity":"what they post about, 8 words max or null"}],"suggested_message":"25 words max, reference their post or trigger if known, no em-dashes","effort_mins":5,"effort_label":"5 min"}
@@ -4282,7 +4286,7 @@ function renderTodaysActions(data,modeData){
   document.getElementById('actions-effort-badge').textContent=`~${data.daily_effort_total||45} min today`;
 
   const list=document.getElementById('actions-list');
-  if(!data.actions||!data.actions.length){list.innerHTML='<div class="empty"><i class="ti ti-bolt"></i><p>No actions generated. Try again.</p></div>';return;}
+  if(!data.actions||!data.actions.length){list.innerHTML='<div class="empty"><i class="ti ti-bolt"></i><p>No actions generated. Try again.</p></div>';updateActionsNavBadge();return;}
 
   const priorityColors={critical:'var(--red)',high:'var(--amber)',medium:'#3b82f6',low:'var(--border)'};
   list.innerHTML=data.actions.map((a,i)=>{
@@ -4297,6 +4301,7 @@ function renderTodaysActions(data,modeData){
       <div class="action-body">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap">
           <span class="b b-${a.priority==='critical'?'high':a.priority==='high'?'followup':a.priority==='medium'?'contacted':'cold'}">${esc(a.type||'Action')}</span>
+          ${a.type==='Signal trigger'?`<span onclick="goPage('signals',document.querySelector('.nav-btn[onclick*=signals]'))" style="font-size:10px;color:#3b82f6;cursor:pointer;padding:1px 6px;border:1px solid #3b82f6;border-radius:4px;font-weight:600;white-space:nowrap" title="View source signal">⚡ Signal</span>`:''}
           ${a.contact?`<span style="font-size:12px;color:var(--muted)">${esc(a.contact)}${a.company?' — '+esc(a.company):''}</span>`:''}
           <div style="margin-left:auto;display:flex;gap:4px;flex-shrink:0">
             <button class="btn btn-xs btn-outline" onclick="updateActionStatus(${rank},${i},'completed',this)" title="Mark complete" style="${isCompleted?'background:#22c55e;color:#fff;border-color:#22c55e':''}"><i class="ti ti-check"></i></button>
@@ -4328,6 +4333,16 @@ function renderTodaysActions(data,modeData){
       </div>
     </div>
   `; }).join('');
+  updateActionsNavBadge();
+}
+
+function updateActionsNavBadge(){
+  const actions=window._todaysActionsData||[];
+  const remaining=actions.filter(a=>!a.status||a.status==='active'||a.status==='snoozed').length;
+  const badge=document.getElementById('nb-actions');
+  if(!badge)return;
+  if(remaining>0){badge.textContent=remaining;badge.style.display='inline-flex';}
+  else{badge.style.display='none';}
 }
 
 async function updateActionStatus(rank,i,status,btn){
@@ -4335,6 +4350,11 @@ async function updateActionStatus(rank,i,status,btn){
   const today=new Date().toISOString().slice(0,10);
   if(db){try{const{data}=await db.from('todays_actions').select('id,actions').eq('action_date',today).order('generated_at',{ascending:false}).limit(1).single();if(data){const updated=(data.actions||[]).map(a=>a.rank===rank?{...a,status,actioned_at:new Date().toISOString()}:a);await db.from('todays_actions').update({actions:updated}).eq('id',data.id);}}catch(e){console.warn('Status update failed:',e);}}
   if(window._todaysActionsData&&window._todaysActionsData[i])window._todaysActionsData[i].status=status;
+  // Mark matching signal as actioned when completing
+  if(status==='completed'&&db){
+    try{const company=window._todaysActionsData&&window._todaysActionsData[i]&&window._todaysActionsData[i].company;if(company)await db.from('company_signals').update({actioned:true}).eq('actioned',false).ilike('company_name',company);}catch(e){}
+  }
+  updateActionsNavBadge();
   const card=document.getElementById('action-'+i);if(!card)return;
   if(status==='completed'){card.style.opacity='0.55';card.style.borderLeft='4px solid #22c55e';const rk=card.querySelector('.action-rank');if(rk)rk.style.cssText='background:#22c55e;color:#fff;';if(btn){btn.style.background='#22c55e';btn.style.color='#fff';btn.style.borderColor='#22c55e';}showToast('Action completed ✓');}
   else if(status==='deleted'){card.style.transition='opacity 0.3s';card.style.opacity='0';setTimeout(()=>{card.style.display='none';},300);}
