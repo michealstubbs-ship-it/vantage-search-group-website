@@ -4485,27 +4485,12 @@ async function runTodaysActions(){
         const upcoming=contacts.filter(c=>c.followup_date&&c.followup_date>=today);
         const goingQuiet=contacts.filter(c=>!c.followup_date&&c.last_contact&&c.last_contact>=d14ago&&c.last_contact<=d7ago&&c.stage&&!['closed','placed'].includes(c.stage));
         const noDate=contacts.filter(c=>!c.followup_date&&!goingQuiet.includes(c));
-        let lines=[];
-        if(overdue.length){
-          lines.push('OVERDUE FOLLOW-UPS:');
-          overdue.forEach(c=>{
-            const days=Math.floor((new Date(today)-new Date(c.followup_date))/(86400000));
-            lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) Stage:${c.stage} Due:${c.followup_date}(${days}d overdue) LI:${c.linkedin||'?'} Notes:${(c.notes||'none').slice(0,100)}`);
-          });
-        }
-        if(goingQuiet.length){
-          lines.push('GOING QUIET (last contact 7-14d ago, no reply yet):');
-          goingQuiet.slice(0,5).forEach(c=>lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) Stage:${c.stage} LastContact:${c.last_contact} LI:${c.linkedin||'?'} Notes:${(c.notes||'none').slice(0,80)}`));
-        }
-        if(upcoming.length){
-          lines.push('UPCOMING FOLLOW-UPS:');
-          upcoming.slice(0,5).forEach(c=>lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) Due:${c.followup_date} Stage:${c.stage} Notes:${(c.notes||'none').slice(0,80)}`));
-        }
-        if(noDate.length){
-          lines.push('PIPELINE (no date):');
-          noDate.slice(0,6).forEach(c=>lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) Stage:${c.stage} LastContact:${c.last_contact||'never'} LI:${c.linkedin||'?'} Notes:${(c.notes||'none').slice(0,80)}`));
-        }
-        pipelineContext=lines.join('\n');
+        // Pipeline context = company names only (prevents AI generating follow-up actions for these contacts)
+        // Full contact details are handled by rule-injected cards, not the AI
+        const allCompanies=[...new Set(contacts.map(c=>c.company).filter(Boolean))];
+        pipelineContext='Companies already in your pipeline (cross-reference only — do NOT generate actions for these):\n'+allCompanies.join(', ');
+        // Also store full data for rule-injected cards (separate from AI context)
+        _ruleCardData.overdue=overdue;
       }
 
       // VIP / past client contacts for relationship maintenance
@@ -4515,7 +4500,8 @@ async function runTodaysActions(){
         const d30ago=new Date(Date.now()-30*86400000).toISOString().slice(0,10);
         const vipDue=vipContacts.filter(c=>!c.last_contact||c.last_contact<=d30ago);
         if(vipDue.length){
-          vipContext='VIP / PAST CLIENTS (30d+ since last contact — relationship maintenance):\n'+vipDue.map(c=>{const d=c.last_contact?Math.floor((new Date(today2)-new Date(c.last_contact))/(86400000)):'?';return`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) LastContact:${c.last_contact||'never'}(${d}d ago) LI:${c.linkedin||'?'} Notes:${(c.notes||'none').slice(0,80)}`;}).join('\n');
+          // VIP context = company names only — prevents AI generating "check in with VIP" actions
+          vipContext='Past clients / VIPs (cross-reference only):\n'+vipDue.map(c=>c.company||c.name).join(', ');
         }
       }
 
