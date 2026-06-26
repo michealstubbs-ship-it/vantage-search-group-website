@@ -4682,16 +4682,16 @@ ${warmLeadsContext||'No warm leads with matching signals today.'}
 === LIVE INTELLIGENCE SIGNALS (GCC signal monitor — 8am/12pm/4pm) ===
 ${signalContext||'No signals loaded yet.'}
 
-=== PIPELINE CONTEXT (follow-ups, overdue, going quiet) ===
+=== PIPELINE (FOR REFERENCE ONLY — do NOT generate follow-up actions for these contacts) ===
 ${pipelineContext||'No pipeline contacts loaded.'}
 
-=== VIP + PAST CLIENT RELATIONSHIPS (30d+ since contact) ===
+=== VIP + PAST CLIENTS (FOR REFERENCE ONLY — use only if they have a live signal match) ===
 ${vipContext||'No VIP contacts flagged.'}
 
 === BD-RELEVANT EMAILS (inbound interest, replies, triggers) ===
 ${emailContext||'No BD emails today.'}
 
-=== STALE RELATIONSHIPS (14+ days silent) ===
+=== STALE RELATIONSHIPS (14+ days silent — only include stage: engaged/meeting/active) ===
 ${staleContext||'No stale relationships today.'}
 
 === PROSPECTS QUEUED (auto-discovered, awaiting approval) ===
@@ -4699,16 +4699,18 @@ ${prospectsContext||'No prospects queued.'}
 === END LIVE DATA ===
 ${feedbackContext}
 
+CRITICAL — NEW BD ONLY: Today's Actions is for NEW business development opportunities. The Follow-ups panel handles existing pipeline follow-ups. Do NOT generate actions like "follow up with [existing contact]" or "chase [pipeline person]" unless they are ALSO linked to a live signal or appointment trigger. Pipeline and VIP data above is for REFERENCE only — use it to avoid suggesting contacts you already know as new prospects, and to cross-reference signals with existing relationships.
+
 PRIORITY ORDER — rank every action by this:
-1. Warm lead + active signal (person already replied, company has live signal)
+1. Warm lead + active signal (person already replied to you AND company has live signal)
 2. Appointment trigger (leadership change, ≤60 day hot window — fewer days = higher rank)
 3. BD-relevant email requiring a reply
 4. Meeting follow-up (from today's calendar — prep or post-meeting action)
-5. Signal trigger (live GCC company signal — one action per signal)
-6. Overdue follow-up (relationship at risk, has due date in past)
-7. Stale relationship (14+ days silent, high-value stage: engaged/meeting/active)
-8. VIP relationship maintenance (past client or warm referrer, 30d+ silent)
-9. Opportunity trigger (tier list company, no current signal)
+5. Signal trigger (live GCC company signal — one action per signal, target the decision-maker)
+6. Stale relationship WITH a new angle (14+ days silent, stage: engaged/meeting/active — ONLY if there's a specific reason to re-engage beyond "haven't spoken")
+7. Opportunity trigger (tier list company, no current signal)
+
+DO NOT generate: generic "check in" actions, "follow up" actions for pipeline contacts, or any action without a specific named company and specific trigger reason.
 
 CONTACT TARGETING — always the functional decision-maker, never generic HR:
 - AI/data signals: CDO, Head of AI, Chief Data Officer, VP Data
