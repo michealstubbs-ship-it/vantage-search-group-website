@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "UX: All Contacts A-Z sort + sort dropdown; Jobs active-first ordering"
+git commit -m "Global search bar (contacts/companies/signals/leads); Companies A-Z + sort; Signals unactioned-first"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...

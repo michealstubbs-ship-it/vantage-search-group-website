@@ -27,6 +27,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* TOP BAR */
 .bar{height:54px;background:var(--navy);border-bottom:3px solid var(--gold);display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:100;gap:12px;flex-wrap:nowrap}
 .bar-brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
+
+/* GLOBAL SEARCH */
+.gs-wrap{flex:1;max-width:480px;position:relative}
+.gs-input{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;padding:7px 12px 7px 34px;font-size:13px;outline:none;transition:background .2s,border .2s}
+.gs-input::placeholder{color:rgba(255,255,255,.45)}
+.gs-input:focus{background:rgba(255,255,255,.15);border-color:var(--gold)}
+.gs-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.45);font-size:14px;pointer-events:none}
+.gs-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.45);font-size:13px;cursor:pointer;display:none;background:none;border:none;padding:2px 4px}
+.gs-clear:hover{color:#fff}
+.gs-drop{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--sh-lg);z-index:9999;max-height:480px;overflow-y:auto;display:none}
+.gs-drop.open{display:block}
+.gs-section{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:10px 14px 4px}
+.gs-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-radius:0;transition:background .15s}
+.gs-item:hover,.gs-item.gs-active{background:var(--hover)}
+.gs-item-av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;flex-shrink:0}
+.gs-item-body{min-width:0}
+.gs-item-name{font-size:13px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gs-item-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gs-item-tag{margin-left:auto;flex-shrink:0}
+.gs-empty{padding:24px;text-align:center;color:var(--muted);font-size:13px}
 .bar-logo{width:36px;height:36px;background:var(--gold);border-radius:8px;display:grid;place-items:center;font-size:13px;font-weight:900;color:var(--navy);letter-spacing:-.5px;flex-shrink:0}
 .bar-name{color:#fff;font-size:14px;font-weight:700;white-space:nowrap}
 .bar-tag{font-size:9px;color:var(--gold);font-weight:600;letter-spacing:1px;text-transform:uppercase}
@@ -636,6 +656,15 @@ textarea{resize:vertical;min-height:80px}
       <div class="bar-tag">BD Dashboard</div>
     </div>
   </div>
+
+  <!-- GLOBAL SEARCH -->
+  <div class="gs-wrap" id="gs-wrap">
+    <i class="ti ti-search gs-icon"></i>
+    <input class="gs-input" id="gs-input" type="text" placeholder="Search contacts, companies, signals…" oninput="gsSearch()" onkeydown="gsKey(event)" autocomplete="off">
+    <button class="gs-clear" id="gs-clear" onclick="gsClear()" tabindex="-1">✕</button>
+    <div class="gs-drop" id="gs-drop"></div>
+  </div>
+
   <div class="bar-actions">
     <button class="btn btn-sm btn-green" onclick="saveBackup()" title="Save backup"><i class="ti ti-device-floppy"></i></button>
     <label class="btn btn-sm btn-ghost-inv" style="cursor:pointer;margin-right:8px" title="Restore backup"><i class="ti ti-upload"></i><input type="file" accept=".json" style="display:none" onchange="restoreBackup(event)"></label>
@@ -860,8 +889,13 @@ textarea{resize:vertical;min-height:80px}
     <div id="p-companies" class="page">
       <div class="ph" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div><h1><i class="ti ti-building" style="color:var(--gold);margin-right:8px;vertical-align:middle"></i>Companies</h1><p>All organisations in your network, with signals and relationship health</p></div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;align-items:center">
           <input type="text" id="co-srch" placeholder="Search company..." oninput="renderCompanies()" style="width:200px">
+          <select id="co-sort" style="width:auto" onchange="renderCompanies()">
+            <option value="name">A → Z</option>
+            <option value="contacts">Most contacts</option>
+            <option value="signal">Has signal</option>
+          </select>
         </div>
       </div>
       <div id="co-grid" class="co-grid"></div>
@@ -3509,8 +3543,11 @@ function renderCompanies(){
     const key=s.company_name?.trim();
     if(key&&map[key]&&!map[key].latestSignal)map[key].latestSignal=s;
   });
+  const coSort=document.getElementById('co-sort')?.value||'name';
   let companies=Object.values(map).filter(c=>!srch||c.name.toLowerCase().includes(srch));
-  companies.sort((a,b)=>b.contacts.length-a.contacts.length);
+  if(coSort==='name')companies.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(coSort==='contacts')companies.sort((a,b)=>b.contacts.length-a.contacts.length);
+  else if(coSort==='signal')companies.sort((a,b)=>(b.latestSignal?1:0)-(a.latestSignal?1:0)||a.name.localeCompare(b.name));
 
   const grid=document.getElementById('co-grid');
   if(!grid)return;
@@ -4479,6 +4516,117 @@ function showToast(msg){
 }
 
 /* ═══════════════════════════════════════════════════
+   GLOBAL SEARCH
+════════════════════════════════════════════════════ */
+let _gsActiveIdx=-1;
+let _gsResults=[];
+
+function gsSearch(){
+  const inp=document.getElementById('gs-input');
+  const drop=document.getElementById('gs-drop');
+  const clear=document.getElementById('gs-clear');
+  const q=(inp?.value||'').trim().toLowerCase();
+  clear.style.display=q?'block':'none';
+  if(!q){drop.classList.remove('open');_gsResults=[];return;}
+
+  _gsResults=[];
+  const MAX=5;
+
+  // 1 — Contacts
+  const matchedContacts=(contacts||[]).filter(c=>(c.name+' '+(c.company||'')+' '+(c.title||'')+' '+(c.industry||'')).toLowerCase().includes(q)).slice(0,MAX);
+  matchedContacts.forEach(c=>_gsResults.push({type:'contact',id:c.id,name:c.name,sub:(c.title?c.title+' · ':'')+esc(c.company||''),stage:c.stage}));
+
+  // 2 — Companies (derived from contacts)
+  const coMap={};
+  (contacts||[]).forEach(c=>{if(c.company)coMap[c.company]=(coMap[c.company]||0)+1;});
+  const matchedCos=Object.entries(coMap).filter(([name])=>name.toLowerCase().includes(q)).slice(0,MAX);
+  matchedCos.forEach(([name,cnt])=>_gsResults.push({type:'company',name,sub:`${cnt} contact${cnt!==1?'s':''}`,stage:''}));
+
+  // 3 — Hiring Signals
+  const matchedSigs=(_allHiringSignals||[]).filter(s=>((s.company||'')+' '+(s.notes||'')+' '+(s.roles_posted||'')).toLowerCase().includes(q)).slice(0,MAX);
+  matchedSigs.forEach(s=>_gsResults.push({type:'signal',name:s.company,sub:s.roles_posted||'Signal',notes:s.notes}));
+
+  // 4 — LinkedIn leads
+  const matchedLeads=(window._liLeadsCache||[]).filter(l=>((l.full_name||'')+' '+(l.company||'')+' '+(l.title||'')).toLowerCase().includes(q)).slice(0,3);
+  matchedLeads.forEach(l=>_gsResults.push({type:'lead',name:l.full_name,sub:(l.title?l.title+' · ':'')+esc(l.company||'')}));
+
+  if(!_gsResults.length){
+    drop.innerHTML=`<div class="gs-empty"><i class="ti ti-search" style="font-size:20px;display:block;margin-bottom:6px"></i>No results for "<strong>${esc(q)}</strong>"</div>`;
+    drop.classList.add('open');_gsActiveIdx=-1;return;
+  }
+
+  // Build HTML grouped
+  let html='';
+  const sections={contact:'Contacts',company:'Companies',signal:'Hiring Signals',lead:'LinkedIn Leads'};
+  const seen=new Set();
+  Object.keys(sections).forEach(type=>{
+    const items=_gsResults.filter(r=>r.type===type);
+    if(!items.length)return;
+    html+=`<div class="gs-section">${sections[type]}</div>`;
+    items.forEach((r,idx)=>{
+      const globalIdx=_gsResults.indexOf(r);
+      const clr=avColor(r.name);
+      const icon=type==='contact'?'<i class="ti ti-user"></i>':type==='company'?'<i class="ti ti-building"></i>':type==='signal'?'<i class="ti ti-trending-up"></i>':'<i class="ti ti-brand-linkedin"></i>';
+      html+=`<div class="gs-item" data-idx="${globalIdx}" onmousedown="gsSelect(${globalIdx})">
+        <div class="gs-item-av" style="background:${clr}18;color:${clr}">${icon}</div>
+        <div class="gs-item-body">
+          <div class="gs-item-name">${esc(r.name)}</div>
+          <div class="gs-item-sub">${r.sub||''}</div>
+        </div>
+        ${r.stage?`<span class="b b-${r.stage} gs-item-tag" style="font-size:10px">${STAGES[r.stage]||r.stage}</span>`:''}
+      </div>`;
+    });
+  });
+  drop.innerHTML=html;
+  drop.classList.add('open');
+  _gsActiveIdx=-1;
+}
+
+function gsSelect(idx){
+  const r=_gsResults[idx];
+  if(!r)return;
+  gsClear();
+  if(r.type==='contact'){openDetail(r.id);}
+  else if(r.type==='company'){
+    goPage('companies',document.querySelector('.nav-btn[onclick*="companies"]'));
+    renderCompanies();
+    setTimeout(()=>openCoIntel(r.name),150);
+  }
+  else if(r.type==='signal'){
+    const btn=document.querySelector('.nav-btn[onclick*="signals"]');
+    goPage('signals',btn);loadSignals();
+  }
+  else if(r.type==='lead'){
+    const btn=document.querySelector('.nav-btn[onclick*="li-leads"]');
+    goPage('li-leads',btn);loadLeads();
+  }
+}
+
+function gsKey(e){
+  const items=document.querySelectorAll('.gs-item');
+  if(!items.length)return;
+  if(e.key==='ArrowDown'){e.preventDefault();_gsActiveIdx=Math.min(_gsActiveIdx+1,items.length-1);}
+  else if(e.key==='ArrowUp'){e.preventDefault();_gsActiveIdx=Math.max(_gsActiveIdx-1,0);}
+  else if(e.key==='Enter'){e.preventDefault();if(_gsActiveIdx>=0)gsSelect(parseInt(items[_gsActiveIdx].dataset.idx));return;}
+  else if(e.key==='Escape'){gsClear();return;}
+  items.forEach((el,i)=>el.classList.toggle('gs-active',i===_gsActiveIdx));
+  if(_gsActiveIdx>=0)items[_gsActiveIdx].scrollIntoView({block:'nearest'});
+}
+
+function gsClear(){
+  document.getElementById('gs-input').value='';
+  document.getElementById('gs-clear').style.display='none';
+  document.getElementById('gs-drop').classList.remove('open');
+  _gsResults=[];_gsActiveIdx=-1;
+}
+
+// Close dropdown on outside click
+document.addEventListener('click',e=>{
+  if(!document.getElementById('gs-wrap')?.contains(e.target))
+    document.getElementById('gs-drop')?.classList.remove('open');
+});
+
+/* ═══════════════════════════════════════════════════
    LINKEDIN LEADS
 ════════════════════════════════════════════════════ */
 async function loadLeads(){
@@ -4497,6 +4645,7 @@ async function loadLeads(){
       db.from('company_signals').select('company_name').eq('actioned',false)
     ]);
     const leads=leadsRes.data||[];
+    window._liLeadsCache=leads; // used by global search
     const signalCompanies=new Set((signalsRes.data||[]).map(s=>(s.company_name||'').toLowerCase()));
 
     // Update nav badge
@@ -4617,7 +4766,12 @@ async function loadSignals(){
 
   if(!_allHiringSignals.length){list.innerHTML='<div class="empty"><i class="ti ti-trending-up"></i><p>No hiring signals yet. The signal monitor runs automatically — check back after the next scan.</p></div>';return;}
 
-  const sorted=[..._allHiringSignals].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const sorted=[..._allHiringSignals].sort((a,b)=>{
+    // Unactioned first, then newest
+    const aAct=a.actioned?1:0,bAct=b.actioned?1:0;
+    if(aAct!==bAct)return aAct-bAct;
+    return new Date(b.date)-new Date(a.date);
+  });
   list.innerHTML=sorted.map((s,i)=>{
     const days=Math.floor((today-new Date(s.date))/(1000*60*60*24));
     const heat=days<=30?'hot':days<=60?'warm':'cool';
