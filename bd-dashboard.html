@@ -4702,11 +4702,13 @@ CONTACT TARGETING — always the functional decision-maker, never generic HR:
 - Trading/markets signals: Head of Trading, Chief Markets Officer
 - Finance/expansion signals: CFO, Head of Corporate Finance, Chief Investment Officer
 - Strategy/growth signals: CEO, COO, Chief Strategy Officer
-- Leadership change signal: target the person who just moved (they need to build a team)
+- Funding/expansion signals: target the CEO or CFO of the company receiving funding
+- Leadership change signal: if someone is named in the signal, target them; if a role is vacant, target the incoming replacement or the CEO
 - Signal contains "CONTACT: [Name], [Title]": use that exact person
 - NEVER use CHRO, CPO, Head of Talent, or HR titles unless the signal is explicitly an HR mandate
+- IF no named contact exists: still generate the action — set name to the role title (e.g. "Head of Trading, ADNOC") and flag activity as null. A role-targeted action is better than no action.
 
-REAL COMPANIES ONLY: Every action must target a named company from signals or the tier list. Never write "regional fintech", "UAE bank", "GCC consulting firm" or any generic category. If you cannot name a specific company, skip the action.
+REAL COMPANIES ONLY: Every action must target a named company from the signals list or the tier list. Never write "regional fintech", "UAE bank", "GCC consulting firm". If you cannot name a specific company, skip that action. But you MUST generate at least one action per live signal — 13 signals = minimum 13 actions.
 
 GCC TIER LIST (for actions beyond the signal list):
 SWFs: Mubadala, ADQ, PIF, ADIA, ADNOC, TAQA, ICD, QIA
