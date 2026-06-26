@@ -3925,7 +3925,7 @@ Since you cannot currently query Supabase directly, generate example actions for
     const resp=await fetch('/.netlify/functions/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt})
+      body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt,maxTokens:4096})
     });
     const data=await resp.json();
     clearInterval(ticker);bar.style.width='100%';
