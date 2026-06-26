@@ -3191,6 +3191,7 @@ let intelFilter='all';
 let chatMessages=[];
 let currentChatContact=null;
 let chatContactId=null;
+let _actionCtx=null; // stores Today's Actions context when chatting from an action card
 
 // Supabase instance (reuse from parent scope via window)
 const _db=()=>window._vsgDb;
@@ -3550,6 +3551,15 @@ function closeChatPanel(){
   document.getElementById('chatPanel').classList.remove('open');
   document.getElementById('chatOverlay').classList.remove('open');
   currentChatContact=null;chatContactId=null;chatMessages=[];
+  _actionCtx=null;
+  // Restore default chips
+  const chips=document.getElementById('chat-chips');
+  if(chips) chips.innerHTML=`
+    <button class="chat-chip" onclick="quickChat('Draft a personalised LinkedIn message for this contact')"><i class="ti ti-message"></i> Draft message</button>
+    <button class="chat-chip" onclick="quickChat('What is the best approach to re-engage this person right now?')"><i class="ti ti-refresh"></i> Re-engage angle</button>
+    <button class="chat-chip" onclick="quickChat('What senior roles might this company need to hire for based on their current situation?')"><i class="ti ti-briefcase"></i> Hiring intel</button>
+    <button class="chat-chip" onclick="quickChat('Give me a quick background on this person and why they are a good BD target')"><i class="ti ti-user-search"></i> Profile brief</button>
+  `;
 }
 
 async function loadChatHistory(contactId){
@@ -3582,10 +3592,28 @@ async function sendChat(){
   addChatMessage('user',text);
   addChatMessage('assistant','Thinking...',true);
   try{
-    const res=await fetch('/.netlify/functions/chat',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
+    let fetchBody;
+    if(_actionCtx){
+      // Action chat — pass full action context as systemOverride so Claude knows exactly what was seen and why
+      const sys=`You are an AI BD assistant for Michael Stubbs at Vantage Search Group, a boutique GCC executive search firm headquartered in Dubai. VSG has placed leaders at Mubadala, PIF, TAQA, Red Sea Global, Diriyah Gate, ADNOC, Accenture, Kearney and many others.
+
+Michael is following up on a specific BD action from his dashboard. Here is the full context:
+
+CONTACT: ${_actionCtx.contact||'Unknown'}
+COMPANY: ${_actionCtx.company||'Unknown'}
+ACTION: ${_actionCtx.title||''}
+SIGNAL (what was observed): ${_actionCtx.signal||''}
+WHY ACT NOW: ${_actionCtx.why||''}
+DRAFTED MESSAGE: ${_actionCtx.suggested_message||'None'}
+
+Help Michael: refine or rewrite the message, find a different angle, provide company or person intel, answer any question about this outreach. Be concise and direct. No em-dashes. No corporate language.`;
+      fetchBody={
+        messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
+        systemOverride:sys,
+        maxTokens:1024
+      };
+    } else {
+      fetchBody={
         messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
         contactContext:{
           name:currentChatContact.name,title:currentChatContact.title,
@@ -3594,7 +3622,12 @@ async function sendChat(){
           followupDate:currentChatContact.followupDate,linkedin:currentChatContact.linkedin,
           notes:currentChatContact.notes
         }
-      })
+      };
+    }
+    const res=await fetch('/.netlify/functions/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(fetchBody)
     });
     const data=await res.json();
     if(data.error)throw new Error(data.error);
@@ -3794,6 +3827,7 @@ Since you cannot currently query Supabase directly, generate the most useful exa
 }
 
 function renderTodaysActions(data,modeData){
+  window._todaysActionsData=data.actions||[]; // store for action chat context
   const modeCard=document.getElementById('actions-mode-card');
   modeCard.className='actions-mode '+data.mode;
   modeCard.style.display='flex';
@@ -3822,7 +3856,7 @@ function renderTodaysActions(data,modeData){
         <div class="action-ft">
           <span class="effort-tag"><i class="ti ti-clock" style="font-size:10px"></i> ${esc(a.effort_label||'5 min')}</span>
           ${a.suggested_message?`<button class="btn btn-xs btn-outline" onclick="copyAction(${i})"><i class="ti ti-copy"></i> Copy</button>`:''}
-          ${a.contact?`<button class="btn btn-xs btn-gold" onclick="openChatFromAction('${esc(a.contact)}','${esc(a.company||'')}')"><i class="ti ti-message"></i> Chat</button>`:''}
+          <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask AI</button>
         </div>
       </div>
     </div>
@@ -3833,10 +3867,35 @@ function copyAction(i){
   const msg=document.querySelector(`#action-${i} .action-msg`);
   if(msg){navigator.clipboard.writeText(msg.textContent.replace(/^"|"$/g,'').trim());showToast('Message copied to clipboard');}
 }
-function openChatFromAction(contact,company){
-  document.getElementById('chat-contact-name').textContent=contact;
-  document.getElementById('chat-company-name').textContent=company||'';
-  document.getElementById('chat-messages').innerHTML='';
+function openChatFromAction(idx){
+  const a=(window._todaysActionsData||[])[idx];
+  if(!a)return;
+  _actionCtx=a;
+  // Set a fake currentChatContact so sendChat() doesn't bail
+  currentChatContact={name:a.contact||'Contact',company:a.company||'',title:'',industry:'',stage:'',lastContact:'',followupDate:'',linkedin:'',notes:''};
+  chatContactId=null;
+  chatMessages=[];
+  // Update header
+  const av=document.getElementById('chat-av');
+  if(av){av.textContent=(a.contact||'A')[0].toUpperCase();av.style.background='#b8860b';av.style.color='#fff';}
+  document.getElementById('chat-name').textContent=a.contact||(a.company||'Action Chat');
+  document.getElementById('chat-co').textContent=a.company||'Today\'s Action';
+  // Welcome message with full context
+  const welcomeParts=[`I have the full context on this action.`];
+  if(a.signal) welcomeParts.push(`Signal: ${a.signal}`);
+  if(a.why) welcomeParts.push(`Why now: ${a.why}`);
+  if(a.suggested_message) welcomeParts.push(`Drafted message:\n"${a.suggested_message}"`);
+  welcomeParts.push(`What would you like to do? Refine the message, try a different angle, or ask me anything.`);
+  renderChatMessages([{role:'assistant',content:welcomeParts.join('\n\n')}]);
+  // Contextual chips
+  const co=a.company?a.company.replace(/'/g,"\\'"):'this company';
+  const ct=a.contact?a.contact.replace(/'/g,"\\'"):'this person';
+  document.getElementById('chat-chips').innerHTML=`
+    <button class="chat-chip" onclick="quickChat('Rewrite the suggested message with a slightly different angle — keep it under 70 words')"><i class="ti ti-refresh"></i> Rewrite</button>
+    <button class="chat-chip" onclick="quickChat('Make the message shorter and more punchy — under 40 words')"><i class="ti ti-arrows-minimize"></i> Shorter</button>
+    <button class="chat-chip" onclick="quickChat('What else should I know about ${co} before reaching out?')"><i class="ti ti-building"></i> Company intel</button>
+    <button class="chat-chip" onclick="quickChat('Suggest 3 different opening lines I could use to reach out to ${ct}')"><i class="ti ti-list"></i> Opening lines</button>
+  `;
   document.getElementById('chatPanel').classList.add('open');
   document.getElementById('chatOverlay').classList.add('open');
 }
