@@ -1201,7 +1201,7 @@ textarea{resize:vertical;min-height:80px}
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span id="seo-period" style="font-size:11px;color:var(--muted)"></span>
           <button class="btn btn-outline" onclick="loadSEO()"><i class="ti ti-refresh"></i> Refresh</button>
-          <button class="btn btn-gold" onclick="openSEOChat()"><i class="ti ti-message-circle"></i> Ask AI about traffic</button>
+          <button class="btn btn-gold" onclick="openSEOChat()"><i class="ti ti-message-circle"></i> Ask Annie about traffic</button>
         </div>
       </div>
 
@@ -1223,7 +1223,7 @@ textarea{resize:vertical;min-height:80px}
           </div>
         </div>
         <div style="margin-top:24px">
-          <button class="btn btn-gold" onclick="openSEOChat()"><i class="ti ti-message-circle"></i> Ask AI SEO questions anyway</button>
+          <button class="btn btn-gold" onclick="openSEOChat()"><i class="ti ti-message-circle"></i> Ask Annie SEO questions anyway</button>
         </div>
       </div>
 
@@ -3787,7 +3787,7 @@ window.openDetail=function(id){
     if(footer&&!footer.querySelector('.ai-chat-btn')){
       const btn=document.createElement('button');
       btn.className='btn btn-sm btn-purple ai-chat-btn';
-      btn.innerHTML='<i class="ti ti-message-circle-2"></i> Ask AI';
+      btn.innerHTML='<i class="ti ti-message-circle-2"></i> Ask Annie';
       btn.onclick=()=>{document.getElementById('detailOv').classList.remove('open');openChatPanel(id);};
       footer.insertBefore(btn,footer.firstChild);
     }
@@ -4065,7 +4065,7 @@ function renderTodaysActions(data,modeData){
         <div class="action-ft">
           <span class="effort-tag"><i class="ti ti-clock" style="font-size:10px"></i> ${esc(a.effort_label||'5 min')}</span>
           ${a.suggested_message?`<button class="btn btn-xs btn-outline" onclick="copyAction(${i})"><i class="ti ti-copy"></i> Copy</button>`:''}
-          <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask AI</button>
+          <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask Annie</button>
         </div>
       </div>
     </div>
