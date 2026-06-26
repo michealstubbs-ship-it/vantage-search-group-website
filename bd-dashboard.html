@@ -4163,65 +4163,66 @@ ${modeDescriptions[modeData.mode]}
 
 TODAY'S DATE: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
 
-=== WARM LEADS — REPLY NOW (LinkedIn outreach that has received a reply) ===
-${linkedinRepliesContext||'No pending LinkedIn replies.'}
+=== LIVE INTELLIGENCE SIGNALS (from VSG signal monitor, runs 8am and 4pm daily) ===
+${signalContext||'No signals today — generate GCC market intelligence actions from your knowledge.'}
 
-=== COMPANY INTELLIGENCE SIGNALS (from VSG signal monitor, runs 2x daily) ===
-${signalContext||'Signal monitor has not run yet today — use GCC market knowledge for intelligence actions.'}
-
-=== BD-RELEVANT EMAILS ===
+=== BD-RELEVANT EMAILS (inbound interest or appointment triggers) ===
 ${emailContext||'No BD emails today.'}
 
-=== RELATIONSHIP MAINTENANCE (VIP / past clients 30d+ since contact) ===
-${vipContext||'No VIP contacts overdue.'}
-
-=== PROSPECTS QUEUED (auto-discovered, awaiting your approval) ===
+=== PROSPECTS QUEUED (auto-discovered, awaiting approval) ===
 ${prospectsContext||'No prospects queued.'}
 === END LIVE DATA ===
 
-GENERATE TODAY'S BD ACTIONS — 12 to 15 total. MANDATORY STRUCTURE — follow this exactly:
+GENERATE TODAY'S BD ACTIONS — 12 to 15 total. These are NEW business development opportunities ONLY. Pipeline follow-ups and existing contact management are handled in the Follow-ups panel — do NOT generate them here.
 
-SLOTS 1-3 MAX: OVERDUE FOLLOW-UPS + LINKEDIN REPLIES
-Pick the top 3 most urgent items from: overdue follow-ups AND LinkedIn replies combined. Maximum 3 total — even if there are 10 LinkedIn replies, only include the top 3 most recent/urgent. Do NOT let replies crowd out signals.
-- Overdue follow-ups: type="Follow-up overdue", priority="critical"/"high"
-- LinkedIn replies: type="LinkedIn reply", priority="critical". Draft a warm reply that moves to a call. signal="LinkedIn reply: [date]", source_url=their linkedin_url.
+SECTION A: SIGNAL-BASED BD (from live signals above, all of them)
+If LIVE INTELLIGENCE SIGNALS contains data: generate one action per HIGH or MEDIUM signal.
+- type="Signal trigger", priority="high"/"medium"
+- signal = copy the signal title verbatim
+- source_url = copy source_url from data (or null)
+- contacts_to_reach: right decision-maker by signal type (leadership_change→CHRO, funding→CEO/CHRO, expansion→regional CHRO, hiring→Head of TA)
+- suggested_message: reference the specific event, under 40 words
 
-SLOTS 4-12 MANDATORY: SIGNAL-BASED BD ACTIONS (this is the core of the list — do NOT skip this section)
-CRITICAL: You MUST produce one BD action for EVERY signal in the COMPANY INTELLIGENCE SIGNALS section above. These are real, verified GCC market events — they are the most valuable part of this list. Do not ignore them. Do not replace them with pipeline contacts.
+SECTION B: GCC MARKET INTELLIGENCE (always generate 8-10 of these — this is the core value)
+Regardless of whether signals exist, generate BD actions based on your knowledge of the GCC executive search market right now. Use these company tiers:
 
-For EACH signal (HIGH and MEDIUM importance), generate one action:
-- type="Signal trigger"
-- priority: "high" for HIGH signals, "medium" for MEDIUM signals
-- company = the company_name from the signal
-- title = action verb + specific event (e.g. "Contact FAB CHRO — COO and Global Markets exits")
-- signal = copy the signal title VERBATIM from the data above
-- source_url = the source_url from the signal (copy exactly as provided, or null if none)
-- why = one sentence: why does this signal create an executive search mandate for VSG?
-- contacts_to_reach: identify the right decision-maker by signal_type:
-  * leadership_change: CHRO or hiring authority above the departing exec
-  * funding: CHRO or CEO of the funded company
-  * expansion: CHRO or regional head responsible for new office/market
-  * hiring: Head of Talent Acquisition or CHRO
-  * ipo: CEO and CHRO (pre-IPO leadership gaps: CFO, GC, IR, board)
-  Name a realistic title even if you don't know the individual name (e.g. "Group CHRO, First Abu Dhabi Bank")
-- suggested_message: reference the specific event. Under 40 words, warm, direct, no em-dashes.
-  Example: "We saw the leadership transition at NEOM this week. A new CEO with a cost discipline mandate usually means a restructured leadership team. Would VSG be useful to you right now?"
-- effort_mins: 5
+TIER A — SWFs and State Entities (constant senior hiring need):
+Mubadala, ADQ, PIF, ADIA, ADNOC, TAQA, AD Ports, ICD, QIA, Jadwa, Hassana, Emirates Investment Authority
 
-REMAINING SLOTS: PIPELINE + MAINTENANCE
-After all signals are covered, fill remaining slots with:
-- [A] Overdue pipeline contacts not already in slots 1-3: type="New outreach", priority="medium"
-- [B] VIP relationship maintenance (max 2): type="Relationship check-in", priority="medium"
-- [C] Prospects queued (max 2): type="Prospect queued", priority="low"
+TIER B — Saudi Vision 2030 Giga-Projects (in execution — transformation/PMO/finance leaders needed):
+NEOM, Red Sea Global, Diriyah Gate Development Authority, Royal Commission AlUla, Qiddiya, Rua Al Madinah, King Salman Park Foundation, ROSHN
+
+TIER C — Consulting Practices GCC (hiring MD/Partner/Principal constantly):
+Kearney, Strategy& (PwC), Oliver Wyman, Alvarez & Marsal, Arthur D. Little, Roland Berger, FTI Consulting, Accenture GCC
+
+TIER D — Digital and AI Entities (rapid build-out):
+SDAIA, Abu Dhabi Digital Authority, G42, Core42, Presight AI, Smart Dubai, e& (Etisalat), STC Group, ZATCA
+
+TIER E — FinTech and Banking (digital transformation driving C-suite hires):
+FAB, Emirates NBD, ADCB, Mashreq, Riyad Bank, SNB, Tabby, Tamara, Lean Technologies, Wio Bank
+
+For each GCC market intelligence action:
+- Pick a SPECIFIC company from the tiers — vary across tiers, do not repeat companies
+- Identify the SPECIFIC senior role VSG should be positioning for (COO, CHRO, CDO, CIO, Chief Strategy Officer, Chief Transformation Officer, Head of Investments, Head of TA)
+- Name a plausible decision-maker at that company (realistic name and title — you can use known public figures or invent plausible ones)
+- type="Opportunity trigger", signal="GCC intelligence: [specific sector rationale]"
+- why: one sentence — why this company needs that role NOW (expansion, digital transformation, new mandate, talent gap)
+- suggested_message: warm, specific, under 40 words, no pitch
+
+SECTION C: RELATIONSHIP MAINTENANCE (max 2, from VIP data if available)
+${vipContext||''}
+type="Relationship check-in", priority="low"
+
+SECTION D: PROSPECTS QUEUED (max 2, from queued data above)
+type="Prospect queued", priority="low"
 
 OUTPUT: Compact JSON only. Each action:
-{"rank":N,"priority":"critical|high|medium|low","type":"Follow-up overdue|LinkedIn reply|Signal trigger|Opportunity trigger|New outreach|Relationship check-in|Prospect queued","title":"max 8 words","contact":"name or null","company":"name or null","signal":"1 sentence — the intelligence trigger","source_url":"url or null","why":"1 sentence commercial reason","contacts_to_reach":[{"name":"Name or title","title":"Title","linkedin":"url or null"}],"suggested_message":"max 40 words, warm, no em-dashes, or null","effort_mins":5,"effort_label":"5 min"}
+{"rank":N,"priority":"critical|high|medium|low","type":"Signal trigger|Opportunity trigger|Hiring signal|Appointment trigger|New outreach|Relationship check-in|Prospect queued","title":"max 8 words","contact":"name or null","company":"name or null","signal":"1 sentence — the intelligence trigger","source_url":"url or null","why":"1 sentence commercial reason","contacts_to_reach":[{"name":"Name","title":"Title","linkedin":"url or null"}],"suggested_message":"max 40 words, warm, no em-dashes, or null","effort_mins":5,"effort_label":"5 min"}
 
 RULES:
 - Never criticise UAE, Saudi Arabia or any GCC government
-- No em-dashes anywhere
-- SIGNAL ACTIONS ARE MANDATORY — if there are 10 signals, produce 10 signal actions. Do not skip any.
-- HARD CAP: max 3 actions from LinkedIn replies/overdue follow-ups combined in slots 1-3
+- No em-dashes anywhere in any field
+- DO NOT generate follow-up overdue, pipeline, or existing contact actions
 - CRITICAL: Return ONLY raw JSON. First char { last char }. No markdown.
 - Wrap in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}`;
 
