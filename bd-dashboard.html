@@ -864,8 +864,18 @@ textarea{resize:vertical;min-height:80px}
     <!-- AI PROSPECTS -->
     <div id="p-prospects" class="page">
       <div class="ph" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
-        <div><h1><i class="ti ti-sparkles" style="color:var(--gold);margin-right:8px;vertical-align:middle"></i>AI Prospects</h1><p>Contacts discovered by the auto-prospecting agent, ready for your review</p></div>
-        <button class="btn btn-sm btn-ghost" onclick="loadProspects()"><i class="ti ti-refresh"></i> Refresh</button>
+        <div><h1><i class="ti ti-sparkles" style="color:var(--gold);margin-right:8px;vertical-align:middle"></i>AI Prospects</h1><p>Senior GCC contacts discovered by the AI prospecting agent, ready for your review</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-ghost" onclick="loadProspects()"><i class="ti ti-refresh"></i> Refresh</button>
+          <button class="btn btn-sm btn-gold" id="run-prospect-btn" onclick="runAIProspecting()"><i class="ti ti-sparkles"></i> Run AI Prospecting</button>
+        </div>
+      </div>
+      <div id="prospect-run-status" style="display:none;margin-bottom:16px" class="card card-b" style="padding:14px 18px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <i class="ti ti-loader-2" style="animation:spin 1s linear infinite;font-size:18px;color:var(--gold)"></i>
+          <span id="prospect-run-msg" style="font-size:13px;color:var(--muted)">Running AI prospecting scan...</span>
+        </div>
+        <div style="margin-top:8px;height:4px;background:var(--border);border-radius:4px;overflow:hidden"><div id="prospect-run-bar" style="height:100%;width:0%;background:var(--gold);border-radius:4px;transition:width .4s"></div></div>
       </div>
       <div class="metrics" id="pq-metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px"></div>
       <div class="card">
@@ -1611,6 +1621,50 @@ textarea{resize:vertical;min-height:80px}
   </div>
 </div>
 
+<!-- LOG UPDATE OVERLAY -->
+<div class="ov" id="logUpdateOv">
+  <div class="panel" style="max-width:480px">
+    <div class="panel-h">
+      <div>
+        <h2 id="lu-name">Log update</h2>
+        <div id="lu-sub" style="font-size:12px;color:rgba(255,255,255,.55);margin-top:2px"></div>
+      </div>
+      <button class="btn btn-xs btn-ghost-inv" onclick="document.getElementById('logUpdateOv').classList.remove('open')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="panel-b">
+      <div style="margin-bottom:16px">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);display:block;margin-bottom:6px">What happened?</label>
+        <textarea id="lu-note" rows="4" placeholder="e.g. Called — left voicemail. Waiting to hear back on NovaMed placement feedback." style="width:100%;font-family:inherit;font-size:13px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--rs);resize:vertical;line-height:1.55;color:var(--text)"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);display:block;margin-bottom:6px">Next follow-up</label>
+          <input type="date" id="lu-date" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;color:var(--text)">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);display:block;margin-bottom:6px">Move stage to</label>
+          <select id="lu-stage" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;color:var(--text)">
+            <option value="">Keep current stage</option>
+            <option value="cold">Cold lead</option>
+            <option value="contacted">Contacted</option>
+            <option value="followup">Follow-up needed</option>
+            <option value="engaged">Engaged</option>
+            <option value="meeting">Meeting booked</option>
+            <option value="active">Active client</option>
+            <option value="placed">Placed</option>
+            <option value="notinterested">Not interested</option>
+            <option value="onhold">On hold</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-gold" style="flex:1" onclick="saveLogUpdate()"><i class="ti ti-check"></i> Save update</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('logUpdateOv').classList.remove('open')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ADD JOB OVERLAY -->
 <div class="ov" id="jobOv">
   <div class="panel">
@@ -2016,9 +2070,51 @@ function del(id){if(confirm('Delete this contact?')){contacts=contacts.filter(x=
 
 function markDone(id){
   const c=contacts.find(x=>x.id===id);if(!c)return;
-  const next=prompt('Next follow-up date (YYYY-MM-DD)? Leave blank to clear:');
-  c.lastContact=today();c.followupDate=next||'';c.updatedAt=today();
-  save();render();closeDetail();
+  openLogUpdate(id);
+}
+
+let _logUpdateId=null;
+function openLogUpdate(id){
+  const c=contacts.find(x=>x.id===id);if(!c)return;
+  _logUpdateId=id;
+  document.getElementById('lu-name').textContent=c.name;
+  document.getElementById('lu-sub').textContent=(c.title?c.title+' · ':'')+( c.company||'');
+  document.getElementById('lu-note').value='';
+  // Default next follow-up to 3 business days from today
+  const d=new Date();d.setDate(d.getDate()+3);
+  const iso=d.toISOString().slice(0,10);
+  document.getElementById('lu-date').value=iso;
+  document.getElementById('lu-stage').value='';
+  document.getElementById('logUpdateOv').classList.add('open');
+  setTimeout(()=>document.getElementById('lu-note').focus(),200);
+}
+
+function showToast(msg,dur=2500){
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.25);pointer-events:none;transition:opacity .3s';
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},dur);
+}
+
+function saveLogUpdate(){
+  const c=contacts.find(x=>x.id===_logUpdateId);if(!c)return;
+  const note=document.getElementById('lu-note').value.trim();
+  const date=document.getElementById('lu-date').value;
+  const stage=document.getElementById('lu-stage').value;
+  // Prepend dated entry to notes
+  if(note){
+    const stamp=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    const entry=`[${stamp}] ${note}`;
+    c.notes=c.notes?entry+'\n\n'+c.notes:entry;
+  }
+  c.lastContact=today();
+  c.followupDate=date||'';
+  if(stage)c.stage=stage;
+  c.updatedAt=today();
+  save();render();
+  document.getElementById('logUpdateOv').classList.remove('open');
+  closeDetail();
+  showToast('Update saved'+(date?' — next follow-up set for '+fmt(date):''));
 }
 
 /* ── ICS CALENDAR ── */
@@ -2180,7 +2276,9 @@ function render(){
   const fuCard=(c,cls)=>{
     const d=daysTo(c.followupDate);
     const lbl=d<0?`${Math.abs(d)} day${Math.abs(d)>1?'s':''} overdue`:d===0?'Due today':`Due in ${d} day${d>1?'s':''}`;
-    return `<div class="fu ${cls}">
+    // Show last update if notes start with a dated entry
+    const lastUpdate=c.notes&&c.notes.startsWith('[')?c.notes.split('\n\n')[0]:'';
+    return `<div class="fu ${cls}" style="cursor:pointer" onclick="openLogUpdate(${c.id})">
       <div class="fu-top">
         <div class="fu-meta">
           <div class="av" style="width:40px;height:40px;font-size:14px;background:${avColor(c.name)}18;color:${avColor(c.name)}">${ini(c.name)}</div>
@@ -2192,12 +2290,12 @@ function render(){
         </div>
         <div style="font-size:12px;color:var(--subtle);white-space:nowrap">${fmt(c.followupDate)}</div>
       </div>
-      ${c.notes?`<div class="fu-note">${esc(c.notes.slice(0,160))}${c.notes.length>160?'…':''}</div>`:''}
-      <div class="fu-actions">
+      ${lastUpdate?`<div class="fu-note" style="font-style:italic;color:var(--subtle);font-size:11px">${esc(lastUpdate.slice(0,140))}${lastUpdate.length>140?'…':''}</div>`:c.notes?`<div class="fu-note">${esc(c.notes.slice(0,160))}${c.notes.length>160?'…':''}</div>`:''}
+      <div class="fu-actions" onclick="event.stopPropagation()">
         ${c.email?`<a href="mailto:${esc(c.email)}" class="btn btn-sm btn-navy"><i class="ti ti-mail"></i> Email</a>`:''}
         ${c.followupDate?`<button class="btn btn-sm" onclick="makeIcs('Follow up: ${c.name.replace(/'/g,"\\'")}','${c.followupDate}','${(c.company||'').replace(/'/g,"\\'")}')"><i class="ti ti-calendar"></i> Calendar</button>`:''}
-        <button class="btn btn-sm btn-gold" onclick="openDetail(${c.id})"><i class="ti ti-eye"></i> View</button>
-        <button class="btn btn-sm btn-ghost" onclick="markDone(${c.id})"><i class="ti ti-check"></i> Mark done</button>
+        <button class="btn btn-sm btn-gold" onclick="openLogUpdate(${c.id})"><i class="ti ti-edit"></i> Log update</button>
+        <button class="btn btn-sm btn-ghost" onclick="openDetail(${c.id})"><i class="ti ti-eye"></i> View</button>
       </div>
     </div>`;
   };
@@ -3451,6 +3549,92 @@ async function loadProspects(){
   }catch(e){console.error('loadProspects:',e);}
 }
 
+async function runAIProspecting(){
+  const btn=document.getElementById('run-prospect-btn');
+  const statusEl=document.getElementById('prospect-run-status');
+  const msgEl=document.getElementById('prospect-run-msg');
+  const barEl=document.getElementById('prospect-run-bar');
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Running...';
+  statusEl.style.display='block';
+  let pct=0;const ticker=setInterval(()=>{pct=Math.min(pct+3,90);barEl.style.width=pct+'%';},600);
+
+  // Fetch existing contacts to avoid duplicates and signal context
+  let existingNames=new Set();
+  let signalContext='';
+  try{
+    const db=_db();
+    if(db){
+      const{data:ctcts}=await db.from('contacts').select('name');
+      (ctcts||[]).forEach(c=>existingNames.add((c.name||'').toLowerCase()));
+      const{data:sigs}=await db.from('company_signals').select('company_name,signal_type,title,importance').eq('actioned',false).order('created_at',{ascending:false}).limit(15);
+      if(sigs&&sigs.length)signalContext='Active BD signals this week:\n'+sigs.map(s=>`- ${s.company_name}: ${s.signal_type} — ${s.title}`).join('\n');
+    }
+  }catch(e){}
+
+  const existingList=[...existingNames].slice(0,30).join(', ');
+  const prompt=`You are VSG's AI prospecting agent. Find 8 high-value senior GCC executives for Michael Stubbs at Vantage Search Group to approach.
+
+TARGET PROFILES (executive search — these are who VSG places and who Michael should be building relationships with):
+- CHROs, Talent Directors, Heads of TA at Tier 1/2 GCC companies (they give mandates)
+- COOs, CTOs, Chief Digital Officers, Chief Strategy Officers at GCC companies (candidates/BD targets)
+- C-suite at well-funded GCC fintechs, AI companies, SWFs, giga-projects
+
+PRIORITY COMPANIES (from current BD signals):
+${signalContext||'Mubadala, ADNOC, PIF, NEOM, FAB, G42, Tabby, Red Sea Global, ROSHN, BCG GCC, McKinsey GCC, SDAIA, Core42'}
+
+QUALITY FILTER: Only include people whose background includes at least one of: McKinsey, BCG, Bain, Goldman Sachs, JPMorgan, Mubadala, ADIA, ADQ, PIF, ADNOC, Google, Microsoft, Amazon, Meta, HSBC, Citi, G42, FAB, Emirates NBD, or equivalent global tier 1 firm.
+
+EXCLUDE anyone already in Michael's contacts: ${existingList||'none yet'}.
+
+For each prospect, output JSON:
+{"full_name":"Name Surname","title":"Exact title","company":"Exact company","linkedin_url":"https://linkedin.com/in/realistic-slug","email":null,"notes":"2-3 sentences: why they qualify, pedigree highlights, why now is the right time to connect","draft_message":"A warm, specific connection request under 280 characters — references something real about their background. No em-dashes. No generic openers.","score":75}
+
+Output ONLY a JSON array of 8 objects. No markdown. First char [ last char ].`;
+
+  try{
+    msgEl.textContent='Scanning GCC senior leadership network...';
+    const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],maxTokens:3000})});
+    const data=await resp.json();
+    clearInterval(ticker);barEl.style.width='100%';
+    await new Promise(r=>setTimeout(r,300));
+
+    let prospects=[];
+    try{
+      let raw=(data.content||data.response||'').trim();
+      raw=raw.replace(/^```(?:json)?\s*/,'').replace(/```\s*$/,'').trim();
+      const match=raw.match(/\[[\s\S]*\]/);
+      prospects=JSON.parse(match?match[0]:raw);
+    }catch(e){throw new Error('Could not parse AI response');}
+
+    // Write to Supabase prospects_queue
+    const db=_db();
+    let added=0;
+    if(db&&prospects.length){
+      for(const p of prospects){
+        if(!p.full_name)continue;
+        const{error}=await db.from('prospects_queue').insert({
+          full_name:p.full_name,title:p.title||'',company:p.company||'',
+          linkedin_url:p.linkedin_url||null,email:p.email||null,
+          notes:p.notes||'',draft_message:p.draft_message||'',
+          score:p.score||0,status:'pending',source:'ai_prospecting',
+          created_at:new Date().toISOString()
+        });
+        if(!error)added++;
+      }
+    }
+    msgEl.textContent=`Done — ${added} new prospects queued for your review.`;
+    setTimeout(()=>{statusEl.style.display='none';},3000);
+    await loadProspects();
+    showToast(`${added} new prospects added`);
+  }catch(e){
+    clearInterval(ticker);
+    msgEl.textContent='Error: '+e.message+'. Check API key and try again.';
+    barEl.style.background='var(--red)';barEl.style.width='100%';
+    setTimeout(()=>{statusEl.style.display='none';barEl.style.background='var(--gold)';},4000);
+  }
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-sparkles"></i> Run AI Prospecting';
+}
+
 function updateProspectsBadge(){
   const pending=prospectsQueue.filter(p=>p.status==='pending').length;
   const badge=document.getElementById('nb-prospects');
@@ -3875,6 +4059,9 @@ async function runTodaysActions(){
   let linkedinRepliesContext='';
   let emailContext='';
   let overdueTasks='';
+  let vipContext='';
+  let prospectsContext='';
+  let signalContext='';
   try{
     const db=_db();
     if(db){
@@ -3886,20 +4073,27 @@ async function runTodaysActions(){
       else if(jobCount>=2)modeData.mode='mixed';
       else modeData.mode='prospecting';
 
-      // All pipeline contacts — real data (capped at 20 to keep prompt within timeout)
-      const{data:contacts}=await db.from('contacts').select('name,title,company,stage,followup_date,last_contact,notes,linkedin').neq('name','Michael Stubbs').order('followup_date',{ascending:true,nullsFirst:false}).limit(20);
+      // All pipeline contacts — real data (capped at 25)
+      const{data:contacts}=await db.from('contacts').select('name,title,company,stage,followup_date,last_contact,notes,linkedin').neq('name','Michael Stubbs').order('followup_date',{ascending:true,nullsFirst:false}).limit(25);
       if(contacts&&contacts.length){
         const today=new Date().toISOString().slice(0,10);
+        const d14ago=new Date(Date.now()-14*86400000).toISOString().slice(0,10);
+        const d7ago=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
         const overdue=contacts.filter(c=>c.followup_date&&c.followup_date<today);
         const upcoming=contacts.filter(c=>c.followup_date&&c.followup_date>=today);
-        const noDate=contacts.filter(c=>!c.followup_date);
+        const goingQuiet=contacts.filter(c=>!c.followup_date&&c.last_contact&&c.last_contact>=d14ago&&c.last_contact<=d7ago&&c.stage&&!['closed','placed'].includes(c.stage));
+        const noDate=contacts.filter(c=>!c.followup_date&&!goingQuiet.includes(c));
         let lines=[];
         if(overdue.length){
           lines.push('OVERDUE FOLLOW-UPS:');
           overdue.forEach(c=>{
             const days=Math.floor((new Date(today)-new Date(c.followup_date))/(86400000));
-            lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) Stage:${c.stage} Due:${c.followup_date}(${days}d ago) LI:${c.linkedin||'?'} Notes:${(c.notes||'none').slice(0,100)}`);
+            lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) Stage:${c.stage} Due:${c.followup_date}(${days}d overdue) LI:${c.linkedin||'?'} Notes:${(c.notes||'none').slice(0,100)}`);
           });
+        }
+        if(goingQuiet.length){
+          lines.push('GOING QUIET (last contact 7-14d ago, no reply yet):');
+          goingQuiet.slice(0,5).forEach(c=>lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) Stage:${c.stage} LastContact:${c.last_contact} LI:${c.linkedin||'?'} Notes:${(c.notes||'none').slice(0,80)}`));
         }
         if(upcoming.length){
           lines.push('UPCOMING FOLLOW-UPS:');
@@ -3907,10 +4101,29 @@ async function runTodaysActions(){
         }
         if(noDate.length){
           lines.push('PIPELINE (no date):');
-          noDate.slice(0,8).forEach(c=>lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) Stage:${c.stage} LI:${c.linkedin||'?'} Notes:${(c.notes||'none').slice(0,80)}`));
+          noDate.slice(0,6).forEach(c=>lines.push(`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) Stage:${c.stage} LastContact:${c.last_contact||'never'} LI:${c.linkedin||'?'} Notes:${(c.notes||'none').slice(0,80)}`));
         }
         pipelineContext=lines.join('\n');
       }
+
+      // VIP / past client contacts for relationship maintenance
+      const{data:vipContacts}=await db.from('contacts').select('name,title,company,last_contact,notes,linkedin').in('stage',['past_client','vip','warm_referrer']).neq('name','Michael Stubbs').order('last_contact',{ascending:true}).limit(5);
+      if(vipContacts&&vipContacts.length){
+        const today2=new Date().toISOString().slice(0,10);
+        const d30ago=new Date(Date.now()-30*86400000).toISOString().slice(0,10);
+        const vipDue=vipContacts.filter(c=>!c.last_contact||c.last_contact<=d30ago);
+        if(vipDue.length){
+          vipContext='VIP / PAST CLIENTS (30d+ since last contact — relationship maintenance):\n'+vipDue.map(c=>{const d=c.last_contact?Math.floor((new Date(today2)-new Date(c.last_contact))/(86400000)):'?';return`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) LastContact:${c.last_contact||'never'}(${d}d ago) LI:${c.linkedin||'?'} Notes:${(c.notes||'none').slice(0,80)}`;}).join('\n');
+        }
+      }
+
+      // Prospects queued by auto-prospecting agent
+      const{data:queuedProspects}=await db.from('prospects_queue').select('name,title,company,signal,notes').eq('status','prospect_queued').order('created_at',{ascending:false}).limit(8).catch(()=>({data:[]}));
+      if(queuedProspects&&queuedProspects.length){
+        prospectsContext='PROSPECTS QUEUED (auto-discovered, awaiting approval):\n'+queuedProspects.map(p=>`  - ${p.name} (${p.title||'?'}, ${p.company||'?'}) Signal:${p.signal||'?'} Notes:${(p.notes||'none').slice(0,80)}`).join('\n');
+      }
+
+      // pipelineContext, vipContext, prospectsContext are kept separate for the systemPrompt template
 
       // LinkedIn replies — capped at 10 most recent
       const{data:liReplies}=await db.from('linkedin_outreach').select('full_name,title,linkedin_url,status,date_replied,notes').eq('status','replied').order('date_replied',{ascending:false}).limit(10);
@@ -3918,10 +4131,16 @@ async function runTodaysActions(){
         linkedinRepliesContext='LINKEDIN OUTREACH REPLIES (people who replied to VSG outreach — needs BD follow-up):\n'+liReplies.map(r=>`  - ${r.full_name} (${r.title||'?'}) | Replied: ${r.date_replied?new Date(r.date_replied).toLocaleDateString('en-GB'):'recently'} | LinkedIn: ${r.linkedin_url||'unknown'} | Notes: ${r.notes||'basic reply received'}`).join('\n');
       }
 
-      // Recent emails saved to email_context
-      const{data:emails}=await db.from('email_context').select('received_at,sender_name,sender_email,subject,summary').eq('is_bd_relevant',true).order('received_at',{ascending:false}).limit(15);
+      // Recent BD-relevant emails
+      const{data:emails}=await db.from('email_context').select('received_at,sender_name,sender_email,subject,summary').eq('is_bd_relevant',true).order('received_at',{ascending:false}).limit(10);
       if(emails&&emails.length){
-        emailContext='RECENT EMAILS (from Vantage Search inbox — real received messages):\n'+emails.map(e=>`  - ${new Date(e.received_at).toLocaleDateString('en-GB')}: From ${e.sender_name||'?'} (${e.sender_email||'?'}) | Subject: "${e.subject}" | ${e.summary||''}`).join('\n');
+        emailContext='BD-RELEVANT EMAILS (from Vantage Search inbox):\n'+emails.map(e=>`  - ${new Date(e.received_at).toLocaleDateString('en-GB')}: From ${e.sender_name||'?'} | Subject: "${e.subject}" | ${e.summary||''}`).join('\n');
+      }
+
+      // Company intelligence signals (populated by signal monitor 2x daily)
+      const{data:signals}=await db.from('company_signals').select('company_name,signal_type,title,summary,source_url,importance').eq('actioned',false).order('created_at',{ascending:false}).limit(12);
+      if(signals&&signals.length){
+        signalContext='COMPANY INTELLIGENCE SIGNALS (from GCC signal monitor — act on these):\n'+signals.map(s=>`  - [${s.importance||'medium'}] ${s.company_name}: ${s.signal_type} — "${s.title}" | ${s.summary||''} ${s.source_url?'| URL:'+s.source_url:''}`).join('\n');
       }
 
       // Overdue tasks
@@ -3938,32 +4157,73 @@ async function runTodaysActions(){
     delivery:`VSG currently has ${modeData.jobs} live mandates. DELIVERY MODE: weight actions 60% delivery, 25% relationship maintenance, 15% new BD.`
   };
 
-  const systemPrompt=`You are Michael Stubbs' AI BD engine at Vantage Search Group (VSG), a boutique executive search firm in Dubai/GCC.
+  const systemPrompt=`You are Michael Stubbs' AI BD engine at Vantage Search Group (VSG), a boutique executive search firm in Dubai specialising in senior executive search across digital, data/AI, strategy, transformation, investments, and commercial functions — for SWFs, fintechs, regional banks, giga-projects, and consulting firms across UAE and Saudi Arabia.
 
 ${modeDescriptions[modeData.mode]}
 
-=== REAL PIPELINE DATA FROM SUPABASE ===
-${pipelineContext||'No pipeline data available.'}
+TODAY'S DATE: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
 
-${linkedinRepliesContext||''}
+=== WARM LEADS — REPLY NOW (LinkedIn outreach that has received a reply) ===
+${linkedinRepliesContext||'No pending LinkedIn replies.'}
 
-${emailContext||''}
+=== COMPANY INTELLIGENCE SIGNALS (from VSG signal monitor, runs 2x daily) ===
+${signalContext||'Signal monitor has not run yet today — use GCC market knowledge for intelligence actions.'}
 
-${overdueTasks||''}
-=== END REAL DATA ===
+=== BD-RELEVANT EMAILS ===
+${emailContext||'No BD emails today.'}
 
-Generate Michael's Today's Actions — max 12 actions, grounded ONLY in the real data above. No invented signals.
+=== RELATIONSHIP MAINTENANCE (VIP / past clients 30d+ since contact) ===
+${vipContext||'No VIP contacts overdue.'}
 
-Output compact JSON. Each action:
-{"rank":N,"priority":"critical|high|medium|low","type":"Reply needed|Follow-up overdue|LinkedIn reply to convert|Meeting prep|New outreach|Relationship check-in","title":"max 8 words","contact":"name or null","company":"name or null","signal":"1 sentence: source + what was seen","source_url":"linkedin url from data or null","why":"1 sentence reason","contacts_to_reach":[{"name":"Name","title":"Title","linkedin":"url or null"}],"suggested_message":"max 40 words, no em-dashes, or null","effort_mins":5,"effort_label":"5 min"}
+=== PROSPECTS QUEUED (auto-discovered, awaiting your approval) ===
+${prospectsContext||'No prospects queued.'}
+=== END LIVE DATA ===
 
-Rules:
+GENERATE TODAY'S BD ACTIONS — 12 to 15 total. MANDATORY STRUCTURE — follow this exactly:
+
+SLOTS 1-3 MAX: OVERDUE FOLLOW-UPS + LINKEDIN REPLIES
+Pick the top 3 most urgent items from: overdue follow-ups AND LinkedIn replies combined. Maximum 3 total — even if there are 10 LinkedIn replies, only include the top 3 most recent/urgent. Do NOT let replies crowd out signals.
+- Overdue follow-ups: type="Follow-up overdue", priority="critical"/"high"
+- LinkedIn replies: type="LinkedIn reply", priority="critical". Draft a warm reply that moves to a call. signal="LinkedIn reply: [date]", source_url=their linkedin_url.
+
+SLOTS 4-12 MANDATORY: SIGNAL-BASED BD ACTIONS (this is the core of the list — do NOT skip this section)
+CRITICAL: You MUST produce one BD action for EVERY signal in the COMPANY INTELLIGENCE SIGNALS section above. These are real, verified GCC market events — they are the most valuable part of this list. Do not ignore them. Do not replace them with pipeline contacts.
+
+For EACH signal (HIGH and MEDIUM importance), generate one action:
+- type="Signal trigger"
+- priority: "high" for HIGH signals, "medium" for MEDIUM signals
+- company = the company_name from the signal
+- title = action verb + specific event (e.g. "Contact FAB CHRO — COO and Global Markets exits")
+- signal = copy the signal title VERBATIM from the data above
+- source_url = the source_url from the signal (copy exactly as provided, or null if none)
+- why = one sentence: why does this signal create an executive search mandate for VSG?
+- contacts_to_reach: identify the right decision-maker by signal_type:
+  * leadership_change: CHRO or hiring authority above the departing exec
+  * funding: CHRO or CEO of the funded company
+  * expansion: CHRO or regional head responsible for new office/market
+  * hiring: Head of Talent Acquisition or CHRO
+  * ipo: CEO and CHRO (pre-IPO leadership gaps: CFO, GC, IR, board)
+  Name a realistic title even if you don't know the individual name (e.g. "Group CHRO, First Abu Dhabi Bank")
+- suggested_message: reference the specific event. Under 40 words, warm, direct, no em-dashes.
+  Example: "We saw the leadership transition at NEOM this week. A new CEO with a cost discipline mandate usually means a restructured leadership team. Would VSG be useful to you right now?"
+- effort_mins: 5
+
+REMAINING SLOTS: PIPELINE + MAINTENANCE
+After all signals are covered, fill remaining slots with:
+- [A] Overdue pipeline contacts not already in slots 1-3: type="New outreach", priority="medium"
+- [B] VIP relationship maintenance (max 2): type="Relationship check-in", priority="medium"
+- [C] Prospects queued (max 2): type="Prospect queued", priority="low"
+
+OUTPUT: Compact JSON only. Each action:
+{"rank":N,"priority":"critical|high|medium|low","type":"Follow-up overdue|LinkedIn reply|Signal trigger|Opportunity trigger|New outreach|Relationship check-in|Prospect queued","title":"max 8 words","contact":"name or null","company":"name or null","signal":"1 sentence — the intelligence trigger","source_url":"url or null","why":"1 sentence commercial reason","contacts_to_reach":[{"name":"Name or title","title":"Title","linkedin":"url or null"}],"suggested_message":"max 40 words, warm, no em-dashes, or null","effort_mins":5,"effort_label":"5 min"}
+
+RULES:
 - Never criticise UAE, Saudi Arabia or any GCC government
-- No em-dashes
-- Order: overdue follow-ups first, then LinkedIn replies to convert, then new outreach
-- CRITICAL: Return ONLY raw JSON. No markdown. No fences. First char must be { last must be }
-- Wrap in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
-- Today is ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}. No news older than 7 days.`;
+- No em-dashes anywhere
+- SIGNAL ACTIONS ARE MANDATORY — if there are 10 signals, produce 10 signal actions. Do not skip any.
+- HARD CAP: max 3 actions from LinkedIn replies/overdue follow-ups combined in slots 1-3
+- CRITICAL: Return ONLY raw JSON. First char { last char }. No markdown.
+- Wrap in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}`;
 
   try{
     const resp=await fetch('/.netlify/functions/chat',{
@@ -4105,38 +4365,91 @@ function showToast(msg){
    HIRING SIGNALS
 ════════════════════════════════════════════════════ */
 let hiringSignals=JSON.parse(localStorage.getItem('vsg_signals')||'[]');
+let _allHiringSignals=[]; // merged: Supabase + localStorage
 function saveSignals(){localStorage.setItem('vsg_signals',JSON.stringify(hiringSignals));}
 
-function loadSignals(){
+async function loadSignals(){
   const list=document.getElementById('signals-list');
+  list.innerHTML='<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite;font-size:28px"></i><p style="margin-top:8px">Loading signals...</p></div>';
+
+  // Fetch live signals from Supabase company_signals
+  let supabaseSignals=[];
+  try{
+    const db=_db();
+    if(db){
+      const{data}=await db.from('company_signals').select('*').in('signal_type',['hiring','expansion','funding']).order('created_at',{ascending:false}).limit(40);
+      if(data&&data.length){
+        supabaseSignals=data.map(s=>({
+          id:'sb_'+s.id,
+          company:s.company_name,
+          roles_posted:s.signal_type==='hiring'?'Hiring surge':s.signal_type==='expansion'?'Expansion':s.signal_type==='funding'?'Funding':'Signal',
+          date:s.created_at.slice(0,10),
+          connection:null,
+          notes:s.title+(s.summary?'. '+s.summary:''),
+          source_url:s.source_url,
+          importance:s.importance,
+          from_supabase:true
+        }));
+      }
+    }
+  }catch(e){console.warn('Supabase signals load error:',e);}
+
+  // Merge: Supabase first, then any manual localStorage signals not already covered
+  const sbCompanies=new Set(supabaseSignals.map(s=>s.company.toLowerCase()));
+  const localOnly=hiringSignals.filter(s=>!sbCompanies.has((s.company||'').toLowerCase()));
+  _allHiringSignals=[...supabaseSignals,...localOnly];
+
   const today=new Date();
   let hot=0,warm=0;
-  hiringSignals.forEach(s=>{
+  _allHiringSignals.forEach(s=>{
     const days=Math.floor((today-new Date(s.date))/(1000*60*60*24));
     if(days<=30)hot++;else if(days<=60)warm++;
   });
-  document.getElementById('signals-hot-count').textContent=hot;
-  document.getElementById('signals-warm-count').textContent=warm;
-  if(!hiringSignals.length){list.innerHTML='<div class="empty"><i class="ti ti-trending-up"></i><p>No hiring signals yet. Add manually or let the Intelligence agent populate these.</p></div>';return;}
-  const sorted=[...hiringSignals].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const hotEl=document.getElementById('signals-hot-count');
+  const warmEl=document.getElementById('signals-warm-count');
+  if(hotEl)hotEl.textContent=hot;
+  if(warmEl)warmEl.textContent=warm;
+
+  if(!_allHiringSignals.length){list.innerHTML='<div class="empty"><i class="ti ti-trending-up"></i><p>No hiring signals yet. The signal monitor runs automatically — check back after the next scan.</p></div>';return;}
+
+  const sorted=[..._allHiringSignals].sort((a,b)=>new Date(b.date)-new Date(a.date));
   list.innerHTML=sorted.map((s,i)=>{
     const days=Math.floor((today-new Date(s.date))/(1000*60*60*24));
     const heat=days<=30?'hot':days<=60?'warm':'cool';
     const heatLabel=days<=30?'🔥 Hot':'🟡 Warm';
+    const importanceBadge=s.importance==='high'?'<span class="b b-high" style="font-size:10px">HIGH</span>':s.importance==='medium'?'<span class="b b-followup" style="font-size:10px">MEDIUM</span>':'';
     return `<div class="signal-card ${heat}">
       <div class="signal-icon" style="background:${heat==='hot'?'var(--red-bg)':heat==='warm'?'var(--amber-bg)':'#eff6ff'};color:${heat==='hot'?'var(--red)':heat==='warm'?'var(--amber)':'#2563eb'}"><i class="ti ti-trending-up"></i></div>
       <div class="signal-body">
-        <div class="signal-title">${esc(s.company)} <span style="font-size:12px;font-weight:400;color:var(--muted)">— ${s.roles_posted||'?'} senior roles posted</span></div>
-        <div class="signal-sub">${s.connection?`Your contact: <strong>${esc(s.connection)}</strong> — `:''} ${s.notes?esc(s.notes):''}</div>
+        <div class="signal-title">${esc(s.company)} <span style="font-size:12px;font-weight:400;color:var(--muted)">— ${esc(s.roles_posted||'Signal')}</span> ${importanceBadge}</div>
+        <div class="signal-sub">${s.connection?`Your contact: <strong>${esc(s.connection)}</strong> — `:''} ${s.notes?esc(s.notes.slice(0,180)):''}</div>
         <div class="signal-ft">
           <span class="b b-${heat==='hot'?'high':'followup'}">${heatLabel} ${days}d ago</span>
-          <button class="btn btn-xs btn-outline" onclick="reachOutFromSignal(${i})"><i class="ti ti-message"></i> Draft outreach</button>
-          <button class="btn btn-xs btn-ghost" onclick="deleteSignal(${i})"><i class="ti ti-trash"></i></button>
+          ${s.source_url?`<a href="${esc(s.source_url)}" target="_blank" rel="noopener" class="btn btn-xs btn-outline"><i class="ti ti-external-link"></i> Source</a>`:''}
+          <button class="btn btn-xs btn-outline" onclick="reachOutFromHiringSignal(${i})"><i class="ti ti-message"></i> Draft outreach</button>
+          ${!s.from_supabase?`<button class="btn btn-xs btn-ghost" onclick="deleteSignal(${i})"><i class="ti ti-trash"></i></button>`:''}
         </div>
       </div>
     </div>`;
   }).join('');
 }
+
+function reachOutFromHiringSignal(i){
+  const s=sorted_signals_ref[i]||_allHiringSignals[i];
+  if(!s)return;
+  currentChatContact={name:s.company,company:s.company,title:'',industry:'',stage:'',lastContact:'',followupDate:'',linkedin:'',notes:s.notes||''};
+  chatContactId=null;chatMessages=[];
+  const av=document.getElementById('chat-av');
+  if(av){av.textContent=(s.company||'S')[0].toUpperCase();av.style.background='#1e7e34';av.style.color='#fff';}
+  document.getElementById('chat-name').textContent=s.company;
+  document.getElementById('chat-co').textContent=s.roles_posted||'Hiring Signal';
+  const prompt=`Signal: ${s.notes||s.company+' is showing a hiring surge.'}\n\nDraft a warm, specific outreach message from Michael Stubbs at Vantage Search Group to the CHRO or Head of Talent at ${s.company}. Reference the specific signal. Under 60 words. No em-dashes. Not generic.`;
+  renderChatMessages([{role:'assistant',content:`I have the signal on ${s.company}:\n\n"${s.notes||''}"\n\nHere's a draft outreach — want me to refine it or try a different angle?`}]);
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatOverlay').classList.add('open');
+  setTimeout(()=>{document.getElementById('chat-input').value=prompt;},200);
+}
+let sorted_signals_ref=[];
 
 function openAddSignal(){document.getElementById('sig-date').value=new Date().toISOString().split('T')[0];document.getElementById('addSignalOv').classList.add('open');}
 function saveSignal(){
@@ -4161,15 +4474,105 @@ function reachOutFromSignal(i){
    APPOINTMENT TRIGGERS
 ════════════════════════════════════════════════════ */
 let appointmentTriggers=JSON.parse(localStorage.getItem('vsg_triggers')||'[]');
+let _allTriggers=[]; // merged: Supabase leadership_change signals + localStorage
 function saveTriggers(){localStorage.setItem('vsg_triggers',JSON.stringify(appointmentTriggers));}
 let _triggerFilter='all';
 
-function loadTriggers(){
+async function loadTriggers(){
   const list=document.getElementById('triggers-list');
-  filterTriggers(_triggerFilter,null);
+  list.innerHTML='<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite;font-size:28px"></i><p style="margin-top:8px">Loading triggers...</p></div>';
+
+  // Fetch leadership_change signals from Supabase
+  let supabaseTriggers=[];
+  try{
+    const db=_db();
+    if(db){
+      const{data}=await db.from('company_signals').select('*').eq('signal_type','leadership_change').order('created_at',{ascending:false}).limit(30);
+      if(data&&data.length){
+        supabaseTriggers=data.map(s=>({
+          id:'sb_'+s.id,
+          name:s.company_name,
+          new_role:s.title,
+          new_co:s.company_name,
+          prev_role:'',
+          date:s.created_at.slice(0,10),
+          network:'no',
+          notes:s.summary||'',
+          source_url:s.source_url,
+          importance:s.importance,
+          from_supabase:true
+        }));
+      }
+    }
+  }catch(e){console.warn('Supabase triggers load error:',e);}
+
+  // Merge: Supabase first, then manual localStorage triggers not already covered by company
+  const sbCompanies=new Set(supabaseTriggers.map(t=>(t.new_co||'').toLowerCase()));
+  const localOnly=appointmentTriggers.filter(t=>!sbCompanies.has((t.new_co||t.name||'').toLowerCase()));
+  _allTriggers=[...supabaseTriggers,...localOnly];
+
+  renderTriggersList(_allTriggers);
+
   const nb=document.getElementById('nb-triggers');
-  const hot=appointmentTriggers.filter(t=>{const d=Math.floor((new Date()-new Date(t.date))/(864e5));return d<=60;}).length;
+  const hot=_allTriggers.filter(t=>{const d=Math.floor((new Date()-new Date(t.date))/(864e5));return d<=60;}).length;
   if(hot>0){nb.style.display='';nb.textContent=hot;}else nb.style.display='none';
+}
+
+function renderTriggersList(triggers){
+  const list=document.getElementById('triggers-list');
+  const today=new Date();
+  let filtered=[...triggers].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(_triggerFilter==='hot')filtered=filtered.filter(t=>Math.floor((today-new Date(t.date))/864e5)<=60);
+  else if(_triggerFilter==='warm')filtered=filtered.filter(t=>{const d=Math.floor((today-new Date(t.date))/864e5);return d>60&&d<=90;});
+  else if(_triggerFilter==='mine')filtered=filtered.filter(t=>t.network==='yes');
+
+  if(!filtered.length){list.innerHTML='<div class="empty"><i class="ti ti-user-star"></i><p>No appointment triggers match this filter. The signal monitor surfaces leadership changes automatically — check back after the next scan.</p></div>';return;}
+
+  list.innerHTML=filtered.map((t,i)=>{
+    const days=Math.floor((today-new Date(t.date))/864e5);
+    const heat=days<=60?'hot':'warm';
+    const windowLabel=days<=60?`${60-days} days left in hot window`:`${90-days} days left in warm window`;
+    const importanceBadge=t.importance==='high'?'<span class="b b-high" style="font-size:10px">HIGH</span>':t.importance==='medium'?'<span class="b b-followup" style="font-size:10px">MEDIUM</span>':'';
+    return `<div class="signal-card ${heat}">
+      <div class="signal-icon" style="background:${heat==='hot'?'var(--red-bg)':'var(--amber-bg)'};color:${heat==='hot'?'var(--red)':'var(--amber)'}"><i class="ti ti-user-check"></i></div>
+      <div class="signal-body">
+        <div class="signal-title">${esc(t.name||t.new_co)} ${importanceBadge}<span style="font-size:12px;font-weight:400;color:var(--muted)"> — ${esc((t.new_role||'').slice(0,80))}</span></div>
+        <div class="signal-sub">${t.prev_role?`Previously: ${esc(t.prev_role)} — `:''}<span style="color:${heat==='hot'?'var(--red)':'var(--amber)'}">Day ${days} in window</span>${t.notes?'. '+esc(t.notes.slice(0,160)):''}</div>
+        <div class="signal-ft">
+          <span class="b ${heat==='hot'?'b-high':'b-followup'}">${windowLabel}</span>
+          ${!t.from_supabase?`<span class="b ${t.network==='yes'?'b-active':t.network==='2nd'?'b-engaged':'b-cold'}">${t.network==='yes'?'In my network':t.network==='2nd'?'2nd degree':'Not connected'}</span>`:''}
+          ${t.source_url?`<a href="${esc(t.source_url)}" target="_blank" rel="noopener" class="btn btn-xs btn-outline"><i class="ti ti-external-link"></i> Source</a>`:''}
+          <button class="btn btn-xs btn-outline" onclick="draftTriggerOutreachFromAll(${i},${JSON.stringify(filtered.length)})"><i class="ti ti-message"></i> Draft message</button>
+          ${!t.from_supabase?`<button class="btn btn-xs btn-ghost" onclick="deleteTriggerFromAll('${t.id}')"><i class="ti ti-trash"></i></button>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  window._renderedTriggers=filtered;
+}
+
+function draftTriggerOutreachFromAll(i){
+  const t=(window._renderedTriggers||[])[i]||_allTriggers[i];
+  if(!t)return;
+  const days=Math.floor((new Date()-new Date(t.date))/864e5);
+  const prompt=`Draft a warm message from Michael Stubbs at Vantage Search Group regarding this leadership change:\n\n"${t.new_role||t.name}" at ${t.new_co||t.name}.\n\nContext: ${t.notes||'Senior leadership change/appointment.'}\n\nDays since announcement: ${days}. Message tone: congratulatory if a new appointment, or empathetic if a departure. Position VSG naturally as a search partner without being pushy. Under 70 words. No em-dashes.`;
+  currentChatContact={name:t.name||t.new_co,company:t.new_co||'',title:t.new_role||'',industry:'',stage:'',lastContact:'',followupDate:'',linkedin:'',notes:t.notes||''};
+  chatContactId=null;chatMessages=[];
+  const av=document.getElementById('chat-av');
+  if(av){av.textContent=(t.name||t.new_co||'T')[0].toUpperCase();av.style.background='#7c3aed';av.style.color='#fff';}
+  document.getElementById('chat-name').textContent=t.name||t.new_co||'Leadership Trigger';
+  document.getElementById('chat-co').textContent=t.new_co||'Appointment Trigger';
+  renderChatMessages([{role:'assistant',content:`Leadership signal at ${t.new_co||t.name}:\n\n"${t.new_role||t.notes||''}"\n\nLet me draft a message — or tell me what angle to take.`}]);
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatOverlay').classList.add('open');
+  setTimeout(()=>{document.getElementById('chat-input').value=prompt;},200);
+}
+
+function deleteTriggerFromAll(id){
+  if(!confirm('Delete this trigger?'))return;
+  appointmentTriggers=appointmentTriggers.filter(t=>t.id!=id);
+  saveTriggers();
+  loadTriggers();
 }
 
 function filterTriggers(f,btn){
@@ -4318,14 +4721,38 @@ function toggleDigestPreview(){
 
 async function generateSegment(seg){
   const segNames={banking:'Banking (commercial/investment banks — FAB, Emirates NBD, Goldman GCC, HSBC etc)',swf:'Sovereign Wealth Funds (ADIA, Mubadala, ADQ, PIF, QIA etc)',pe:'Private Equity and Asset Management (Carlyle, KKR, Blackstone, regional PE, family offices)',fintech:'Fintech, Digital, and AI (Tabby, Tamara, Wio Bank, Revolut UAE, regional tech)',consulting:'Strategy and Consulting (McKinsey, BCG, Bain, Strategy&, Oliver Wyman, Big 4)',general:'General GCC senior leadership (cross-sector C-suite moves)'};
+  // Segment → company keyword filters for matching signals
+  const segKeywords={banking:['bank','fab','emirates nbd','adcb','mashreq','hsbc','citi','goldman','barclays','riyad','snb','nbk','qnb'],swf:['mubadala','pif','adia','adq','qia','icd','hassana','jadwa'],pe:['carlyle','kkr','blackstone','blackrock','warburg','private equity','asset management'],fintech:['tabby','tamara','wio','baraka','lean','checkout','fasset','stc pay','tabby','fintech'],consulting:['mckinsey','bcg','bain','strategy&','kearney','oliver wyman','accenture','deloitte','pwc','ey','roland berger'],general:[]};
+
   const btn=document.querySelector(`#digest-seg-${seg} button`);
   btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Generating...';
-  const prompt=`Generate one edition of the GCC Leadership Moves Digest for the ${segNames[seg]} segment.
+
+  // Fetch this week's relevant signals from Supabase to ground the digest
+  let signalContext='';
+  try{
+    const db=_db();
+    if(db){
+      const sevenDaysAgo=new Date(Date.now()-7*864e5).toISOString();
+      const{data}=await db.from('company_signals').select('company_name,signal_type,title,summary,importance').gte('created_at',sevenDaysAgo).order('created_at',{ascending:false}).limit(50);
+      if(data&&data.length){
+        const keywords=segKeywords[seg]||[];
+        const relevant=seg==='general'?data:data.filter(s=>{
+          const hay=(s.company_name||'').toLowerCase();
+          return keywords.some(k=>hay.includes(k));
+        });
+        if(relevant.length){
+          signalContext=`\n\nCURRENT WEEK INTELLIGENCE (use these as the basis for MOVES and BUILDING sections — prioritise these over invented examples):\n`+relevant.map(s=>`- [${s.importance||'medium'}] ${s.company_name}: ${s.signal_type} — "${s.title}". ${s.summary||''}`).join('\n');
+        }
+      }
+    }
+  }catch(e){console.warn('Signal fetch for digest failed:',e);}
+
+  const prompt=`Generate one edition of the GCC Leadership Moves Digest for the ${segNames[seg]} segment.${signalContext}
 
 Output format (each section labelled clearly):
-MOVES: [5-8 real or plausible GCC senior leadership moves relevant to ${segNames[seg]}. Format: Name — Previous Role, Previous Company to New Role, New Company. One sentence on why it matters.]
-BUILDING: [2-3 companies in this segment visibly scaling their senior teams. One line each.]
-OBSERVATION: [Michael's first-person read on the market in one paragraph. Intelligent, specific, opinionated. Not generic. Starts with "This week,"]
+MOVES: [5-8 GCC senior leadership moves relevant to ${segNames[seg]}. Use the intelligence signals above where available — they are real, verified signals from this week. For any gaps, use plausible GCC market knowledge. Format: Name or Company — signal event. One sentence on why it matters.]
+BUILDING: [2-3 companies in this segment visibly scaling their senior teams this week. Draw from the signals above where possible.]
+OBSERVATION: [Michael's first-person read on the market in one paragraph. Intelligent, specific, opinionated. References the signals above where relevant. Not generic. Starts with "This week,"]
 QUESTION: [One provocative question for this segment's senior professionals]
 CLOSE: [One warm closing line positioning VSG as search partner — not salesy]
 
