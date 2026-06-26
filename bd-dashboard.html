@@ -752,6 +752,12 @@ textarea{resize:vertical;min-height:80px}
           <option value="">All priorities</option>
           <option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
         </select>
+        <select id="f-sort" style="width:auto" onchange="renderContacts()">
+          <option value="name">A → Z</option>
+          <option value="company">Company</option>
+          <option value="stage">Stage</option>
+          <option value="recent">Last contacted</option>
+        </select>
       </div>
       <div class="card" style="margin:0"><div id="contact-list" class="card-b p0"></div></div>
     </div>
@@ -2366,10 +2372,17 @@ function renderContacts(){
   const q=document.getElementById('srch')?.value?.toLowerCase()||'';
   const fs=document.getElementById('f-stage')?.value||'';
   const fp=document.getElementById('f-pri')?.value||'';
+  const so=document.getElementById('f-sort')?.value||'name';
   let list=contacts;
   if(q)list=list.filter(c=>(c.name+' '+c.company+' '+c.industry+' '+(c.notes||'')).toLowerCase().includes(q));
   if(fs)list=list.filter(c=>c.stage===fs);
   if(fp)list=list.filter(c=>c.priority===fp);
+  // Sort
+  list=[...list];
+  if(so==='name')list.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  else if(so==='company')list.sort((a,b)=>(a.company||'').localeCompare(b.company||''));
+  else if(so==='stage')list.sort((a,b)=>(a.stage||'').localeCompare(b.stage||''));
+  else if(so==='recent')list.sort((a,b)=>daysSince(a.lastContact)-daysSince(b.lastContact));
   const el=document.getElementById('contact-list');if(!el)return;
   document.getElementById('contacts-sub').textContent=`${list.length} contact${list.length!==1?'s':''}`;
   el.innerHTML=list.length?list.map(c=>{
@@ -2531,6 +2544,9 @@ function renderJobs(){
   let list=jobs;
   if(q)list=list.filter(j=>(j.title+' '+j.company+' '+j.industry).toLowerCase().includes(q));
   if(sf)list=list.filter(j=>j.status===sf);
+  // Active first, then alphabetical by company+title
+  const statusOrder={active:0,filled:1,onhold:2,lost:3};
+  list=[...list].sort((a,b)=>{const so=(statusOrder[a.status]??9)-(statusOrder[b.status]??9);return so|||(a.company+a.title).localeCompare(b.company+b.title);});
 
   const el=document.getElementById('jobs-list');if(!el)return;
   if(!list.length){
