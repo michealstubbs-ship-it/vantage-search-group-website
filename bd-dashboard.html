@@ -3879,7 +3879,7 @@ Generate Michael's Today's Actions list. Output as a JSON array of action object
 - title: short action title (max 12 words)
 - contact: name of person (if applicable, else null)
 - company: company name (if applicable, else null)
-- signal: what was SEEN or OBSERVED that triggers this action — be specific (e.g. "Posted on LinkedIn 2 days ago about hiring a CFO", "Gulf Capital announced a new $500M fund this week", "Profile viewed your LinkedIn yesterday", "No contact in 47 days — relationship cooling", "Moved to a new role at ADNOC last month"). This must be a concrete, specific observation — not a generic reason.
+- signal: what was SEEN or OBSERVED that triggers this action. CRITICAL RULES FOR SIGNAL: (1) NEVER claim someone emailed, messaged, or called Michael unless the contact's notes field explicitly records this. (2) NEVER invent communications that did not happen. (3) Only cite signals you can derive directly from the pipeline data provided — e.g. days since last contact, follow-up date passed, notes content, LinkedIn data, or publicly observable company news you have seen. (4) If the signal is inferred from a date or pattern (e.g. "no contact in 47 days"), say exactly that — do not dress it up as a received message. (5) If you cite a news signal (e.g. "company announced a fund"), prefix it with "Publicly reported:" so Michael knows it is market intelligence, not a personal communication. Examples of honest signals: "No contact recorded in 47 days — relationship cooling", "Follow-up date passed 12 days ago with no action", "Notes record a conversation in March about a potential mandate", "Publicly reported: Gulf Capital announced a $500M fund last month".
 - why: one sentence on why acting on this signal matters commercially RIGHT NOW
 - suggested_message: a drafted message that references the signal naturally, so it reads as informed and relevant (max 80 words, warm, human, no em-dashes) OR null if not applicable
 - effort_mins: 2 | 5 | 15 | 30
@@ -3896,7 +3896,7 @@ Rules:
 - Add a "daily_effort_total" field at the root of the response (number of total minutes)
 - Wrap everything in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
 
-Since you cannot currently query Supabase directly, generate the most useful example actions for a GCC executive search firm in prospecting mode — realistic, specific, actionable. Make them feel real.`;
+Since you cannot currently query Supabase directly, generate example actions for a GCC executive search firm. IMPORTANT: be honest about what you can and cannot know. Do not invent emails, messages, or calls that Michael supposedly received — these are fabricated and waste his time when he cannot find them. Instead, base signals on: time-based patterns (days since contact), publicly available company news prefixed with "Publicly reported:", or general relationship maintenance logic. If a signal is a suggestion rather than observed fact, say "Suggested action:" not "They emailed you" or "They reached out".`;
 
   try{
     const resp=await fetch('/.netlify/functions/chat',{
