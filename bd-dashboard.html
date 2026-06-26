@@ -4691,9 +4691,6 @@ ${vipContext||'No VIP contacts flagged.'}
 === BD-RELEVANT EMAILS (inbound interest, replies, triggers) ===
 ${emailContext||'No BD emails today.'}
 
-=== STALE RELATIONSHIPS (14+ days silent — only include stage: engaged/meeting/active) ===
-${staleContext||'No stale relationships today.'}
-
 === PROSPECTS QUEUED (auto-discovered, awaiting approval) ===
 ${prospectsContext||'No prospects queued.'}
 === END LIVE DATA ===
@@ -4707,8 +4704,9 @@ PRIORITY ORDER — rank every action by this:
 3. BD-relevant email requiring a reply
 4. Meeting follow-up (from today's calendar — prep or post-meeting action)
 5. Signal trigger (live GCC company signal — one action per signal, target the decision-maker)
-6. Stale relationship WITH a new angle (14+ days silent, stage: engaged/meeting/active — ONLY if there's a specific reason to re-engage beyond "haven't spoken")
-7. Opportunity trigger (tier list company, no current signal)
+6. Opportunity trigger (tier list company with a clear reason to reach out — NOT a generic check-in)
+
+NEVER generate: stale relationship check-ins, follow-ups with pipeline contacts, or re-engagement actions. Those are handled elsewhere. Every single action must be triggered by a LIVE SIGNAL, an APPOINTMENT TRIGGER, an EMAIL, or a CALENDAR EVENT.
 
 DO NOT generate: generic "check in" actions, "follow up" actions for pipeline contacts, or any action without a specific named company and specific trigger reason.
 
@@ -4732,14 +4730,13 @@ Digital/AI: SDAIA, G42, Core42, e&, STC, Presight
 FinTech/Banking: FAB, Emirates NBD, ADCB, Mashreq, Riyad Bank, Tabby, Tamara, Wio Bank
 
 VOLUME RULES:
-- Generate ONE action per live signal (13 signals = 13 actions minimum)
+- Generate ONE action per live signal (if 13 signals exist = 13 signal actions minimum)
 - Warm lead + signal match: generate FIRST, ranked #1, #2 etc.
 - Appointment trigger: one action per leadership change entry
-- Stale relationship: one action per person in stage "engaged", "meeting", or "active"
-- Use their notes to craft specific, personalised re-engagement reasons
+- DO NOT generate stale relationship actions — the Follow-ups panel handles those
 
 OUTPUT FORMAT — ultra-compact JSON:
-{"rank":N,"priority":"high|medium","type":"Warm lead - signal match|Appointment trigger|Signal trigger|Stale relationship|Opportunity trigger|Email follow-up|Meeting follow-up|VIP maintenance","title":"6 words max","company":"name","signal":"specific trigger: 10 words max","source_url":null,"why":"10 words max","contacts_to_reach":[{"name":"Full Name","title":"Exact Title","activity":"what they post about: 8 words max or null"}],"suggested_message":"25 words max, reference their trigger or post, no em-dashes","effort_mins":5,"effort_label":"5 min"}
+{"rank":N,"priority":"high|medium","type":"Warm lead - signal match|Appointment trigger|Signal trigger|Opportunity trigger|Email follow-up|Meeting follow-up","title":"6 words max","company":"name","signal":"specific trigger: 10 words max","source_url":null,"why":"10 words max","contacts_to_reach":[{"name":"Full Name","title":"Exact Title","activity":"what they post about: 8 words max or null"}],"suggested_message":"25 words max, reference their trigger or post, no em-dashes","effort_mins":5,"effort_label":"5 min"}
 
 RULES: No em-dashes. Never criticise UAE, Saudi Arabia, or any GCC government. Return ONLY raw JSON, no markdown fences.
 Wrap in: {"mode":"${modeData.mode}","daily_effort_total":40,"strategic_brief":"2-3 sentence summary of today's biggest commercial opportunity and what Michael should focus on first","actions":[...]}`;
