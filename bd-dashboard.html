@@ -3952,33 +3952,18 @@ ${emailContext||''}
 ${overdueTasks||''}
 === END REAL DATA ===
 
-Generate Michael's Today's Actions list based on the REAL DATA above. Every single action must be grounded in a real signal from the data above — pipeline notes, LinkedIn replies, overdue follow-ups, emails received, or tasks. Do NOT invent communications. Do NOT fabricate signals.
+Generate Michael's Today's Actions — max 12 actions, grounded ONLY in the real data above. No invented signals.
 
-Generate as many actions as there are real things to do — typically 15 to 25. Every person with a recent reply, every overdue follow-up, every note indicating a pending next step is a separate action. Do not merge or skip any.
-
-Output as JSON. Each action object:
-- rank: number (1 = most urgent)
-- priority: "critical" | "high" | "medium" | "low"
-- type: "Reply needed" | "Follow-up overdue" | "LinkedIn reply to convert" | "Meeting prep" | "Referral to chase" | "New outreach" | "Relationship check-in" | "Pipeline admin"
-- title: short action title (max 12 words)
-- contact: name (or null)
-- company: company name (or null)
-- signal: EXACTLY where this came from. Be specific. Format: "[Source type]: [what was observed]". Source types: "LinkedIn message received [date]:", "Email received [date]:", "Pipeline data:", "Follow-up date passed:", "Notes record:", "LinkedIn reply [date]:". CRITICAL: NEVER invent a communication. Quote or paraphrase the real note/signal from the data above.
-- source_url: URL linking to the source of this lead. Use the LinkedIn URL from contacts_to_reach if it is a person. For company news use the real news article URL. For pipeline contacts use their LinkedIn URL from the data. null if no URL available.
-- why: one sentence commercial reason to act now
-- contacts_to_reach: array — each: {"name":"Full Name","title":"Title","company":"Company","linkedin":"url or null","email":"email or null","approach":"why this person"}. Use the LinkedIn URL from the data if available.
-- suggested_message: drafted message referencing the actual signal (max 80 words, warm, human, no em-dashes). Must reference what was actually said or what the real situation is. Null if not applicable.
-- effort_mins: 2 | 5 | 15 | 30
-- effort_label: "2 min" | "5 min" | "15 min" | "30 min"
+Output compact JSON. Each action:
+{"rank":N,"priority":"critical|high|medium|low","type":"Reply needed|Follow-up overdue|LinkedIn reply to convert|Meeting prep|New outreach|Relationship check-in","title":"max 8 words","contact":"name or null","company":"name or null","signal":"1 sentence: source + what was seen","source_url":"linkedin url from data or null","why":"1 sentence reason","contacts_to_reach":[{"name":"Name","title":"Title","linkedin":"url or null"}],"suggested_message":"max 40 words, no em-dashes, or null","effort_mins":5,"effort_label":"5 min"}
 
 Rules:
-- Never criticise the UAE, Saudi Arabia, or any GCC government
-- No em-dashes anywhere
-- Start with replies needed and overdue follow-ups, then referrals to chase, then LinkedIn replies to convert, then new outreach
-- Add "daily_effort_total" at root (total minutes)
+- Never criticise UAE, Saudi Arabia or any GCC government
+- No em-dashes
+- Order: overdue follow-ups first, then LinkedIn replies to convert, then new outreach
+- CRITICAL: Return ONLY raw JSON. No markdown. No fences. First char must be { last must be }
 - Wrap in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
-- Today's date is ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}. Any company news or market signals you include must be from the last 7 days only. Do NOT reference events from January or any date older than 7 days. If you cannot recall a genuinely recent (last 7 days) GCC news event, do not invent one — only use pipeline data from above.
-- CRITICAL: Return ONLY raw JSON. No markdown. No code fences. No backticks. First character must be { and last must be }.`;
+- Today is ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}. No news older than 7 days.`;
 
   try{
     const resp=await fetch('/.netlify/functions/chat',{
