@@ -3891,10 +3891,10 @@ function openChatFromAction(idx){
   const co=a.company?a.company.replace(/'/g,"\\'"):'this company';
   const ct=a.contact?a.contact.replace(/'/g,"\\'"):'this person';
   document.getElementById('chat-chips').innerHTML=`
+    <button class="chat-chip" onclick="quickChat('Explain the signal — where exactly was this seen or observed, and how confident are you in it?')"><i class="ti ti-eye"></i> Explain signal</button>
     <button class="chat-chip" onclick="quickChat('Rewrite the suggested message with a slightly different angle — keep it under 70 words')"><i class="ti ti-refresh"></i> Rewrite</button>
     <button class="chat-chip" onclick="quickChat('Make the message shorter and more punchy — under 40 words')"><i class="ti ti-arrows-minimize"></i> Shorter</button>
     <button class="chat-chip" onclick="quickChat('What else should I know about ${co} before reaching out?')"><i class="ti ti-building"></i> Company intel</button>
-    <button class="chat-chip" onclick="quickChat('Suggest 3 different opening lines I could use to reach out to ${ct}')"><i class="ti ti-list"></i> Opening lines</button>
   `;
   document.getElementById('chatPanel').classList.add('open');
   document.getElementById('chatOverlay').classList.add('open');
