@@ -3740,8 +3740,9 @@ Generate Michael's Today's Actions list. Output as a JSON array of action object
 - title: short action title (max 12 words)
 - contact: name of person (if applicable, else null)
 - company: company name (if applicable, else null)
-- why: one sentence on why this matters commercially
-- suggested_message: a suggested message draft (max 80 words, warm, human, no em-dashes) OR null if not applicable
+- signal: what was SEEN or OBSERVED that triggers this action — be specific (e.g. "Posted on LinkedIn 2 days ago about hiring a CFO", "Gulf Capital announced a new $500M fund this week", "Profile viewed your LinkedIn yesterday", "No contact in 47 days — relationship cooling", "Moved to a new role at ADNOC last month"). This must be a concrete, specific observation — not a generic reason.
+- why: one sentence on why acting on this signal matters commercially RIGHT NOW
+- suggested_message: a drafted message that references the signal naturally, so it reads as informed and relevant (max 80 words, warm, human, no em-dashes) OR null if not applicable
 - effort_mins: 2 | 5 | 15 | 30
 - effort_label: "2 min" | "5 min" | "15 min" | "30 min"
 
@@ -3814,6 +3815,7 @@ function renderTodaysActions(data,modeData){
           ${a.contact?`<span style="font-size:12px;color:var(--muted)">${esc(a.contact)}${a.company?' — '+esc(a.company):''}</span>`:''}
         </div>
         <div class="action-title">${esc(a.title)}</div>
+        ${a.signal?`<div style="display:flex;align-items:flex-start;gap:6px;margin:5px 0 4px;padding:6px 10px;background:rgba(59,130,246,0.07);border-left:3px solid #3b82f6;border-radius:0 6px 6px 0"><i class="ti ti-eye" style="font-size:12px;color:#3b82f6;margin-top:1px;flex-shrink:0"></i><span style="font-size:12px;color:#1e3a5f;font-weight:500">${esc(a.signal)}</span></div>`:''}
         <div class="action-sub">${esc(a.why)}</div>
         ${a.suggested_message?`<div class="action-msg">"${esc(a.suggested_message)}"</div>`:''}
         <div class="action-ft">
