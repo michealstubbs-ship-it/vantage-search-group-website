@@ -3917,6 +3917,7 @@ Rules:
 - Start with any pending replies, then overdue follow-ups, then opportunity triggers ranked by recency
 - Add a "daily_effort_total" field at the root of the response (number of total minutes)
 - Wrap everything in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
+- CRITICAL: Return ONLY raw JSON. No markdown. No code fences. No backticks. The first character of your response must be { and the last must be }.
 
 Since you cannot currently query Supabase directly, generate example actions for a GCC executive search firm. Be honest about sources: prefix all signals correctly. For company news signals, use "Publicly reported [date]:" and cite a real, plausible recent GCC business event. For relationship suggestions, use "Suggested action:". For each action, populate contacts_to_reach with the most relevant real people Michael should contact — include realistic LinkedIn URLs (linkedin.com/in/firstname-lastname format). The suggested_message must reference the signal directly so it reads as informed and specific, not generic.`;
 
@@ -3931,14 +3932,20 @@ Since you cannot currently query Supabase directly, generate example actions for
     await new Promise(r=>setTimeout(r,400));
     document.getElementById('actions-loading').style.display='none';
 
-    // Parse response
+    // Parse response — strip markdown fences, fix trailing commas, then parse
     let parsed;
     try{
       const raw=data.content||data.response||'';
-      const jsonMatch=raw.match(/\{[\s\S]*\}/);
-      parsed=JSON.parse(jsonMatch?jsonMatch[0]:raw);
+      // Strip any markdown code fences Claude may have added
+      let cleaned=raw.replace(/^```(?:json)?\s*\n?/,'').replace(/\n?```\s*$/,'').trim();
+      // Extract the outermost JSON object
+      const jsonMatch=cleaned.match(/\{[\s\S]*\}/);
+      let jsonStr=jsonMatch?jsonMatch[0]:cleaned;
+      // Fix trailing commas before ] or } (common LLM mistake)
+      jsonStr=jsonStr.replace(/,(\s*[}\]])/g,'$1');
+      parsed=JSON.parse(jsonStr);
     }catch(e){
-      parsed={mode:modeData.mode,daily_effort_total:45,actions:[{rank:1,priority:'high',type:'System',title:'Actions generated — review below',contact:null,company:null,why:'AI returned content in non-JSON format. Raw response shown.',suggested_message:data.content||data.response||'No response received',effort_mins:5,effort_label:'5 min'}]};
+      parsed={mode:modeData.mode,daily_effort_total:45,actions:[{rank:1,priority:'high',type:'System',title:'Actions generated — review below',contact:null,company:null,why:'AI returned content in unexpected format. Try regenerating.',suggested_message:data.content||data.response||'No response received',effort_mins:5,effort_label:'5 min'}]};
     }
 
     renderTodaysActions(parsed,modeData);
