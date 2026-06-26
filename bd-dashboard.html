@@ -4182,11 +4182,16 @@ Consulting: Kearney, Strategy&, Oliver Wyman, A&M, Roland Berger, FTI
 Digital/AI: SDAIA, ADDA, G42, Core42, e&, STC, ZATCA
 FinTech/Banking: FAB, Emirates NBD, ADCB, Mashreq, Riyad Bank, Tabby, Tamara, Wio Bank
 
-For each action: pick one company from the tiers, identify the senior role VSG should position for (COO/CHRO/CDO/CIO/CSO/CTO/Head of TA/Transformation Director), name the right decision-maker to approach, explain why NOW.
+NAMED CONTACT RULE: If a signal summary contains "CONTACT: [Name], [Title]" — use that exact person in contacts_to_reach. Do NOT substitute a generic CHRO or default title. The named contact is the person actively building that team or most recently appointed — they are the right door to knock on.
+
+If no named contact in the signal, choose the most function-specific decision-maker (e.g., for AI hiring → CDO or Head of AI, not CHRO; for FinTech growth → CFO or Head of Products, not CEO).
+
+Signals with a named contact who is actively posting on LinkedIn = rank these highest. They self-selected as approachable.
+
 If LIVE INTELLIGENCE SIGNALS has entries, use those first as type="Signal trigger". Otherwise use type="Opportunity trigger".
 
 OUTPUT — ultra-compact JSON, STRICT token budget:
-{"rank":N,"priority":"high|medium","type":"Signal trigger|Opportunity trigger","title":"6 words max","company":"name","signal":"GCC: 10 words max","source_url":null,"why":"10 words max","contacts_to_reach":[{"name":"Full Name","title":"Title"}],"suggested_message":"25 words max, no em-dashes","effort_mins":5,"effort_label":"5 min"}
+{"rank":N,"priority":"high|medium","type":"Signal trigger|Opportunity trigger","title":"6 words max","company":"name","signal":"specific trigger: 10 words max","source_url":null,"why":"10 words max","contacts_to_reach":[{"name":"Full Name","title":"Exact Title","activity":"what they post about, 8 words max or null"}],"suggested_message":"25 words max, reference their post or trigger if known, no em-dashes","effort_mins":5,"effort_label":"5 min"}
 
 RULES: No em-dashes. No follow-ups. No pipeline contacts. Never criticise UAE/Saudi/GCC governments. Return ONLY raw JSON, no markdown fences.
 Wrap in: {"mode":"${modeData.mode}","daily_effort_total":40,"actions":[...]}`;
