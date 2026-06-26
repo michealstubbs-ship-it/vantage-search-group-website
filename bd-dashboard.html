@@ -4119,6 +4119,10 @@ async function runTodaysActions(){
   let signalContext='';
   let feedbackContext='';
   let warmLeadsContext='';
+  let triggersContext='';
+  let staleContext='';
+  // also capture rule-based data for injected cards
+  let _ruleCardData={triggers:[],overdue:[],stale:[]};
   try{
     const db=_db();
     if(db){
@@ -4211,20 +4215,47 @@ async function runTodaysActions(){
         }
       }
 
-      // Feedback learning from rated actions (last 30 days)
+      // Feedback learning — last 30 days of actions with statuses + ratings
       const thirtyDaysAgo=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
-      const{data:fbRows}=await db.from('todays_actions').select('actions').gte('action_date',thirtyDaysAgo);
+      const{data:fbRows}=await db.from('todays_actions').select('action_date,actions').gte('action_date',thirtyDaysAgo).order('action_date',{ascending:false});
       if(fbRows&&fbRows.length){
-        const allRated=(fbRows.flatMap(r=>r.actions||[])).filter(a=>a.feedback);
-        if(allRated.length>=3){
-          const ups=allRated.filter(a=>a.feedback==='up');
-          const downs=allRated.filter(a=>a.feedback==='down');
+        const allActions=fbRows.flatMap(r=>r.actions||[]);
+        const completed=allActions.filter(a=>a.status==='completed');
+        const snoozed=allActions.filter(a=>a.status==='snoozed');
+        const deleted=allActions.filter(a=>a.status==='deleted');
+        const rated=allActions.filter(a=>a.feedback);
+        const ups=rated.filter(a=>a.feedback==='up');
+        const downs=rated.filter(a=>a.feedback==='down');
+
+        if(allActions.length>=5){
+          // Completion rate by type
+          const typeStats={};
+          allActions.forEach(a=>{
+            const t=a.type||'Unknown';
+            if(!typeStats[t])typeStats[t]={done:0,total:0};
+            typeStats[t].total++;
+            if(a.status==='completed')typeStats[t].done++;
+          });
+          const topTypes=Object.entries(typeStats).sort((a,b)=>b[1].done/b[1].total-a[1].done/a[1].total).slice(0,4);
+
+          // Companies Michael completed actions on
+          const completedCos=[...new Set(completed.map(a=>a.company).filter(Boolean))].slice(0,8);
+          // Companies Michael consistently skipped
+          const skippedCos=[...new Set(deleted.map(a=>a.company).filter(Boolean))].filter(c=>!completedCos.includes(c)).slice(0,5);
+
+          // Tag analysis on downs
           const tagCounts=downs.reduce((acc,a)=>{const t=a.feedback_tag||'general';acc[t]=(acc[t]||0)+1;return acc;},{});
-          feedbackContext=`\n=== VSG FEEDBACK PREFERENCES (${allRated.length} rated actions — apply these) ===\n`;
-          if(ups.length)feedbackContext+=`Positively rated: ${ups.slice(0,6).map(a=>a.type+' at '+a.company).join('; ')}\n`;
-          if(tagCounts.too_generic)feedbackContext+=`AVOID generic signals (marked poor ${tagCounts.too_generic}x) — be specific, use real data\n`;
-          if(tagCounts.wrong_person)feedbackContext+=`AVOID wrong contact (marked poor ${tagCounts.wrong_person}x) — find actual hiring manager, not CHRO\n`;
-          if(tagCounts.already_know)feedbackContext+=`AVOID already-known contacts (marked poor ${tagCounts.already_know}x) — fresh targets only\n`;
+
+          feedbackContext=`\n=== LEARNING FROM 30-DAY ACTION HISTORY (${allActions.length} actions tracked) ===\n`;
+          feedbackContext+=`Completion rate: ${completed.length}/${allActions.length} (${Math.round(completed.length/allActions.length*100)}%)\n`;
+          if(topTypes.length)feedbackContext+=`Highest-converting action types: ${topTypes.map(([t,s])=>`${t} (${Math.round(s.done/s.total*100)}% completed)`).join(', ')}\n`;
+          if(completedCos.length)feedbackContext+=`Companies Michael ACTED on: ${completedCos.join(', ')} — prioritise these and similar\n`;
+          if(skippedCos.length)feedbackContext+=`Companies consistently SKIPPED: ${skippedCos.join(', ')} — deprioritise or find better angle\n`;
+          if(snoozed.length)feedbackContext+=`${snoozed.length} actions snoozed recently — avoid types/companies that keep getting deferred\n`;
+          if(ups.length)feedbackContext+=`Positively rated: ${ups.slice(0,6).map(a=>(a.type||'')+(a.company?' at '+a.company:'')).join('; ')}\n`;
+          if(tagCounts.too_generic)feedbackContext+=`AVOID generic signals (flagged ${tagCounts.too_generic}x) — must reference specific data\n`;
+          if(tagCounts.wrong_person)feedbackContext+=`AVOID wrong contact (flagged ${tagCounts.wrong_person}x) — target functional decision-maker, not HR\n`;
+          if(tagCounts.already_know)feedbackContext+=`AVOID already-known contacts (flagged ${tagCounts.already_know}x) — fresh targets only\n`;
         }
       }
 
@@ -4232,6 +4263,29 @@ async function runTodaysActions(){
       const{data:taskData}=await db.from('tasks').select('title,due,contact,notes,priority').eq('done',false).not('due','is',null).lte('due',new Date().toISOString().slice(0,10)).order('due',{ascending:true}).limit(5);
       if(taskData&&taskData.length){
         overdueTasks='OVERDUE TASKS:\n'+taskData.map(t=>`  - "${t.title}" | Due: ${t.due} | Contact: ${t.contact||'none'} | Notes: ${t.notes||'none'}`).join('\n');
+      }
+
+      // Appointment triggers (leadership changes — hot window ≤60 days)
+      const today3=new Date().toISOString().slice(0,10);
+      const sixtyDaysAgo=new Date(Date.now()-60*864e5).toISOString().slice(0,10);
+      const{data:trigData}=await db.from('company_signals').select('id,company_name,title,summary,source_url,importance,created_at').eq('signal_type','leadership_change').gte('created_at',sixtyDaysAgo).order('created_at',{ascending:false}).limit(10);
+      if(trigData&&trigData.length){
+        _ruleCardData.triggers=trigData;
+        triggersContext='APPOINTMENT TRIGGERS — LEADERSHIP CHANGES (people in new roles in hot window ≤60 days — highest conversion rate for VSG):\n'+trigData.map(t=>{const d=Math.floor((new Date()-new Date(t.created_at))/864e5);return`  - ${t.company_name}: "${t.title}" — Day ${d} in window | ${t.summary||''} ${t.source_url?'| URL:'+t.source_url:''}`}).join('\n');
+      }
+
+      // Stale contacts (14+ days no contact, not placed/not interested)
+      const d14ago=new Date(Date.now()-14*864e5).toISOString().slice(0,10);
+      const{data:staleData}=await db.from('contacts').select('id,name,title,company,last_contact,stage,notes,linkedin').not('stage','in','("placed","notinterested")').neq('name','Michael Stubbs').or(`last_contact.lte.${d14ago},last_contact.is.null`).order('last_contact',{ascending:true,nullsFirst:true}).limit(8);
+      if(staleData&&staleData.length){
+        _ruleCardData.stale=staleData;
+        staleContext='STALE RELATIONSHIPS (contacts 14+ days silent — relationship at risk):\n'+staleData.map(c=>{const d=c.last_contact?Math.floor((new Date()-new Date(c.last_contact))/864e5):'never contacted';return`  - ${c.name} (${c.title||'?'}, ${c.company||'?'}) | Stage: ${c.stage} | Last contact: ${c.last_contact||'never'} (${d}${typeof d==='number'?'d ago':''}) | Notes: ${(c.notes||'none').slice(0,80)}`}).join('\n');
+      }
+
+      // Overdue follow-ups for rule cards (already in pipelineContext but capture separately for cards)
+      const{data:overdueData}=await db.from('contacts').select('id,name,title,company,followup_date,stage,notes,linkedin').not('stage','in','("placed","notinterested")').neq('name','Michael Stubbs').not('followup_date','is',null).lt('followup_date',today3).order('followup_date',{ascending:true}).limit(8);
+      if(overdueData&&overdueData.length){
+        _ruleCardData.overdue=overdueData;
       }
     }
   }catch(e){console.warn('Context load error:',e);}
@@ -4247,6 +4301,12 @@ async function runTodaysActions(){
 ${modeDescriptions[modeData.mode]}
 
 TODAY'S DATE: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
+
+=== APPOINTMENT TRIGGERS — LEADERSHIP CHANGES (people in new roles, hot window ≤60 days) ===
+${triggersContext||'No active appointment triggers today.'}
+
+=== STALE RELATIONSHIPS (14+ days silent — flag the most critical ones) ===
+${staleContext||'No stale relationships today.'}
 
 === WARM LINKEDIN LEADS + ACTIVE SIGNALS (already replied to your outreach AND company has a live signal) ===
 ${warmLeadsContext||'No warm leads with matching signals today.'}
@@ -4287,7 +4347,11 @@ Signals with a named contact actively posting on LinkedIn = rank highest. All li
 OUTPUT — ultra-compact JSON, STRICT token budget:
 {"rank":N,"priority":"high|medium","type":"Signal trigger|Opportunity trigger","title":"6 words max","company":"name","signal":"specific trigger: 10 words max","source_url":null,"why":"10 words max","contacts_to_reach":[{"name":"Full Name","title":"Exact Title","activity":"what they post about, 8 words max or null"}],"suggested_message":"25 words max, reference their post or trigger if known, no em-dashes","effort_mins":5,"effort_label":"5 min"}
 
-RULES: No em-dashes. No follow-ups. No pipeline contacts. Never criticise UAE/Saudi/GCC governments. Return ONLY raw JSON, no markdown fences.
+APPOINTMENT TRIGGER RULE: For each leadership change in the APPOINTMENT TRIGGERS section, generate one action using type="Appointment trigger". The window closes at 60 days — prioritise by days remaining (fewer = higher rank). Target the person who just moved, not their old company.
+
+STALE RELATIONSHIP RULE: For each person in STALE RELATIONSHIPS who is in stage "engaged", "meeting", or "active", generate one action using type="Stale relationship". Use their notes to craft a specific re-engagement reason.
+
+RULES: No em-dashes. Never criticise UAE/Saudi/GCC governments. Return ONLY raw JSON, no markdown fences.
 Wrap in: {"mode":"${modeData.mode}","daily_effort_total":40,"actions":[...]}`;
 
   try{
@@ -4404,6 +4468,111 @@ function renderTodaysActions(data,modeData){
     </div>
   `; }).join('');
   updateActionsNavBadge();
+  // Inject guaranteed rule-based cards (overdue follow-ups, stale, appointment triggers)
+  injectRuleCards();
+}
+
+/* ── RULE-BASED ACTION CARDS ── */
+function getRuleStatus(key){
+  const today=new Date().toISOString().slice(0,10);
+  const store=JSON.parse(localStorage.getItem('vsg_rule_status')||'{}');
+  return store[today+':'+key]||'active';
+}
+function setRuleStatus(key,status){
+  const today=new Date().toISOString().slice(0,10);
+  const store=JSON.parse(localStorage.getItem('vsg_rule_status')||'{}');
+  store[today+':'+key]=status;
+  localStorage.setItem('vsg_rule_status',JSON.stringify(store));
+}
+
+function injectRuleCards(){
+  const d=window._ruleCardData||{};
+  const today=new Date().toISOString().slice(0,10);
+  const list=document.getElementById('actions-list');
+  if(!list)return;
+
+  let cards=[];
+
+  // 1 — Overdue follow-ups
+  (d.overdue||[]).forEach(c=>{
+    const key=`followup-${c.id}`;
+    const st=getRuleStatus(key);
+    if(st==='deleted')return;
+    const days=c.followup_date?Math.floor((new Date()-new Date(c.followup_date))/864e5):0;
+    cards.push({key,priority:'high',type:'Follow-up due',icon:'ti-bell',color:'var(--red)',
+      title:`Follow up: ${c.name}`,
+      company:c.company||'',contact:c.name,
+      why:`${days}d overdue · ${c.stage}${c.notes?' · '+c.notes.slice(0,60):''}`,
+      linkedin:c.linkedin,status:st});
+  });
+
+  // 2 — Appointment triggers
+  (d.triggers||[]).forEach(t=>{
+    const key=`trigger-${t.id}`;
+    const st=getRuleStatus(key);
+    if(st==='deleted')return;
+    const days=Math.floor((new Date()-new Date(t.created_at))/864e5);
+    cards.push({key,priority:days<=14?'high':'medium',type:'Appointment trigger',icon:'ti-user-check',color:'var(--amber)',
+      title:`New role: ${t.company_name}`,
+      company:t.company_name,contact:t.title,
+      why:`Day ${days}/60 in window · ${(t.summary||'').slice(0,80)}`,
+      source_url:t.source_url,status:st});
+  });
+
+  // 3 — Stale relationships (only engaged/meeting/active stages)
+  (d.stale||[]).filter(c=>['engaged','meeting','active'].includes(c.stage)).forEach(c=>{
+    const key=`stale-${c.id}`;
+    const st=getRuleStatus(key);
+    if(st==='deleted')return;
+    const days=c.last_contact?Math.floor((new Date()-new Date(c.last_contact))/864e5):'?';
+    cards.push({key,priority:'medium',type:'Stale relationship',icon:'ti-clock-exclamation',color:'#8b5cf6',
+      title:`Re-engage: ${c.name}`,
+      company:c.company||'',contact:c.name,
+      why:`${days}d silent · ${c.stage}${c.notes?' · '+c.notes.slice(0,60):''}`,
+      linkedin:c.linkedin,status:st});
+  });
+
+  if(!cards.length)return;
+
+  // Build a labelled section and prepend it
+  const section=document.createElement('div');
+  section.id='rule-cards-section';
+  section.innerHTML=`<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 0 10px;margin-bottom:2px"><i class="ti ti-bolt" style="color:var(--gold)"></i> Priority Actions — Triggered by your data</div>`
+    +cards.map((a,ci)=>{
+      const isC=a.status==='completed',isS=a.status==='snoozed';
+      return `<div class="action-item ${a.priority}" id="rule-card-${ci}" style="${isC?'opacity:0.55;border-left:4px solid #22c55e;':isS?'border-left:4px solid var(--amber);':''}">
+        <div class="action-rank" style="background:${a.color};color:#fff"><i class="ti ${a.icon}" style="font-size:11px"></i></div>
+        <div class="action-body">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap">
+            <span class="b b-${a.priority==='high'?'high':a.priority==='medium'?'followup':'cold'}" style="border-left:2px solid ${a.color}">${esc(a.type)}</span>
+            ${a.contact?`<span style="font-size:12px;color:var(--muted)">${esc(a.contact)}${a.company?' — '+esc(a.company):''}</span>`:''}
+            <div style="margin-left:auto;display:flex;gap:4px;flex-shrink:0">
+              <button class="btn btn-xs btn-outline" onclick="ruleCardStatus('${a.key}',${ci},'completed',this)" title="Mark complete" style="${isC?'background:#22c55e;color:#fff;border-color:#22c55e':''}"><i class="ti ti-check"></i></button>
+              <button class="btn btn-xs btn-outline" onclick="ruleCardStatus('${a.key}',${ci},'snoozed',this)" title="Snooze" style="${isS?'background:var(--amber);color:#fff;border-color:var(--amber)':''}"><i class="ti ti-clock-pause"></i></button>
+              <button class="btn btn-xs btn-outline" onclick="ruleCardStatus('${a.key}',${ci},'deleted',this)" title="Remove" style="color:var(--red)"><i class="ti ti-trash"></i></button>
+            </div>
+          </div>
+          <div class="action-title">${esc(a.title)}</div>
+          <div class="action-sub">${esc(a.why)}</div>
+          <div class="action-ft">
+            ${a.linkedin?`<a href="${a.linkedin.startsWith('http')?a.linkedin:'https://'+a.linkedin}" target="_blank" class="btn btn-xs btn-outline"><i class="ti ti-brand-linkedin" style="color:#0077b5"></i> LinkedIn</a>`:''}
+            ${a.source_url?`<a href="${esc(a.source_url)}" target="_blank" class="btn btn-xs btn-outline"><i class="ti ti-external-link"></i> Source</a>`:''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+  // Remove old section if re-injecting
+  document.getElementById('rule-cards-section')?.remove();
+  list.insertBefore(section,list.firstChild);
+}
+
+function ruleCardStatus(key,ci,status,btn){
+  setRuleStatus(key,status);
+  const card=document.getElementById('rule-card-'+ci);if(!card)return;
+  if(status==='completed'){card.style.opacity='0.55';card.style.borderLeft='4px solid #22c55e';btn.style.cssText='background:#22c55e;color:#fff;border-color:#22c55e';showToast('Done ✓');}
+  else if(status==='deleted'){card.style.transition='opacity 0.3s';card.style.opacity='0';setTimeout(()=>card.style.display='none',300);}
+  else if(status==='snoozed'){card.style.borderLeft='4px solid var(--amber)';btn.style.cssText='background:var(--amber);color:#fff;border-color:var(--amber)';showToast('Snoozed');}
 }
 
 function updateActionsNavBadge(){
