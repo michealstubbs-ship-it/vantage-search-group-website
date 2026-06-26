@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "Today's Actions: allow role-based contact targeting when no named person in signal"
+git commit -m "Fix: prospects_queue .catch() crash was silently killing signal fetch in runTodaysActions"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...

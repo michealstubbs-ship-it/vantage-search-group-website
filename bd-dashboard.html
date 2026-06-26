@@ -4506,7 +4506,8 @@ async function runTodaysActions(){
       }
 
       // Prospects queued by auto-prospecting agent
-      const{data:queuedProspects}=await db.from('prospects_queue').select('name,title,company,signal,notes').eq('status','prospect_queued').order('created_at',{ascending:false}).limit(8).catch(()=>({data:[]}));
+      let queuedProspects=[];
+      try{const{data:_qp}=await db.from('prospects_queue').select('name,title,company,signal,notes').eq('status','prospect_queued').order('created_at',{ascending:false}).limit(8);queuedProspects=_qp||[];}catch(e){}
       if(queuedProspects&&queuedProspects.length){
         prospectsContext='PROSPECTS QUEUED (auto-discovered, awaiting approval):\n'+queuedProspects.map(p=>`  - ${p.name} (${p.title||'?'}, ${p.company||'?'}) Signal:${p.signal||'?'} Notes:${(p.notes||'none').slice(0,80)}`).join('\n');
       }
