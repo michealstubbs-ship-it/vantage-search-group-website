@@ -3698,6 +3698,7 @@ ACTION: ${_actionCtx.title||''}
 SIGNAL (what was observed): ${_actionCtx.signal||''}
 WHY ACT NOW: ${_actionCtx.why||''}
 DRAFTED MESSAGE: ${_actionCtx.suggested_message||'None'}
+CONTACTS TO REACH: ${(_actionCtx.contacts_to_reach&&_actionCtx.contacts_to_reach.length)?_actionCtx.contacts_to_reach.map(c=>`${c.name} (${c.title||''}${c.company?' at '+c.company:''})${c.linkedin?' LinkedIn: '+c.linkedin:''}${c.email?' Email: '+c.email:''}`).join('; '):'Not specified'}
 
 Help Michael: refine or rewrite the message, find a different angle, provide company or person intel, answer any question about this outreach. Be concise and direct. No em-dashes. No corporate language.`;
       fetchBody={
@@ -3829,8 +3830,28 @@ window.openDetail=function(id){
    TODAY'S ACTIONS
 ════════════════════════════════════════════════════ */
 let _actionsGenerated=false;
-function loadTodaysActions(){
+async function loadTodaysActions(){
   if(_actionsGenerated)return;
+  // Try loading today's saved actions from Supabase first
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    const db=_db();
+    if(db){
+      const{data}=await db.from('todays_actions').select('*').eq('action_date',today).order('generated_at',{ascending:false}).limit(1);
+      if(data&&data.length>0&&data[0].actions&&data[0].actions.length>0){
+        const row=data[0];
+        const modeData={mode:row.mode||'prospecting',jobs:0,pipeline:0};
+        renderTodaysActions({mode:row.mode,daily_effort_total:row.daily_effort_total,actions:row.actions},modeData);
+        _actionsGenerated=true;
+        const ts=new Date(row.generated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+        const src=row.source==='scheduled'?' (auto)':'';
+        document.getElementById('actions-timestamp').textContent='Generated '+ts+src;
+        document.getElementById('run-actions-btn').innerHTML='<i class="ti ti-bolt"></i> Regenerate';
+        return;
+      }
+    }
+  }catch(e){console.warn('Could not load saved actions:',e);}
+  // No saved actions for today — show empty state
   document.getElementById('actions-empty').style.display='block';
   document.getElementById('actions-mode-card').style.display='none';
   document.getElementById('actions-list').innerHTML='';
@@ -3879,9 +3900,10 @@ Generate Michael's Today's Actions list. Output as a JSON array of action object
 - title: short action title (max 12 words)
 - contact: name of person (if applicable, else null)
 - company: company name (if applicable, else null)
-- signal: what was SEEN or OBSERVED that triggers this action. CRITICAL RULES FOR SIGNAL: (1) NEVER claim someone emailed, messaged, or called Michael unless the contact's notes field explicitly records this. (2) NEVER invent communications that did not happen. (3) Only cite signals you can derive directly from the pipeline data provided — e.g. days since last contact, follow-up date passed, notes content, LinkedIn data, or publicly observable company news you have seen. (4) If the signal is inferred from a date or pattern (e.g. "no contact in 47 days"), say exactly that — do not dress it up as a received message. (5) If you cite a news signal (e.g. "company announced a fund"), prefix it with "Publicly reported:" so Michael knows it is market intelligence, not a personal communication. Examples of honest signals: "No contact recorded in 47 days — relationship cooling", "Follow-up date passed 12 days ago with no action", "Notes record a conversation in March about a potential mandate", "Publicly reported: Gulf Capital announced a $500M fund last month".
-- why: one sentence on why acting on this signal matters commercially RIGHT NOW
-- suggested_message: a drafted message that references the signal naturally, so it reads as informed and relevant (max 80 words, warm, human, no em-dashes) OR null if not applicable
+- signal: EXACTLY where this came from. Be specific and transparent. Format: "[Source type]: [what was observed]". Source types: "LinkedIn message received [date]:", "Email received [date/time]:", "LinkedIn post by [name] on [date]:", "Publicly reported [date]:", "Pipeline data:", "Follow-up date passed:", "Notes record:". Examples: "LinkedIn message received 25 Jun: Dmitry messaged asking about senior finance hiring in Abu Dhabi", "Email received 26 Jun 09:14: Subject 'CFO Search — interested in working together', from khalid@gulfcapital.com", "Publicly reported 24 Jun: ADNOC announced a new downstream expansion — likely to need transformation leadership", "Follow-up date passed 12 days ago — last contact was 14 Jun per pipeline", "Pipeline data: no contact recorded in 47 days, stage is Warm". CRITICAL: NEVER invent a communication. If you have no real signal, say "Suggested action based on [reason]:" not a fake received message.
+- why: one sentence on commercial reason to act now
+- contacts_to_reach: array of specific people Michael should contact for this action. Each entry: {"name": "Full Name", "title": "Their title", "company": "Company", "linkedin": "linkedin.com/in/profile-url or null", "email": "email if known or null", "approach": "why this person specifically"}. If no specific contacts known, return empty array.
+- suggested_message: drafted message referencing the signal naturally (max 80 words, warm, human, no em-dashes). Must mention WHY Michael is reaching out based on the actual signal — not a generic opener. Or null if not applicable.
 - effort_mins: 2 | 5 | 15 | 30
 - effort_label: "2 min" | "5 min" | "15 min" | "30 min"
 
@@ -3896,7 +3918,7 @@ Rules:
 - Add a "daily_effort_total" field at the root of the response (number of total minutes)
 - Wrap everything in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
 
-Since you cannot currently query Supabase directly, generate example actions for a GCC executive search firm. IMPORTANT: be honest about what you can and cannot know. Do not invent emails, messages, or calls that Michael supposedly received — these are fabricated and waste his time when he cannot find them. Instead, base signals on: time-based patterns (days since contact), publicly available company news prefixed with "Publicly reported:", or general relationship maintenance logic. If a signal is a suggestion rather than observed fact, say "Suggested action:" not "They emailed you" or "They reached out".`;
+Since you cannot currently query Supabase directly, generate example actions for a GCC executive search firm. Be honest about sources: prefix all signals correctly. For company news signals, use "Publicly reported [date]:" and cite a real, plausible recent GCC business event. For relationship suggestions, use "Suggested action:". For each action, populate contacts_to_reach with the most relevant real people Michael should contact — include realistic LinkedIn URLs (linkedin.com/in/firstname-lastname format). The suggested_message must reference the signal directly so it reads as informed and specific, not generic.`;
 
   try{
     const resp=await fetch('/.netlify/functions/chat',{
@@ -3922,6 +3944,21 @@ Since you cannot currently query Supabase directly, generate example actions for
     renderTodaysActions(parsed,modeData);
     _actionsGenerated=true;
     document.getElementById('actions-timestamp').textContent='Generated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    // Save to Supabase so actions persist across refreshes
+    try{
+      const db=_db();
+      if(db){
+        const today=new Date().toISOString().slice(0,10);
+        await db.from('todays_actions').upsert({
+          action_date:today,
+          generated_at:new Date().toISOString(),
+          mode:parsed.mode||modeData.mode,
+          daily_effort_total:parsed.daily_effort_total||0,
+          actions:parsed.actions||[],
+          source:'manual'
+        },{onConflict:'action_date'});
+      }
+    }catch(e){console.warn('Could not save actions:',e);}
   }catch(e){
     clearInterval(ticker);
     document.getElementById('actions-loading').style.display='none';
@@ -3957,6 +3994,7 @@ function renderTodaysActions(data,modeData){
         <div class="action-title">${esc(a.title)}</div>
         ${a.signal?`<div style="display:flex;align-items:flex-start;gap:6px;margin:5px 0 4px;padding:6px 10px;background:rgba(59,130,246,0.07);border-left:3px solid #3b82f6;border-radius:0 6px 6px 0"><i class="ti ti-eye" style="font-size:12px;color:#3b82f6;margin-top:1px;flex-shrink:0"></i><span style="font-size:12px;color:#1e3a5f;font-weight:500">${esc(a.signal)}</span></div>`:''}
         <div class="action-sub">${esc(a.why)}</div>
+        ${(a.contacts_to_reach&&a.contacts_to_reach.length)?`<div style="margin:7px 0 5px;padding:8px 10px;background:rgba(201,168,76,0.07);border-left:3px solid var(--gold);border-radius:0 6px 6px 0"><div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Who to contact</div>${a.contacts_to_reach.map(c=>`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;flex-wrap:wrap"><div><div style="font-size:12px;font-weight:700;color:var(--navy)">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.title||'')}${c.company?' — '+esc(c.company):''}</div>${c.approach?`<div style="font-size:11px;color:var(--text);margin-top:2px;font-style:italic">${esc(c.approach)}</div>`:''}</div><div style="display:flex;gap:6px;align-items:center;margin-left:auto">${c.linkedin?`<a href="${c.linkedin.startsWith('http')?c.linkedin:'https://'+c.linkedin}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-brand-linkedin" style="color:#0077b5"></i> LinkedIn</a>`:''} ${c.email?`<a href="mailto:${c.email}" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-mail"></i> Email</a>`:''}</div></div>`).join('')}</div>`:'' }
         ${a.suggested_message?`<div class="action-msg">"${esc(a.suggested_message)}"</div>`:''}
         <div class="action-ft">
           <span class="effort-tag"><i class="ti ti-clock" style="font-size:10px"></i> ${esc(a.effort_label||'5 min')}</span>
