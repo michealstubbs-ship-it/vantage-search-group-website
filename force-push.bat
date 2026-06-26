@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "Today's Actions: signal field (what was seen), Haiku model, 26s timeout"
+git commit -m "Enrich system prompt with VSG client history (SWFs, real estate, consulting, energy)"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...
