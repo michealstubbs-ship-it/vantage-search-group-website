@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "VSG Commercial OS: new systemPrompt (CEO+CRO+COO identity), Strategic Brief panel, GCC calendar context, Outlook calendar wiring, Sonnet model for briefs"
+git commit -m "Fix Today's Actions: NEW BD ONLY rule, pipeline context as reference only, remove overdue follow-up from AI priority order"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...
