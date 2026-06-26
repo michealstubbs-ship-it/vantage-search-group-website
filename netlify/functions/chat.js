@@ -26,14 +26,15 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { messages, contactContext, mode, systemOverride, maxTokens } = JSON.parse(event.body || '{}');
+    const { messages, contactContext, mode, systemOverride, maxTokens, model: modelOverride } = JSON.parse(event.body || '{}');
 
-    // Use caller-supplied system prompt override if provided (e.g. Today's Actions)
+    // Use caller-supplied system prompt override if provided (e.g. Today's Actions, Strategic Brief)
     if (systemOverride) {
+      const model = modelOverride || 'claude-haiku-4-5-20251001';
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: maxTokens || 2048, system: systemOverride, messages: messages || [{ role: 'user', content: 'Generate now.' }] }),
+        body: JSON.stringify({ model, max_tokens: maxTokens || 2048, system: systemOverride, messages: messages || [{ role: 'user', content: 'Generate now.' }] }),
       });
       if (!response.ok) { const err = await response.text(); throw new Error(`Claude API error: ${response.status} — ${err}`); }
       const data = await response.json();

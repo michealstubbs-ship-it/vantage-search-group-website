@@ -690,6 +690,7 @@ textarea{resize:vertical;min-height:80px}
     <button class="nav-btn" onclick="goPage('linkedin',this)"><i class="ti ti-brand-linkedin"></i>LinkedIn Pipeline<span class="nav-badge" id="nb-li" style="display:none"></span></button>
     <button class="nav-btn" onclick="goPage('li-leads',this);loadLeads()"><i class="ti ti-user-star"></i>LinkedIn Leads<span class="nav-badge amber" id="nb-leads" style="display:none"></span></button>
     <div class="nav-section">AI Intelligence</div>
+    <button class="nav-btn" onclick="goPage('strategic-brief',this);loadStrategicBrief()"><i class="ti ti-brain"></i>Strategic Brief</button>
     <button class="nav-btn" onclick="goPage('intelligence',this);loadIntelligence()"><i class="ti ti-cpu"></i>Intelligence Feed<span class="nav-badge" id="nb-intel" style="display:none"></span></button>
     <button class="nav-btn" onclick="goPage('signals',this);loadSignals()"><i class="ti ti-trending-up"></i>Hiring Signals<span class="nav-badge amber" id="nb-signals" style="display:none"></span></button>
     <button class="nav-btn" onclick="goPage('triggers',this);loadTriggers()"><i class="ti ti-user-star"></i>Appointment Triggers<span class="nav-badge amber" id="nb-triggers" style="display:none"></span></button>
@@ -870,6 +871,66 @@ textarea{resize:vertical;min-height:80px}
     </div>
 
     <!-- INTELLIGENCE FEED -->
+    <!-- STRATEGIC BRIEF -->
+    <div id="p-strategic-brief" class="page">
+      <div class="ph" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <h1><i class="ti ti-brain" style="color:var(--gold);margin-right:8px;vertical-align:middle"></i>Strategic Brief</h1>
+          <p>Executive intelligence — top opportunities, relationship gaps, market positioning</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span id="brief-timestamp" style="font-size:11px;color:var(--muted)"></span>
+          <button class="btn btn-gold" id="run-brief-btn" onclick="runStrategicBrief()"><i class="ti ti-brain"></i> Generate Brief</button>
+        </div>
+      </div>
+
+      <!-- Loading state -->
+      <div id="brief-loading" style="display:none;margin-bottom:20px">
+        <div style="background:var(--surface);border-radius:var(--r);padding:28px 24px;border:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            <i class="ti ti-brain" style="font-size:22px;color:var(--gold)"></i>
+            <span style="font-size:14px;font-weight:600;color:var(--navy)" id="brief-loading-label">Analysing your pipeline and market signals...</span>
+          </div>
+          <div style="background:var(--border-soft);border-radius:4px;height:6px;overflow:hidden">
+            <div id="brief-progress-bar" style="height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:4px;width:0%;transition:width .4s ease"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="brief-empty" style="text-align:center;padding:60px 20px">
+        <i class="ti ti-brain" style="font-size:48px;color:var(--border);display:block;margin-bottom:12px"></i>
+        <h3 style="color:var(--navy);margin-bottom:6px">Your Strategic Brief</h3>
+        <p style="color:var(--muted);margin-bottom:20px;max-width:400px;margin-left:auto;margin-right:auto">A weekly executive briefing covering your top commercial opportunities, relationship health, market signals, and recommended priorities.</p>
+        <button class="btn btn-gold" onclick="runStrategicBrief()"><i class="ti ti-brain"></i> Generate Now</button>
+      </div>
+
+      <!-- Brief content -->
+      <div id="brief-content" style="display:none">
+        <!-- Top Opportunity Banner -->
+        <div id="brief-banner" style="background:linear-gradient(135deg,var(--navy),var(--navy3));border-radius:var(--r);padding:24px;margin-bottom:20px;border-left:4px solid var(--gold)">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:8px">COMMERCIAL OPERATING SYSTEM BRIEF</div>
+          <div id="brief-headline" style="font-size:17px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:10px"></div>
+          <div id="brief-focus" style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.6"></div>
+        </div>
+
+        <!-- 3-column grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px" id="brief-grid"></div>
+
+        <!-- Top actions table -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-h"><h3><i class="ti ti-target"></i> Priority Actions This Week</h3></div>
+          <div class="card-b p0" id="brief-actions-list"></div>
+        </div>
+
+        <!-- Watch points -->
+        <div class="card">
+          <div class="card-h"><h3><i class="ti ti-eye"></i> Watch Points</h3><span style="font-size:11px;color:var(--muted)">Patterns and risks to monitor</span></div>
+          <div class="card-b" id="brief-watch-points"></div>
+        </div>
+      </div>
+    </div>
+
     <div id="p-intelligence" class="page">
       <div class="ph" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div><h1><i class="ti ti-cpu" style="color:var(--gold);margin-right:8px;vertical-align:middle"></i>Intelligence Feed</h1><p>Live signals, replies and agent outputs — all in one place</p></div>
@@ -2580,7 +2641,7 @@ function renderJobs(){
   if(sf)list=list.filter(j=>j.status===sf);
   // Active first, then alphabetical by company+title
   const statusOrder={active:0,filled:1,onhold:2,lost:3};
-  list=[...list].sort((a,b)=>{const so=(statusOrder[a.status]??9)-(statusOrder[b.status]??9);return so|||(a.company+a.title).localeCompare(b.company+b.title);});
+  list=[...list].sort((a,b)=>{const so=(statusOrder[a.status]??9)-(statusOrder[b.status]??9);return so||(a.company+a.title).localeCompare(b.company+b.title);});
 
   const el=document.getElementById('jobs-list');if(!el)return;
   if(!list.length){
@@ -3438,6 +3499,248 @@ let _actionCtx=null; // stores Today's Actions context when chatting from an act
 // Supabase instance (reuse from parent scope via window)
 const _db=()=>window._vsgDb;
 
+// ── Strategic Brief ──
+let _briefGenerated=false;
+function loadStrategicBrief(){
+  if(_briefGenerated)return;
+  document.getElementById('brief-empty').style.display='block';
+  document.getElementById('brief-content').style.display='none';
+}
+
+async function runStrategicBrief(){
+  const btn=document.getElementById('run-brief-btn');
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Analysing...';
+  document.getElementById('brief-empty').style.display='none';
+  document.getElementById('brief-content').style.display='none';
+  document.getElementById('brief-loading').style.display='block';
+
+  let pct=0;
+  const bar=document.getElementById('brief-progress-bar');
+  const labels=['Analysing your pipeline and market signals...','Reviewing relationship health across your network...','Identifying highest-value commercial opportunities...','Building your executive brief...'];
+  let li=0;
+  const ticker=setInterval(()=>{
+    pct=Math.min(pct+1.5,92);bar.style.width=pct+'%';
+    if(pct>25&&li===0){li=1;document.getElementById('brief-loading-label').textContent=labels[1];}
+    if(pct>50&&li===1){li=2;document.getElementById('brief-loading-label').textContent=labels[2];}
+    if(pct>75&&li===2){li=3;document.getElementById('brief-loading-label').textContent=labels[3];}
+  },400);
+
+  // Gather all data
+  let signalContext='',pipelineContext='',staleContext='',triggersContext='',warmLeadsContext='',vipContext='',emailContext='',prospectsContext='';
+  try{
+    const db=_db();
+    if(db){
+      const today=new Date().toISOString().slice(0,10);
+      const d30ago=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+      const d14ago=new Date(Date.now()-14*864e5).toISOString().slice(0,10);
+      const sixtyDaysAgo=new Date(Date.now()-60*864e5).toISOString().slice(0,10);
+
+      const[{data:sigs},{data:contacts},{data:vipC},{data:trig},{data:leads},{data:sigsAll},{data:emails},{data:prqs},{data:jobs}]=await Promise.all([
+        db.from('company_signals').select('company_name,signal_type,title,summary,importance,created_at').eq('actioned',false).order('created_at',{ascending:false}).limit(20),
+        db.from('contacts').select('name,title,company,stage,followup_date,last_contact,notes,linkedin').neq('name','Michael Stubbs').order('followup_date',{ascending:true,nullsFirst:false}).limit(40),
+        db.from('contacts').select('name,title,company,last_contact,notes,linkedin,stage').in('stage',['past_client','vip','warm_referrer']).neq('name','Michael Stubbs').order('last_contact',{ascending:true}).limit(8),
+        db.from('company_signals').select('company_name,title,summary,created_at').eq('signal_type','leadership_change').gte('created_at',sixtyDaysAgo).order('created_at',{ascending:false}).limit(10),
+        db.from('linkedin_leads').select('full_name,title,company,linkedin_url,notes,follow_up_date').eq('status','replied').order('created_at',{ascending:false}).limit(20),
+        db.from('company_signals').select('company_name').eq('actioned',false),
+        db.from('email_context').select('received_at,sender_name,subject,summary').eq('is_bd_relevant',true).order('received_at',{ascending:false}).limit(8),
+        db.from('prospects_queue').select('name,title,company,signal').eq('status','prospect_queued').order('created_at',{ascending:false}).limit(10).catch(()=>({data:[]})),
+        db.from('jobs').select('status,title,company').eq('status','active')
+      ]);
+
+      const signalCos=new Set((sigsAll||[]).map(s=>(s.company_name||'').toLowerCase()));
+      if(sigs&&sigs.length)signalContext='LIVE SIGNALS:\n'+sigs.map(s=>`  [${s.importance||'med'}] ${s.company_name}: ${s.signal_type} - "${s.title}" | ${s.summary||''}`).join('\n');
+      if(trig&&trig.length)triggersContext='APPOINTMENT TRIGGERS:\n'+trig.map(t=>{const d=Math.floor((new Date()-new Date(t.created_at))/864e5);return`  ${t.company_name}: "${t.title}" Day ${d}/60 | ${t.summary||''}`}).join('\n');
+      if(leads&&leads.length&&sigsAll&&sigsAll.length){
+        const hot=leads.filter(l=>l.company&&signalCos.has(l.company.toLowerCase()));
+        if(hot.length)warmLeadsContext='WARM LEADS + SIGNALS:\n'+hot.map(l=>`  ${l.full_name} (${l.title||'?'}, ${l.company}) | Follow-up: ${l.follow_up_date||'overdue'}`).join('\n');
+      }
+      if(contacts&&contacts.length){
+        const overdue=contacts.filter(c=>c.followup_date&&c.followup_date<today);
+        const stale=contacts.filter(c=>!c.followup_date&&c.last_contact&&c.last_contact<d14ago&&c.stage&&!['placed','notinterested'].includes(c.stage));
+        const active=contacts.filter(c=>c.followup_date&&c.followup_date>=today&&c.stage&&['engaged','meeting','active'].includes(c.stage));
+        const lines=[];
+        if(overdue.length)lines.push(`${overdue.length} OVERDUE follow-ups: ${overdue.slice(0,5).map(c=>`${c.name} (${c.company},${c.stage})`).join(', ')}`);
+        if(stale.length)lines.push(`${stale.length} STALE contacts 14d+ silent: ${stale.slice(0,5).map(c=>`${c.name} (${c.company})`).join(', ')}`);
+        if(active.length)lines.push(`${active.length} active contacts with upcoming follow-ups`);
+        pipelineContext=lines.join('\n');
+        if(stale.length)staleContext='STALE:\n'+stale.slice(0,8).map(c=>`  ${c.name} (${c.title||'?'}, ${c.company}) Stage:${c.stage} LastContact:${c.last_contact||'never'}`).join('\n');
+      }
+      if(vipC&&vipC.length){
+        const due=vipC.filter(c=>!c.last_contact||c.last_contact<d30ago);
+        if(due.length)vipContext='VIP/PAST CLIENTS OVERDUE:\n'+due.map(c=>`  ${c.name} (${c.company}) last: ${c.last_contact||'never'}`).join('\n');
+      }
+      if(emails&&emails.length)emailContext='BD EMAILS:\n'+emails.map(e=>`  ${e.sender_name}: "${e.subject}" | ${e.summary||''}`).join('\n');
+      if(prqs&&prqs.length)prospectsContext='QUEUED PROSPECTS:\n'+prqs.map(p=>`  ${p.name} (${p.title}, ${p.company})`).join('\n');
+
+      // Jobs context
+      const activeJobs=(jobs||[]);
+      const jobsLine=activeJobs.length?`${activeJobs.length} live mandate(s): ${activeJobs.map(j=>`${j.title} at ${j.company}`).join(', ')}`:'No live mandates — prospecting mode';
+      pipelineContext=jobsLine+'\n'+pipelineContext;
+    }
+  }catch(e){console.warn('Brief data load error:',e);}
+
+  const calCtx=getGCCCalendarContext();
+
+  const briefPrompt=`IDENTITY: You are the Vantage Search Group Commercial Operating System. Your role is that of CEO, Chief Revenue Officer, Chief Operating Officer, and Chief Intelligence Officer combined. You drive business growth. You never wait passively. Every recommendation is commercially focused, evidence-based, and ranked by revenue impact.
+
+VSG: Boutique executive search, Dubai. Senior roles in digital, data/AI, strategy, transformation, investments, commercial. Clients: SWFs, fintechs, regional banks, giga-projects, consulting firms across UAE and Saudi Arabia. 70+ C-suite placements. 98% retained conversion. Partner-led.
+
+THINKING: Before every recommendation ask: Does this generate revenue? Does this strengthen relationships? Is there a higher-value action available?
+
+TODAY: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}
+
+=== GCC MARKET CALENDAR ===
+${calCtx}
+
+=== LIVE SIGNALS ===
+${signalContext||'None loaded.'}
+
+=== APPOINTMENT TRIGGERS (leadership changes, ≤60 day hot window) ===
+${triggersContext||'None.'}
+
+=== WARM LEADS + ACTIVE SIGNALS ===
+${warmLeadsContext||'None.'}
+
+=== PIPELINE HEALTH ===
+${pipelineContext||'No data.'}
+
+=== STALE RELATIONSHIPS ===
+${staleContext||'None.'}
+
+=== VIP / PAST CLIENTS OVERDUE ===
+${vipContext||'None.'}
+
+=== BD-RELEVANT EMAILS ===
+${emailContext||'None.'}
+
+=== QUEUED PROSPECTS ===
+${prospectsContext||'None.'}
+
+OBJECTIVE: Produce a weekly executive strategic brief. Think like a CEO reviewing their commercial position. Synthesise ALL data above into an actionable intelligence briefing. Be specific, direct, and commercial. No fluff.
+
+OUTPUT — return ONLY this JSON structure, no markdown fences:
+{
+  "headline": "One sharp sentence: the most important commercial insight right now (max 15 words)",
+  "focus_statement": "2-3 sentences: where the biggest revenue opportunity is this week and why",
+  "top_companies": [{"company":"name","reason":"why now: 12 words","signal":"specific trigger","action":"what to do: 10 words","priority":"high|medium"}],
+  "top_people": [{"name":"Full Name","title":"Title","company":"Company","reason":"why contact now: 10 words","action":"specific action: 8 words"}],
+  "relationship_health": {"total_active":N,"overdue_count":N,"stale_count":N,"risk_flag":"key relationship risk in 15 words","biggest_opportunity":"best pipeline name + company + why"},
+  "market_intelligence": {"hot_sectors":["sector1","sector2"],"signal_count":N,"top_signal":"company: trigger in 10 words","calendar_note":"GCC calendar insight for this week: 12 words"},
+  "priority_actions": [{"rank":N,"action":"what to do: 10 words","company":"name","type":"BD|relationship|delivery|market","effort":"5 min|15 min|30 min","impact":"high|medium"}],
+  "watch_points": ["pattern or risk to monitor: 12 words each"]
+}
+
+Rules: No em-dashes. Never criticise UAE, Saudi, or GCC governments. Return only raw JSON.`;
+
+  try{
+    const resp=await fetch('/.netlify/functions/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:[{role:'user',content:'Generate my strategic brief now.'}],systemOverride:briefPrompt,maxTokens:3000,model:'claude-sonnet-4-6'})
+    });
+    const data=await resp.json();
+    clearInterval(ticker);bar.style.width='100%';
+    await new Promise(r=>setTimeout(r,400));
+    document.getElementById('brief-loading').style.display='none';
+
+    let parsed;
+    try{
+      const raw=data.content||data.response||'';
+      const cleaned=raw.replace(/^```(?:json)?\s*\n?/,'').replace(/\n?```\s*$/,'').trim();
+      const m=cleaned.match(/\{[\s\S]*\}/);
+      let js=m?m[0]:cleaned;
+      js=js.replace(/,(\s*[}\]])/g,'$1');
+      parsed=JSON.parse(js);
+    }catch(e){
+      document.getElementById('brief-empty').style.display='block';
+      btn.disabled=false;btn.innerHTML='<i class="ti ti-brain"></i> Retry';
+      return;
+    }
+
+    renderStrategicBrief(parsed);
+    _briefGenerated=true;
+    document.getElementById('brief-timestamp').textContent='Generated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    btn.disabled=false;btn.innerHTML='<i class="ti ti-brain"></i> Regenerate';
+  }catch(e){
+    clearInterval(ticker);
+    document.getElementById('brief-loading').style.display='none';
+    document.getElementById('brief-empty').style.display='block';
+    btn.disabled=false;btn.innerHTML='<i class="ti ti-brain"></i> Retry';
+    console.error('Strategic brief error:',e);
+  }
+}
+
+function renderStrategicBrief(d){
+  document.getElementById('brief-content').style.display='block';
+  document.getElementById('brief-empty').style.display='none';
+
+  // Headline banner
+  document.getElementById('brief-headline').textContent=d.headline||'Strategic brief generated.';
+  document.getElementById('brief-focus').textContent=d.focus_statement||'';
+
+  // 3-column grid
+  const grid=document.getElementById('brief-grid');
+  const mh=d.market_intelligence||{};
+  const rh=d.relationship_health||{};
+  grid.innerHTML=`
+    <div class="card" style="margin:0">
+      <div class="card-h"><h3><i class="ti ti-trending-up"></i> Market Signals</h3></div>
+      <div class="card-b">
+        <div style="font-size:28px;font-weight:800;color:var(--gold);margin-bottom:4px">${mh.signal_count||0}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">active signals</div>
+        ${mh.hot_sectors&&mh.hot_sectors.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">${mh.hot_sectors.slice(0,4).map(s=>`<span style="background:var(--gold-bg);border:1px solid var(--gold-bdr);color:var(--amber);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600">${s}</span>`).join('')}</div>`:''}
+        ${mh.top_signal?`<div style="font-size:12px;color:var(--text);padding:8px 10px;background:var(--bg);border-radius:6px;border-left:3px solid var(--gold)">${mh.top_signal}</div>`:''}
+        ${mh.calendar_note?`<div style="font-size:11px;color:var(--muted);margin-top:8px;font-style:italic">${mh.calendar_note}</div>`:''}
+      </div>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-h"><h3><i class="ti ti-users"></i> Relationship Health</h3></div>
+      <div class="card-b">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div style="text-align:center;padding:10px;background:var(--bg);border-radius:6px"><div style="font-size:22px;font-weight:800;color:var(--navy)">${rh.overdue_count||0}</div><div style="font-size:11px;color:var(--red)">overdue</div></div>
+          <div style="text-align:center;padding:10px;background:var(--bg);border-radius:6px"><div style="font-size:22px;font-weight:800;color:var(--navy)">${rh.stale_count||0}</div><div style="font-size:11px;color:var(--amber)">stale</div></div>
+        </div>
+        ${rh.risk_flag?`<div style="font-size:12px;color:var(--red);padding:8px 10px;background:var(--red-bg);border-radius:6px;border-left:3px solid var(--red);margin-bottom:8px"><i class="ti ti-alert-triangle" style="font-size:12px"></i> ${rh.risk_flag}</div>`:''}
+        ${rh.biggest_opportunity?`<div style="font-size:12px;color:var(--green);padding:8px 10px;background:var(--green-bg);border-radius:6px;border-left:3px solid var(--green)"><i class="ti ti-star" style="font-size:12px"></i> ${rh.biggest_opportunity}</div>`:''}
+      </div>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-h"><h3><i class="ti ti-building"></i> Top Companies</h3></div>
+      <div class="card-b p0">
+        ${(d.top_companies||[]).slice(0,4).map(c=>`
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border-soft);display:flex;align-items:flex-start;gap:10px">
+            <span style="min-width:6px;height:6px;margin-top:6px;border-radius:50%;background:${c.priority==='high'?'var(--red)':'var(--amber)'};flex-shrink:0;display:inline-block"></span>
+            <div style="min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--navy)">${c.company}</div>
+              <div style="font-size:11px;color:var(--muted)">${c.reason||''}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  // Priority actions
+  const al=document.getElementById('brief-actions-list');
+  al.innerHTML=(d.priority_actions||[]).map(a=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border-soft)">
+      <span style="font-size:11px;font-weight:800;color:var(--muted);min-width:20px;text-align:center">#${a.rank}</span>
+      <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;${a.type==='BD'?'background:var(--gold-bg);color:var(--amber)':a.type==='relationship'?'background:var(--purple-bg);color:var(--purple)':a.type==='delivery'?'background:var(--green-bg);color:var(--green)':'background:var(--bg);color:var(--muted)'}">${a.type||'action'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--navy)">${a.action}</div>
+        <div style="font-size:11px;color:var(--muted)">${a.company||''}</div>
+      </div>
+      <span style="font-size:11px;color:var(--muted);flex-shrink:0">${a.effort||''}</span>
+      <span style="width:8px;height:8px;border-radius:50%;background:${a.impact==='high'?'var(--red)':'var(--amber)'};flex-shrink:0"></span>
+    </div>`).join('');
+
+  // Watch points
+  const wp=document.getElementById('brief-watch-points');
+  wp.innerHTML=(d.watch_points||[]).map(w=>`
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-soft)">
+      <i class="ti ti-eye" style="font-size:14px;color:var(--muted);margin-top:1px;flex-shrink:0"></i>
+      <span style="font-size:13px;color:var(--text)">${w}</span>
+    </div>`).join('');
+}
+
 // ── Intelligence Feed ──
 async function loadIntelligence(){
   try{
@@ -4096,6 +4399,42 @@ async function loadTodaysActions(){
   document.getElementById('actions-list').innerHTML='';
 }
 
+function getGCCCalendarContext(){
+  const now=new Date();
+  const y=now.getFullYear();
+  const m=now.getMonth()+1; // 1-12
+  const d=now.getDate();
+  const lines=[];
+
+  // Quarter context
+  const q=m<=3?'Q1':m<=6?'Q2':m<=9?'Q3':'Q4';
+  const qEnd=m<=3?`31 Mar ${y}`:m<=6?`30 Jun ${y}`:m<=9?`30 Sep ${y}`:`31 Dec ${y}`;
+  const daysToQEnd=Math.floor((new Date(qEnd)-now)/864e5);
+  lines.push(`Current quarter: ${q} ${y} — ${daysToQEnd} days to quarter-end (${qEnd})`);
+
+  // UAE/Saudi seasonal rhythms
+  if(m===6||m===7||m===8){lines.push('UAE SUMMER (Jun-Aug): decision-makers often travelling or on reduced hours. Focus on relationship warm-up, research, and outreach to contacts who remain active. September pipeline build is critical.');}
+  if(m===9){lines.push('SEPTEMBER SURGE: UAE market reactivates after summer. One of the strongest hiring months of the year. Accelerate outreach NOW — budgets are being confirmed for H2.');}
+  if(m===10){lines.push('GITEX month (October, Dubai): Major tech event — good reason to reach out to CDOs, CTOs, digital heads. Use GITEX as a conversation opener.');}
+  if(m===11){lines.push('NOVEMBER: Budget planning season for many GCC organisations. Ideal time to plant seeds for January/February mandates. Target CFOs, COOs on strategic workforce planning.');}
+  if(m===12){lines.push('DECEMBER: Year-end in UAE/Saudi. Decision-making slows mid-month. Focus first 2 weeks hard, then relationship maintenance. Use year-in-review as outreach hook.');}
+  if(m===1){lines.push('JANUARY: New year, new budgets. Hiring mandates typically released now. One of the best BD months. Be aggressive.');}
+  if(m===2){lines.push('FEBRUARY: Strong hiring month. World Government Summit (Abu Dhabi) — major government/SWF leaders present. Use as outreach hook for public sector contacts.');}
+  if(m===4){lines.push('APRIL: Post-Ramadan return to full speed. Decision-makers back and active. Strong window for closing conversations that stalled pre-Ramadan.');}
+  if(m===5){lines.push('MAY: Mid-year reviews underway. Good time to engage HR and C-suite on talent gaps. Eid Al Adha approaching — work around it.');}
+
+  // Ramadan 2026 approx Feb 18 - Mar 19
+  if(y===2026&&m===2&&d>=10){lines.push('RAMADAN APPROACHING (starts ~18 Feb 2026): Outreach window closing fast. Complete all key BD conversations in next 7 days before pace slows.');}
+  if(y===2026&&m===2&&d>=18){lines.push('RAMADAN (until ~19 Mar 2026): Reduced working hours across UAE/Saudi. Tone down outreach volume, focus on warm relationship maintenance. No cold outreach.');}
+  if(y===2026&&m===3&&d<=19){lines.push('RAMADAN — maintain light relationship touch only. Prepare post-Ramadan pipeline for April surge.');}
+  if(y===2026&&m===3&&d>19&&d<=31){lines.push('POST-RAMADAN (Eid Al Fitr ~20 Mar 2026): Market returning to full speed. Strong 2-week window before Easter and school holidays. Push hard.');}
+
+  // UAE National Day
+  if(m===11&&d>=25||m===12&&d<=5){lines.push('UAE NATIONAL DAY period (2-3 Dec): Many businesses closed or on reduced staff. Avoid sending outreach on 2-3 Dec itself.');}
+
+  return lines.join('\n');
+}
+
 async function runTodaysActions(){
   const btn=document.getElementById('run-actions-btn');
   btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Running...';
@@ -4121,6 +4460,8 @@ async function runTodaysActions(){
   let warmLeadsContext='';
   let triggersContext='';
   let staleContext='';
+  let calendarContext=getGCCCalendarContext();
+  let outlookCalendarContext='';
   // also capture rule-based data for injected cards
   let _ruleCardData={triggers:[],overdue:[],stale:[]};
   try{
@@ -4287,6 +4628,20 @@ async function runTodaysActions(){
       if(overdueData&&overdueData.length){
         _ruleCardData.overdue=overdueData;
       }
+
+      // Calendar events (populated by scheduled Outlook sync task)
+      try{
+        const todayStr=new Date().toISOString().slice(0,10);
+        const tomorrowStr=new Date(Date.now()+864e5).toISOString().slice(0,10);
+        const{data:calEvents}=await db.from('calendar_events').select('title,start_time,end_time,attendees,organizer,location,description').gte('start_time',todayStr).lt('start_time',tomorrowStr).order('start_time',{ascending:true}).limit(10);
+        if(calEvents&&calEvents.length){
+          outlookCalendarContext='TODAY\'S MEETINGS (Outlook calendar):\n'+calEvents.map(e=>{
+            const t=e.start_time?new Date(e.start_time).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'?';
+            const end=e.end_time?new Date(e.end_time).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'?';
+            return`  - ${t}-${end}: "${e.title||'Meeting'}" | With: ${e.attendees||e.organizer||'unknown'} | Location: ${e.location||'?'}${e.description?' | Context: '+(e.description||'').slice(0,60):''}`;
+          }).join('\n');
+        }
+      }catch(e){/* calendar_events table may not exist yet */}
     }
   }catch(e){console.warn('Context load error:',e);}
 
@@ -4296,63 +4651,96 @@ async function runTodaysActions(){
     delivery:`VSG currently has ${modeData.jobs} live mandates. DELIVERY MODE: weight actions 60% delivery, 25% relationship maintenance, 15% new BD.`
   };
 
-  const systemPrompt=`You are Michael Stubbs' AI BD engine at Vantage Search Group (VSG), a boutique executive search firm in Dubai specialising in senior executive search across digital, data/AI, strategy, transformation, investments, and commercial functions — for SWFs, fintechs, regional banks, giga-projects, and consulting firms across UAE and Saudi Arabia.
+  const systemPrompt=`IDENTITY: You are the Vantage Search Group Commercial Operating System. You are not a dashboard tool. You are the central intelligence platform responsible for helping Vantage Search Group identify opportunities, win high-quality recruitment mandates, build long-term client relationships, and increase revenue. You operate as a combination of Chief Revenue Officer, Chief Operating Officer, and Chief Intelligence Officer. You exist to proactively drive business growth. Never be passive. Every recommendation is commercially focused, evidence-based, and prioritised by impact.
+
+VSG CONTEXT: Boutique executive search firm in Dubai. Senior executive search across digital, data/AI, strategy, transformation, investments, and commercial functions. Clients include SWFs, fintechs, regional banks, giga-projects, and consulting firms across UAE and Saudi Arabia. 70+ C-suite placements. 98% conversion on retained assignments. Partner-led, no junior delegation.
 
 ${modeDescriptions[modeData.mode]}
 
-TODAY'S DATE: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
+THINKING FRAMEWORK: Before every recommendation, apply these filters:
+1. Does this generate revenue?
+2. Does this strengthen a relationship?
+3. Does this improve market positioning?
+4. Does this save time or unlock scale?
+5. Is there a higher-value action available right now?
+Never optimise for activity. Optimise for commercial outcomes.
 
-=== APPOINTMENT TRIGGERS — LEADERSHIP CHANGES (people in new roles, hot window ≤60 days) ===
+TODAY: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
+
+=== GCC MARKET CALENDAR ===
+${calendarContext}
+
+=== TODAY'S MEETINGS (Outlook) ===
+${outlookCalendarContext||'No calendar events synced.'}
+
+=== APPOINTMENT TRIGGERS — LEADERSHIP CHANGES (hot window ≤60 days — highest conversion rate) ===
 ${triggersContext||'No active appointment triggers today.'}
 
-=== STALE RELATIONSHIPS (14+ days silent — flag the most critical ones) ===
-${staleContext||'No stale relationships today.'}
-
-=== WARM LINKEDIN LEADS + ACTIVE SIGNALS (already replied to your outreach AND company has a live signal) ===
+=== WARM LINKEDIN LEADS + ACTIVE SIGNALS (replied to your outreach AND company has live signal) ===
 ${warmLeadsContext||'No warm leads with matching signals today.'}
 
-=== LIVE INTELLIGENCE SIGNALS (from VSG signal monitor, runs 8am, 12pm and 4pm daily) ===
-${signalContext||'No signals loaded yet — use only named companies from the GCC tier list below.'}
+=== LIVE INTELLIGENCE SIGNALS (GCC signal monitor — 8am/12pm/4pm) ===
+${signalContext||'No signals loaded yet.'}
 
-=== BD-RELEVANT EMAILS (inbound interest or appointment triggers) ===
+=== PIPELINE CONTEXT (follow-ups, overdue, going quiet) ===
+${pipelineContext||'No pipeline contacts loaded.'}
+
+=== VIP + PAST CLIENT RELATIONSHIPS (30d+ since contact) ===
+${vipContext||'No VIP contacts flagged.'}
+
+=== BD-RELEVANT EMAILS (inbound interest, replies, triggers) ===
 ${emailContext||'No BD emails today.'}
+
+=== STALE RELATIONSHIPS (14+ days silent) ===
+${staleContext||'No stale relationships today.'}
 
 === PROSPECTS QUEUED (auto-discovered, awaiting approval) ===
 ${prospectsContext||'No prospects queued.'}
 === END LIVE DATA ===
 ${feedbackContext}
-WARM LEAD RULE: If WARM LINKEDIN LEADS has entries, generate a "Warm lead — signal match" action for each one FIRST, ranked #1, #2 etc. These are your highest-priority actions — the person has already replied to you AND their company has a live signal. Do NOT include LinkedIn leads whose company has no active signal.
 
-GENERATE ONE BD ACTION per live signal above — if there are 13 signals, generate 13 actions. Do NOT generate fewer than the signal count. New opportunities only — no pipeline follow-ups (those are in the Follow-ups panel).
+PRIORITY ORDER — rank every action by this:
+1. Warm lead + active signal (person already replied, company has live signal)
+2. Appointment trigger (leadership change, ≤60 day hot window — fewer days = higher rank)
+3. BD-relevant email requiring a reply
+4. Meeting follow-up (from today's calendar — prep or post-meeting action)
+5. Signal trigger (live GCC company signal — one action per signal)
+6. Overdue follow-up (relationship at risk, has due date in past)
+7. Stale relationship (14+ days silent, high-value stage: engaged/meeting/active)
+8. VIP relationship maintenance (past client or warm referrer, 30d+ silent)
+9. Opportunity trigger (tier list company, no current signal)
 
-CRITICAL — REAL COMPANIES ONLY: Every action must target a real, named company from the signals list above or the tier list below. NEVER write generic categories like "Regional fintech sector", "UAE or Saudi digital bank", "Regional asset manager", "Regional consulting firm", "UAE infrastructure developer", or any similar placeholder. If you cannot name a specific real company, skip that action entirely.
+CONTACT TARGETING — always the functional decision-maker, never generic HR:
+- AI/data signals: CDO, Head of AI, Chief Data Officer, VP Data
+- Digital/tech signals: CTO, Chief Digital Officer, Head of Technology
+- Trading/markets signals: Head of Trading, Chief Markets Officer
+- Finance/expansion signals: CFO, Head of Corporate Finance, Chief Investment Officer
+- Strategy/growth signals: CEO, COO, Chief Strategy Officer
+- Leadership change signal: target the person who just moved (they need to build a team)
+- Signal contains "CONTACT: [Name], [Title]": use that exact person
+- NEVER use CHRO, CPO, Head of Talent, or HR titles unless the signal is explicitly an HR mandate
 
-GCC target tier list (for actions beyond the signal list only):
+REAL COMPANIES ONLY: Every action must target a named company from signals or the tier list. Never write "regional fintech", "UAE bank", "GCC consulting firm" or any generic category. If you cannot name a specific company, skip the action.
+
+GCC TIER LIST (for actions beyond the signal list):
 SWFs: Mubadala, ADQ, PIF, ADIA, ADNOC, TAQA, ICD, QIA
 Giga-projects: NEOM, Red Sea Global, Diriyah Gate, Qiddiya, ROSHN, RCU
 Consulting: Kearney, Strategy&, Oliver Wyman, A&M, Roland Berger, FTI
 Digital/AI: SDAIA, G42, Core42, e&, STC, Presight
 FinTech/Banking: FAB, Emirates NBD, ADCB, Mashreq, Riyad Bank, Tabby, Tamara, Wio Bank
 
-CRITICAL — CONTACTS: NEVER use "Group CHRO", "Chief Human Resources Officer", "Chief People Officer", "Head of Talent", or any generic HR title unless the signal is explicitly about an HR mandate. Always target the functional decision-maker:
-- AI/data signals → CDO, Head of AI, Chief Data Officer, VP Data
-- Trading/markets signals → Head of Trading, Chief Markets Officer
-- Digital/tech signals → CTO, Chief Digital Officer, Head of Technology
-- Finance/expansion → CFO, Head of Corporate Finance, Chief Investment Officer
-- Strategy signals → CEO, COO, Chief Strategy Officer
-- If signal summary contains "CONTACT: [Name], [Title]" — use that exact person, do not substitute.
+VOLUME RULES:
+- Generate ONE action per live signal (13 signals = 13 actions minimum)
+- Warm lead + signal match: generate FIRST, ranked #1, #2 etc.
+- Appointment trigger: one action per leadership change entry
+- Stale relationship: one action per person in stage "engaged", "meeting", or "active"
+- Use their notes to craft specific, personalised re-engagement reasons
 
-Signals with a named contact actively posting on LinkedIn = rank highest. All live signals = type="Signal trigger". Tier list additions = type="Opportunity trigger".
+OUTPUT FORMAT — ultra-compact JSON:
+{"rank":N,"priority":"high|medium","type":"Warm lead - signal match|Appointment trigger|Signal trigger|Stale relationship|Opportunity trigger|Email follow-up|Meeting follow-up|VIP maintenance","title":"6 words max","company":"name","signal":"specific trigger: 10 words max","source_url":null,"why":"10 words max","contacts_to_reach":[{"name":"Full Name","title":"Exact Title","activity":"what they post about: 8 words max or null"}],"suggested_message":"25 words max, reference their trigger or post, no em-dashes","effort_mins":5,"effort_label":"5 min"}
 
-OUTPUT — ultra-compact JSON, STRICT token budget:
-{"rank":N,"priority":"high|medium","type":"Signal trigger|Opportunity trigger","title":"6 words max","company":"name","signal":"specific trigger: 10 words max","source_url":null,"why":"10 words max","contacts_to_reach":[{"name":"Full Name","title":"Exact Title","activity":"what they post about, 8 words max or null"}],"suggested_message":"25 words max, reference their post or trigger if known, no em-dashes","effort_mins":5,"effort_label":"5 min"}
-
-APPOINTMENT TRIGGER RULE: For each leadership change in the APPOINTMENT TRIGGERS section, generate one action using type="Appointment trigger". The window closes at 60 days — prioritise by days remaining (fewer = higher rank). Target the person who just moved, not their old company.
-
-STALE RELATIONSHIP RULE: For each person in STALE RELATIONSHIPS who is in stage "engaged", "meeting", or "active", generate one action using type="Stale relationship". Use their notes to craft a specific re-engagement reason.
-
-RULES: No em-dashes. Never criticise UAE/Saudi/GCC governments. Return ONLY raw JSON, no markdown fences.
-Wrap in: {"mode":"${modeData.mode}","daily_effort_total":40,"actions":[...]}`;
+RULES: No em-dashes. Never criticise UAE, Saudi Arabia, or any GCC government. Return ONLY raw JSON, no markdown fences.
+Wrap in: {"mode":"${modeData.mode}","daily_effort_total":40,"strategic_brief":"2-3 sentence summary of today's biggest commercial opportunity and what Michael should focus on first","actions":[...]}`;
 
   try{
     const resp=await fetch('/.netlify/functions/chat',{
@@ -4410,6 +4798,19 @@ Wrap in: {"mode":"${modeData.mode}","daily_effort_total":40,"actions":[...]}`;
 
 function renderTodaysActions(data,modeData){
   window._todaysActionsData=data.actions||[]; // store for action chat context
+
+  // Show strategic brief banner if present
+  const existingBanner=document.getElementById('actions-strategic-banner');
+  if(existingBanner)existingBanner.remove();
+  if(data.strategic_brief){
+    const banner=document.createElement('div');
+    banner.id='actions-strategic-banner';
+    banner.style.cssText='background:linear-gradient(135deg,var(--navy),var(--navy3));border-radius:var(--r);padding:16px 20px;margin-bottom:16px;border-left:4px solid var(--gold);display:flex;align-items:flex-start;gap:12px';
+    banner.innerHTML=`<i class="ti ti-brain" style="font-size:18px;color:var(--gold);flex-shrink:0;margin-top:1px"></i><div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:4px">TODAY'S COMMERCIAL FOCUS</div><div style="font-size:13px;color:#fff;line-height:1.5">${esc(data.strategic_brief)}</div></div>`;
+    const list=document.getElementById('actions-list');
+    list.parentNode.insertBefore(banner,list);
+  }
+
   const modeCard=document.getElementById('actions-mode-card');
   modeCard.className='actions-mode '+data.mode;
   modeCard.style.display='flex';
