@@ -3886,6 +3886,16 @@ renderFinance();
 
 <!-- ── AI COMMAND CENTRE FEATURES ─────────────────────────────── -->
 <script>
+/* Bootstrap: inject AI command centre as a dynamic script so it always executes */
+document.addEventListener('DOMContentLoaded',function(){
+  var src=document.getElementById('_aiCentre');
+  if(!src)return;
+  var el=document.createElement('script');
+  el.textContent=src.textContent;
+  document.head.appendChild(el);
+});
+</script>
+<script id="_aiCentre" type="text/plain">
 window.SCRIPT3_RAN=true;
 // ── Globals ──
 let agentOutputs=[];
