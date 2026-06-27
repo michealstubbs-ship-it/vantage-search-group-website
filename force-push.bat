@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "Fix: 2 JS syntax errors in script 3 — incomplete ternaries crashing entire AI command centre block"
+git commit -m "Debug: add SCRIPT3_RAN marker to diagnose script 3 execution"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...
