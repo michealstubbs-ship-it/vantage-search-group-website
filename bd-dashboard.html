@@ -3748,29 +3748,29 @@ renderFinance();
 
   // Contacts
   const _save=window.save;
-  window.save=()=>{_save();db.from('contacts').upsert(contacts.map(cToDb)).catch(e=>console.error('contacts sync:',e));};
+  window.save=()=>{_save();db.from('contacts').upsert(contacts.map(cToDb)).then(r=>{if(r.error)console.error('contacts sync:',r.error);});};
 
   const _del=window.del;
   window.del=(id)=>{
     const prevLen=contacts.length;
     _del(id);
-    if(contacts.length<prevLen)db.from('contacts').delete().eq('id',id).catch(e=>console.error('contact del:',e));
+    if(contacts.length<prevLen)db.from('contacts').delete().eq('id',id).then(r=>{if(r.error)console.error('contact del:',r.error);});
   };
 
   // Jobs
   const _saveJobs=window.saveJobs;
   window.saveJobs=()=>{
     _saveJobs();
-    db.from('jobs').upsert(jobs.map(jToDb)).catch(e=>console.error('jobs sync:',e));
+    db.from('jobs').upsert(jobs.map(jToDb)).then(r=>{if(r.error)console.error('jobs sync:',r.error);});
     const allCands=jobs.flatMap(j=>(j.candidates||[]).map(c=>candToDb(c,j.id)));
-    if(allCands.length)db.from('candidates').upsert(allCands).catch(e=>console.error('cands sync:',e));
+    if(allCands.length)db.from('candidates').upsert(allCands).then(r=>{if(r.error)console.error('cands sync:',r.error);});
   };
 
   const _deleteJob=window.deleteJob;
   window.deleteJob=(id)=>{
     const prevLen=jobs.length;
     _deleteJob(id);
-    if(jobs.length<prevLen)db.from('jobs').delete().eq('id',id).catch(e=>console.error('job del:',e));
+    if(jobs.length<prevLen)db.from('jobs').delete().eq('id',id).then(r=>{if(r.error)console.error('job del:',r.error);});
   };
 
   // Candidates
@@ -3780,29 +3780,29 @@ renderFinance();
     const prevLen=j?.candidates?.length||0;
     _deleteCand(jobId,candId);
     const j2=jobs.find(x=>x.id===jobId);
-    if((j2?.candidates?.length||0)<prevLen)db.from('candidates').delete().eq('id',candId).catch(e=>console.error('cand del:',e));
+    if((j2?.candidates?.length||0)<prevLen)db.from('candidates').delete().eq('id',candId).then(r=>{if(r.error)console.error('cand del:',r.error);});
   };
 
   // Tasks
   const _saveTasks=window.saveTasks;
-  window.saveTasks=()=>{_saveTasks();db.from('tasks').upsert(tasks.map(tToDb)).catch(e=>console.error('tasks sync:',e));};
+  window.saveTasks=()=>{_saveTasks();db.from('tasks').upsert(tasks.map(tToDb)).then(r=>{if(r.error)console.error('tasks sync:',r.error);});};
 
   const _deleteTask=window.deleteTask;
   window.deleteTask=(id)=>{
     const prevLen=tasks.length;
     _deleteTask(id);
-    if(tasks.length<prevLen)db.from('tasks').delete().eq('id',id).catch(e=>console.error('task del:',e));
+    if(tasks.length<prevLen)db.from('tasks').delete().eq('id',id).then(r=>{if(r.error)console.error('task del:',r.error);});
   };
 
   // Invoices
   const _saveInv=window.saveInv;
-  window.saveInv=()=>{_saveInv();db.from('invoices').upsert(invoices.map(invToDb)).catch(e=>console.error('invoices sync:',e));};
+  window.saveInv=()=>{_saveInv();db.from('invoices').upsert(invoices.map(invToDb)).then(r=>{if(r.error)console.error('invoices sync:',r.error);});};
 
   const _deleteInvoice=window.deleteInvoice;
   window.deleteInvoice=(id)=>{
     const prevLen=invoices.length;
     _deleteInvoice(id);
-    if(invoices.length<prevLen)db.from('invoices').delete().eq('id',id).catch(e=>console.error('invoice del:',e));
+    if(invoices.length<prevLen)db.from('invoices').delete().eq('id',id).then(r=>{if(r.error)console.error('invoice del:',r.error);});
   };
 
   // ── Load from Supabase on startup ────────────────────────────
@@ -3819,7 +3819,7 @@ renderFinance();
     // Contacts: if local has more data than Supabase, migrate local UP first
     const sbContacts=cr.data||[];
     if(contacts.length>sbContacts.length&&contacts.length>0){
-      await db.from('contacts').upsert(contacts.map(cToDb)).catch(e=>console.error('contacts migrate:',e));
+      try{await db.from('contacts').upsert(contacts.map(cToDb));}catch(e){console.error('contacts migrate:',e);}
     } else if(sbContacts.length>0){
       contacts=sbContacts.map(cFromDb);localStorage.setItem('vsg_c',JSON.stringify(contacts));changed=true;
     }
@@ -3828,9 +3828,9 @@ renderFinance();
     const sbJobs=jr.data||[];const sbCands=candr.data||[];
     const localJobCount=jobs.length;
     if(localJobCount>sbJobs.length&&localJobCount>0){
-      await db.from('jobs').upsert(jobs.map(jToDb)).catch(e=>console.error('jobs migrate:',e));
+      try{await db.from('jobs').upsert(jobs.map(jToDb));}catch(e){console.error('jobs migrate:',e);}
       const allCands=jobs.flatMap(j=>(j.candidates||[]).map(c=>candToDb(c,j.id)));
-      if(allCands.length)await db.from('candidates').upsert(allCands).catch(e=>console.error('cands migrate:',e));
+      if(allCands.length){try{await db.from('candidates').upsert(allCands);}catch(e){console.error('cands migrate:',e);}}
     } else if(sbJobs.length>0){
       jobs=sbJobs.map(j=>{const o=jFromDb(j);o.candidates=sbCands.filter(c=>c.job_id===j.id).map(candFromDb);return o;});
       localStorage.setItem('vsg_j',JSON.stringify(jobs));changed=true;
@@ -3839,7 +3839,7 @@ renderFinance();
     // Tasks
     const sbTasks=tr.data||[];
     if(tasks.length>sbTasks.length&&tasks.length>0){
-      await db.from('tasks').upsert(tasks.map(tToDb)).catch(e=>console.error('tasks migrate:',e));
+      try{await db.from('tasks').upsert(tasks.map(tToDb));}catch(e){console.error('tasks migrate:',e);}
     } else if(sbTasks.length>0){
       tasks=sbTasks.map(tFromDb);localStorage.setItem('vsg_t',JSON.stringify(tasks));changed=true;
     }
@@ -3847,7 +3847,7 @@ renderFinance();
     // Invoices
     const sbInv=ir.data||[];
     if(invoices.length>sbInv.length&&invoices.length>0){
-      await db.from('invoices').upsert(invoices.map(invToDb)).catch(e=>console.error('invoices migrate:',e));
+      try{await db.from('invoices').upsert(invoices.map(invToDb));}catch(e){console.error('invoices migrate:',e);}
     } else if(sbInv.length>0){
       invoices=sbInv.map(invFromDb);localStorage.setItem('vsg_inv',JSON.stringify(invoices));changed=true;
     }
@@ -4417,7 +4417,7 @@ async function runTodaysActions(){
   const ticker=setInterval(()=>{pct=Math.min(pct+2,92);bar.style.width=pct+'%';},500);
 
   let modeData={mode:'prospecting',jobs:0,pipeline:0};
-  try{const{data:jobs}=await supabase.from('jobs').select('id,status').eq('status','active');const jobCount=(jobs||[]).length;modeData.jobs=jobCount;if(jobCount>=4)modeData.mode='delivery';else if(jobCount>=2)modeData.mode='mixed';}catch(e){}
+  try{const db2=_db();if(db2){const{data:jobs}=await db2.from('jobs').select('id,status').eq('status','active');const jobCount=(jobs||[]).length;modeData.jobs=jobCount;if(jobCount>=4)modeData.mode='delivery';else if(jobCount>=2)modeData.mode='mixed';}}catch(e){}
 
   let outcomesContext='No outcome data yet.';
   try{
@@ -4713,7 +4713,7 @@ function loadDigest(){
   document.getElementById('digest-subject').value='GCC Leadership Moves — Week of '+monday.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
   loadDigestCounts();loadSavedDigest();
 }
-async function loadDigestCounts(){try{const{data:contacts}=await supabase.from('contacts').select('industry,company');const counts={banking:0,swf:0,pe:0,fintech:0,consulting:0,general:0};DIGEST_SEGMENTS.forEach(s=>{const el=document.getElementById('digest-'+s+'-count');if(el)el.textContent=counts[s]+' contacts';});}catch(e){}}
+async function loadDigestCounts(){try{const db=_db();if(!db)return;const{data:contacts}=await db.from('contacts').select('industry,company');const counts={banking:0,swf:0,pe:0,fintech:0,consulting:0,general:0};DIGEST_SEGMENTS.forEach(s=>{const el=document.getElementById('digest-'+s+'-count');if(el)el.textContent=counts[s]+' contacts';});}catch(e){}}
 function loadSavedDigest(){const saved=JSON.parse(localStorage.getItem('vsg_digest')||'{}');DIGEST_SEGMENTS.forEach(seg=>{DIGEST_FIELDS.forEach(f=>{const el=document.getElementById('digest-'+seg+'-'+f);if(el&&saved[seg]&&saved[seg][f])el.value=saved[seg][f];});});}
 function saveDigestToStorage(){const data={};DIGEST_SEGMENTS.forEach(seg=>{data[seg]={};DIGEST_FIELDS.forEach(f=>{const el=document.getElementById('digest-'+seg+'-'+f);if(el)data[seg][f]=el.value;});});localStorage.setItem('vsg_digest',JSON.stringify(data));}
 function switchDigestTab(seg,btn){document.querySelectorAll('.digest-tab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');document.querySelectorAll('.digest-segment').forEach(s=>s.classList.remove('on'));document.getElementById('digest-seg-'+seg).classList.add('on');}

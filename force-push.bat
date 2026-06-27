@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "Fix: prospects_queue .catch() crash was silently killing signal fetch in runTodaysActions"
+git commit -m "Fix: remove all .catch() from Supabase v2 queries — was crashing loadFromSupabase on startup, causing no data to load"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...
