@@ -3977,6 +3977,67 @@ Since you cannot currently query Supabase directly, generate example actions for
   btn.disabled=false;btn.innerHTML='<i class="ti ti-bolt"></i> Regenerate';
 }
 
+async function autoQueueLinkedInContacts(actions){
+  const db=_db();if(!db)return;
+  // Collect all contacts_to_reach with a linkedin URL across all actions
+  const toQueue=[];
+  (actions||[]).forEach(a=>{
+    (a.contacts_to_reach||[]).forEach(c=>{
+      if(c.linkedin&&c.name){
+        const cleanUrl=c.linkedin.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase();
+        toQueue.push({name:c.name,title:c.title||null,company:c.company||null,linkedin_url:c.linkedin,_clean:cleanUrl});
+      }
+    });
+  });
+  if(!toQueue.length)return;
+
+  // Check which are already in linkedin_outreach
+  try{
+    const{data:existing}=await db.from('linkedin_outreach').select('linkedin_url,status,full_name');
+    const existingUrls=new Set((existing||[]).map(r=>(r.linkedin_url||'').replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase()));
+
+    const newContacts=toQueue.filter(c=>!existingUrls.has(c._clean));
+    if(!newContacts.length)return;
+
+    const today=new Date().toISOString().slice(0,10);
+    const rows=newContacts.map(c=>({
+      full_name:c.name,
+      title:c.title,
+      company:c.company,
+      linkedin_url:c.linkedin_url.startsWith('http')?c.linkedin_url:'https://'+c.linkedin_url,
+      status:'pending',
+      date_requested:today,
+      source:'todays_actions',
+      notes:"Auto-queued from Today's Actions"
+    }));
+
+    await db.from('linkedin_outreach').insert(rows);
+    console.log(`[LinkedIn] Auto-queued ${rows.length} new contact(s):`,rows.map(r=>r.full_name).join(', '));
+    showToast(`${rows.length} contact${rows.length>1?'s':''} queued for LinkedIn request — nightly agent will send`);
+  }catch(e){console.warn('autoQueueLinkedIn:',e);}
+
+  // After queuing, update status badges on all contact cards
+  try{
+    const{data:all}=await db.from('linkedin_outreach').select('full_name,linkedin_url,status');
+    const statusMap=new Map();
+    (all||[]).forEach(r=>{
+      const key=(r.linkedin_url||'').replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase();
+      statusMap.set(key,r.status);
+      statusMap.set((r.full_name||'').toLowerCase(),r.status);
+    });
+    // Update any [data-li-status] badges in the DOM
+    document.querySelectorAll('[data-li-key]').forEach(el=>{
+      const key=el.getAttribute('data-li-key');
+      const st=statusMap.get(key);
+      if(st){
+        const colors={pending:'#6366f1',connected:'#10b981',replied:'#f59e0b',contacted:'#3b82f6'};
+        const labels={pending:'Request queued',connected:'Connected',replied:'Replied',contacted:'Messaged'};
+        el.innerHTML=`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:${colors[st]||'#6b7280'}22;color:${colors[st]||'#6b7280'};font-weight:600"><i class="ti ti-brand-linkedin" style="font-size:9px"></i> ${labels[st]||st}</span>`;
+      }
+    });
+  }catch(e){}
+}
+
 function renderTodaysActions(data,modeData){
   window._todaysActionsData=data.actions||[]; // store for action chat context
   const modeCard=document.getElementById('actions-mode-card');
@@ -3987,6 +4048,9 @@ function renderTodaysActions(data,modeData){
   document.getElementById('actions-mode-label').textContent=data.mode.toUpperCase()+' MODE';
   document.getElementById('actions-mode-sub').textContent=`${modeData.jobs} live mandate${modeData.jobs!==1?'s':''} — ${data.mode==='prospecting'?'Full prospecting focus today':data.mode==='mixed'?'Balance delivery with pipeline development':'Heavy delivery load'}`;
   document.getElementById('actions-effort-badge').textContent=`~${data.daily_effort_total||45} min today`;
+
+  // Auto-queue any new contacts for LinkedIn outreach (runs silently in background)
+  autoQueueLinkedInContacts(data.actions||[]);
 
   const list=document.getElementById('actions-list');
   if(!data.actions||!data.actions.length){list.innerHTML='<div class="empty"><i class="ti ti-bolt"></i><p>No actions generated. Try again.</p></div>';return;}
@@ -4003,7 +4067,7 @@ function renderTodaysActions(data,modeData){
         <div class="action-title">${esc(a.title)}</div>
         ${a.signal?`<div style="display:flex;align-items:flex-start;gap:6px;margin:5px 0 4px;padding:6px 10px;background:rgba(59,130,246,0.07);border-left:3px solid #3b82f6;border-radius:0 6px 6px 0"><i class="ti ti-eye" style="font-size:12px;color:#3b82f6;margin-top:1px;flex-shrink:0"></i><span style="font-size:12px;color:#1e3a5f;font-weight:500">${esc(a.signal)}</span></div>`:''}
         <div class="action-sub">${esc(a.why)}</div>
-        ${(a.contacts_to_reach&&a.contacts_to_reach.length)?`<div style="margin:7px 0 5px;padding:8px 10px;background:rgba(201,168,76,0.07);border-left:3px solid var(--gold);border-radius:0 6px 6px 0"><div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Who to contact</div>${a.contacts_to_reach.map(c=>`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;flex-wrap:wrap"><div><div style="font-size:12px;font-weight:700;color:var(--navy)">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.title||'')}${c.company?' — '+esc(c.company):''}</div>${c.approach?`<div style="font-size:11px;color:var(--text);margin-top:2px;font-style:italic">${esc(c.approach)}</div>`:''}</div><div style="display:flex;gap:6px;align-items:center;margin-left:auto">${(()=>{const url=c.linkedin?(c.linkedin.startsWith('http')?c.linkedin:'https://'+c.linkedin):'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(c.name+(c.company?' '+c.company:''));return`<a href="${url}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px;background:${c.linkedin?'#0077b5':'transparent'};color:${c.linkedin?'#fff':'inherit'};border-color:${c.linkedin?'#0077b5':'inherit'}"><i class="ti ti-brand-linkedin"></i>${c.linkedin?' LinkedIn':' Search LinkedIn'}</a>`;})()}${c.email?`<a href="mailto:${c.email}" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-mail"></i> Email</a>`:''}</div></div>`).join('')}</div>`:'' }
+        ${(a.contacts_to_reach&&a.contacts_to_reach.length)?`<div style="margin:7px 0 5px;padding:8px 10px;background:rgba(201,168,76,0.07);border-left:3px solid var(--gold);border-radius:0 6px 6px 0"><div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Who to contact</div>${a.contacts_to_reach.map(c=>{const liKey=c.linkedin?(c.linkedin.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase()):(c.name||'').toLowerCase();const url=c.linkedin?(c.linkedin.startsWith('http')?c.linkedin:'https://'+c.linkedin):'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(c.name+(c.company?' '+c.company:''));return`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;flex-wrap:wrap"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:var(--navy)">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.title||'')}${c.company?' — '+esc(c.company):''}</div>${c.approach?`<div style="font-size:11px;color:var(--text);margin-top:2px;font-style:italic">${esc(c.approach)}</div>`:''}<div data-li-key="${liKey}" style="margin-top:3px"></div></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><a href="${url}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px;background:${c.linkedin?'#0077b5':'transparent'};color:${c.linkedin?'#fff':'inherit'};border-color:${c.linkedin?'#0077b5':'inherit'}"><i class="ti ti-brand-linkedin"></i>${c.linkedin?' LinkedIn':' Search'}</a>${c.email?`<a href="mailto:${c.email}" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-mail"></i></a>`:''}</div></div>`;}).join('')}</div>`:'' }
         ${a.suggested_message?`<div class="action-msg">"${esc(a.suggested_message)}"</div>`:''}
         <div class="action-ft">
           <span class="effort-tag"><i class="ti ti-clock" style="font-size:10px"></i> ${esc(a.effort_label||'5 min')}</span>
@@ -4302,68 +4366,4 @@ function openAddSignal(){document.getElementById('sig-date').value=new Date().to
 function saveSignal(){
   const company=document.getElementById('sig-company').value.trim();
   if(!company){alert('Company name required');return;}
-  hiringSignals.push({id:Date.now(),company,roles_posted:parseInt(document.getElementById('sig-roles').value)||0,date:document.getElementById('sig-date').value||new Date().toISOString().split('T')[0],connection:document.getElementById('sig-connection').value.trim(),notes:document.getElementById('sig-notes').value.trim()});
-  saveSignals();document.getElementById('addSignalOv').classList.remove('open');
-  ['sig-company','sig-roles','sig-connection','sig-notes'].forEach(id=>document.getElementById(id).value='');
-  loadSignals();showToast('Signal saved');
-}
-function deleteSignal(i){if(confirm('Delete this signal?')){hiringSignals.splice(i,1);saveSignals();loadSignals();}}
-function reachOutFromSignal(i){
-  const s=hiringSignals[i];
-  document.getElementById('chat-contact-name').textContent=s.connection||s.company;
-  document.getElementById('chat-company-name').textContent=s.company;
-  document.getElementById('chat-messages').innerHTML='';
-  document.getElementById('chatPanel').classList.add('open');
-  document.getElementById('chatOverlay').classList.add('open');
-}
-
-/* ═══════════════════════════════════════════════════
-   APPOINTMENT TRIGGERS
-════════════════════════════════════════════════════ */
-let appointmentTriggers=JSON.parse(localStorage.getItem('vsg_triggers')||'[]');
-let _sbTriggers=[]; // Supabase-loaded triggers
-function saveTriggers(){localStorage.setItem('vsg_triggers',JSON.stringify(appointmentTriggers));}
-let _triggerFilter='all';
-
-async function loadTriggers(){
-  const db=_db();
-  // Load leadership_change signals from Supabase
-  if(db){
-    try{
-      const{data}=await db.from('company_signals')
-        .select('*')
-        .eq('signal_type','leadership_change')
-        .eq('actioned',false)
-        .order('created_at',{ascending:false})
-        .limit(50);
-      _sbTriggers=(data||[]).map(s=>{
-        // Parse name from title if possible: "Name joined/appointed at Company"
-        const nameMatch=s.title.match(/^([^:—–]+?)\s+(?:joins?|appointed|named|promoted|hired)/i);
-        const name=nameMatch?nameMatch[1].trim():s.company_name;
-        const contactMatch=(s.summary||'').match(/CONTACT:\s*([^,|]+),\s*([^|—]+)/i);
-        return {
-          _id:s.id,
-          _source:'supabase',
-          name:contactMatch?contactMatch[1].trim():name,
-          new_role:contactMatch?contactMatch[2].trim():'',
-          new_co:s.company_name,
-          title:s.title,
-          summary:s.summary,
-          source_url:s.source_url,
-          date:s.created_at,
-          network:'unknown',
-          notes:''
-        };
-      });
-    }catch(e){console.warn('triggers load:',e);}
-  }
-  filterTriggers(_triggerFilter,null);
-  const allTriggers=[..._sbTriggers,...appointmentTriggers];
-  const nb=document.getElementById('nb-triggers');
-  const hot=allTriggers.filter(t=>{const d=Math.floor((new Date()-new Date(t.date))/(864e5));return d<=60;}).length;
-  if(hot>0){nb.style.display='';nb.textContent=hot;}else nb.style.display='none';
-}
-
-function filterTriggers(f,btn){
-  _triggerFilter=f;
-  doc
+  hiringSignals.push({id:Date.now(),company,roles_posted:parseInt(document.getElementById('sig-roles').value)||0,date:documen
