@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "Fix: convert script 3 to dynamic injection — resolves AI command centre not loading on page load"
+git commit -m "Fix: maxTokens 4096 for Today's Actions + load most recent actions regardless of date"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...

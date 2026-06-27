@@ -4403,7 +4403,7 @@ async function loadTodaysActions(){
   try{
     const today=new Date().toISOString().slice(0,10);const db=_db();
     if(db){
-      const{data}=await db.from('todays_actions').select('*').eq('action_date',today).order('generated_at',{ascending:false}).limit(1);
+      const{data}=await db.from('todays_actions').select('*').order('generated_at',{ascending:false}).limit(1);
       if(data&&data.length>0&&data[0].actions&&data[0].actions.length>0){
         const row=data[0];const modeData={mode:row.mode||'prospecting',jobs:0,pipeline:0};
         renderTodaysActions({mode:row.mode,daily_effort_total:row.daily_effort_total,actions:row.actions},modeData);
@@ -4526,7 +4526,7 @@ Priority: (1) LinkedIn replies & new connections, (2) overdue follow-ups, (3) hi
 Max 9 actions. No em-dashes. Never criticise UAE/Saudi/GCC governments. Return ONLY raw JSON, no markdown.`;
 
   try{
-    const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt})});
+    const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt,maxTokens:4096})});
     const data=await resp.json();
     clearInterval(ticker);bar.style.width='100%';
     await new Promise(r=>setTimeout(r,400));
