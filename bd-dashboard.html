@@ -3905,7 +3905,7 @@ Generate Michael's Today's Actions list. Output as a JSON array of action object
 - signal: EXACTLY where this came from. Be specific and transparent. Format: "[Source type]: [what was observed]". Source types: "LinkedIn message received [date]:", "Email received [date/time]:", "LinkedIn post by [name] on [date]:", "Publicly reported [date]:", "Pipeline data:", "Follow-up date passed:", "Notes record:". Examples: "LinkedIn message received 25 Jun: Dmitry messaged asking about senior finance hiring in Abu Dhabi", "Email received 26 Jun 09:14: Subject 'CFO Search — interested in working together', from khalid@gulfcapital.com", "Publicly reported 24 Jun: ADNOC announced a new downstream expansion — likely to need transformation leadership", "Follow-up date passed 12 days ago — last contact was 14 Jun per pipeline", "Pipeline data: no contact recorded in 47 days, stage is Warm". CRITICAL: NEVER invent a communication. If you have no real signal, say "Suggested action based on [reason]:" not a fake received message.
 - why: one sentence on commercial reason to act now
 - contacts_to_reach: array of specific people Michael should contact for this action. Each entry: {"name": "Full Name", "title": "Their title", "company": "Company", "linkedin": "linkedin.com/in/profile-url or null", "email": "email if known or null", "approach": "why this person specifically"}. If no specific contacts known, return empty array.
-- suggested_message: drafted message referencing the signal naturally (max 80 words, warm, human, no em-dashes). Must mention WHY Michael is reaching out based on the actual signal — not a generic opener. Or null if not applicable.
+- suggested_message: a short, human outreach message (max 60 words, no em-dashes, no corporate language). Follow this exact 3-part structure: (1) One sentence showing you know something specific about their situation, referencing the actual signal — e.g. "I saw the Geneva and Houston expansion announcement." (2) One sentence making a soft, natural observation about the consequence — e.g. "I'm sure that's creating some real hiring pressure." (3) Close with a genuine open question that is easy to answer — e.g. "Would love to understand whether that's something we could help with." NEVER use phrases like "let's discuss", "let's explore", "I'd love to connect", "we've placed X executives", or any boastful claim about VSG. The message should feel like it came from a human who did their homework, not a sales email. Or null if not applicable.
 - effort_mins: 2 | 5 | 15 | 30
 - effort_label: "2 min" | "5 min" | "15 min" | "30 min"
 
@@ -4366,12 +4366,4 @@ async function loadTriggers(){
 
 function filterTriggers(f,btn){
   _triggerFilter=f;
-  document.querySelectorAll('#p-triggers .intel-filter').forEach(b=>b.classList.remove('on'));
-  if(btn)btn.classList.add('on');
-  const list=document.getElementById('triggers-list');
-  const today=new Date();
-  // Combine Supabase + local, deduplicate by name+company
-  const allTriggers=[..._sbTriggers,...appointmentTriggers];
-  let filtered=[...allTriggers].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  if(f==='hot')filtered=filtered.filter(t=>Math.floor((today-new Date(t.date))/864e5)<=60);
-  else if(f==='warm')filtered=filtered.filter(t=>{const d=Math.floor((today-new Date(t.date))/864e5);return d>60&&d<=90;});
+  doc
