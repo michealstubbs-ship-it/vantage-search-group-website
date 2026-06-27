@@ -4648,7 +4648,7 @@ function saveSignals(){localStorage.setItem('vsg_signals',JSON.stringify(hiringS
 async function loadSignals(){
   const list=document.getElementById('signals-list');const today=new Date();const db=_db();
   let sbSignals=[];if(db){try{const{data}=await db.from('company_signals').select('*').in('signal_type',['hiring','funding','expansion','news']).eq('actioned',false).order('created_at',{ascending:false}).limit(50);sbSignals=data||[];}catch(e){}}
-  const allSignals=[...sbSignals.map(s=>({_id:s.id,_source:'supabase',company:s.company_name,title:s.title,summary:s.summary,signal_type:s.signal_type,importance:s.importance,source_url:s.source_url,date:s.created_at})),...hiringSignals.map((s,i)=>({_idx:i,_source:'local',company:s.company,title:s.company+' — '+(s.roles_posted||'?')+' senior roles posted',summary:(s.connection?'Contact: '+s.connection+'. ')+(s.notes||''),signal_type:'hiring',importance:'medium',date:s.date}))];
+  const allSignals=[...sbSignals.map(s=>({_id:s.id,_source:'supabase',company:s.company_name,title:s.title,summary:s.summary,signal_type:s.signal_type,importance:s.importance,source_url:s.source_url,date:s.created_at})),...hiringSignals.map((s,i)=>({_idx:i,_source:'local',company:s.company,title:s.company+' — '+(s.roles_posted||'?')+' senior roles posted',summary:(s.connection?'Contact: '+s.connection+'. ':'')+(s.notes||''),signal_type:'hiring',importance:'medium',date:s.date}))];
   let hot=0,warm=0;allSignals.forEach(s=>{const d=Math.floor((today-new Date(s.date))/(1000*60*60*24));if(d<=30)hot++;else if(d<=60)warm++;});
   document.getElementById('signals-hot-count').textContent=hot;document.getElementById('signals-warm-count').textContent=warm;
   if(!allSignals.length){list.innerHTML='<div class="empty"><i class="ti ti-trending-up"></i><p>No hiring signals yet.</p></div>';return;}
@@ -4688,7 +4688,7 @@ function deleteTrigger(i){if(confirm('Delete this trigger?')){appointmentTrigger
 function openChatFromTrigger(t){
   _actionCtx=t;currentChatContact={name:t.name,company:t.new_co||'',title:t.new_role||'',industry:'',stage:'',lastContact:'',followupDate:'',linkedin:'',notes:''};chatContactId=null;chatMessages=[];
   const av=document.getElementById('chat-av');if(av){av.textContent=(t.name||'T')[0].toUpperCase();av.style.background='#b8860b';av.style.color='#fff';}
-  document.getElementById('chat-name').textContent=t.name||'Contact';document.getElementById('chat-co').textContent=(t.new_role?t.new_role+', ')+(t.new_co||'Leadership Trigger');
+  document.getElementById('chat-name').textContent=t.name||'Contact';document.getElementById('chat-co').textContent=(t.new_role?t.new_role+', ':'')+(t.new_co||'Leadership Trigger');
   const welcomeParts=[`I have the context on this trigger.`];if(t.title)welcomeParts.push(`Signal: ${t.title}`);if(t.days!==undefined)welcomeParts.push(`${t.days} days into the role.`);welcomeParts.push(`Ask me to draft outreach or explore a different angle.`);
   renderChatMessages([{role:'assistant',content:welcomeParts.join('\n\n')}]);
   const name=(t.name||'').replace(/'/g,"\\'");const co=(t.new_co||'their new company').replace(/'/g,"\\'");const role=(t.new_role||'a senior role').replace(/'/g,"\\'");
