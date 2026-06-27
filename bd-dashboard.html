@@ -669,13 +669,16 @@ textarea{resize:vertical;min-height:80px}
     <button class="nav-btn" onclick="goPage('prospects',this);loadProspects()"><i class="ti ti-sparkles"></i>AI Prospects<span class="nav-badge amber" id="nb-prospects" style="display:none"></span></button>
     <button class="nav-btn" onclick="goPage('sequences',this);loadSequences()"><i class="ti ti-player-play"></i>Sequences</button>
     <div class="nav-section">Recruitment</div>
-    <button class="nav-btn" onclick="goPage('jobs',this)"><i class="ti ti-briefcase"></i>Jobs & candidates</button>
+    <button class="nav-btn" onclick="goPage('jobs',this)"><i class="ti ti-briefcase"></i>Jobs & Mandates</button>
+    <button class="nav-btn" onclick="goPage('candidates',this);loadCandidates()"><i class="ti ti-users"></i>Candidates<span class="nav-badge amber" id="nb-cands" style="display:none"></span></button>
+    <button class="nav-btn" onclick="goPage('netmap',this);loadNetworkMap()"><i class="ti ti-topology-star"></i>Network Map</button>
     <button class="nav-btn" onclick="goPage('tasks',this)"><i class="ti ti-checkbox"></i>Tasks<span class="nav-badge amber" id="nb-tasks" style="display:none"></span></button>
     <button class="nav-btn" onclick="goPage('checkin',this);loadCheckins()"><i class="ti ti-refresh"></i>Candidate Check-in</button>
     <div class="nav-section">Analytics</div>
     <button class="nav-btn" onclick="goPage('seo',this);loadSEO()"><i class="ti ti-world-search"></i>SEO & Traffic</button>
     <button class="nav-btn" onclick="goPage('salary',this);loadSalaryBench()"><i class="ti ti-chart-bar"></i>Salary Benchmark</button>
     <button class="nav-btn" onclick="goPage('outreach-perf',this);loadOutreachPerf()"><i class="ti ti-target"></i>Outreach Performance</button>
+    <button class="nav-btn" onclick="goPage('bd-perf',this);loadBDPerf()"><i class="ti ti-chart-bar"></i>BD Performance</button>
     <button class="nav-btn" onclick="goPage('network',this)"><i class="ti ti-network"></i>Network Map</button>
     <div class="nav-section">Finance</div>
     <button class="nav-btn" onclick="goPage('finance',this)"><i class="ti ti-receipt"></i>Invoices<span class="nav-badge amber" id="nb-inv" style="display:none"></span></button>
@@ -773,6 +776,100 @@ textarea{resize:vertical;min-height:80px}
         </select>
       </div>
       <div id="jobs-list"></div>
+    </div>
+
+    <!-- CANDIDATE PIPELINE -->
+    <div id="p-candidates" class="page">
+      <div class="ph">
+        <h1><i class="ti ti-users"></i> Candidate Pipeline</h1>
+        <div class="ph-actions">
+          <button class="btn btn-outline" onclick="openAddCandidate()"><i class="ti ti-plus"></i> Add candidate</button>
+          <button class="btn btn-gold" onclick="loadCandidates()"><i class="ti ti-refresh"></i> Refresh</button>
+        </div>
+      </div>
+
+      <div class="metrics" id="cand-metrics" style="margin-bottom:20px">
+        <div class="empty"><i class="ti ti-users"></i><p>Loading...</p></div>
+      </div>
+
+      <!-- Kanban-style stage filter -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+        <button class="intel-filter on" onclick="filterCandidates('all',this)">All</button>
+        <button class="intel-filter" onclick="filterCandidates('sourced',this)">Sourced</button>
+        <button class="intel-filter" onclick="filterCandidates('screening',this)">Screening</button>
+        <button class="intel-filter" onclick="filterCandidates('shortlisted',this)">Shortlisted</button>
+        <button class="intel-filter" onclick="filterCandidates('presented',this)">Presented</button>
+        <button class="intel-filter" onclick="filterCandidates('interviewing',this)">Interviewing</button>
+        <button class="intel-filter" onclick="filterCandidates('offer',this)">Offer</button>
+        <button class="intel-filter" onclick="filterCandidates('placed',this)">Placed</button>
+      </div>
+
+      <div id="cand-list"></div>
+    </div>
+
+    <!-- ADD CANDIDATE OVERLAY -->
+    <div class="ov" id="addCandidateOv">
+      <div class="panel">
+        <div class="panel-h">
+          <h2>Add Candidate</h2>
+          <button class="btn btn-xs btn-ghost-inv" onclick="document.getElementById('addCandidateOv').classList.remove('open')"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="panel-b">
+          <div class="fg2">
+            <div class="fg"><label>Full name *</label><input id="cand-name" placeholder="Full name"></div>
+            <div class="fg"><label>Current title</label><input id="cand-role" placeholder="e.g. CFO"></div>
+          </div>
+          <div class="fg2">
+            <div class="fg"><label>Current company</label><input id="cand-company" placeholder="Company"></div>
+            <div class="fg"><label>Location</label><input id="cand-location" placeholder="e.g. Dubai"></div>
+          </div>
+          <div class="fg2">
+            <div class="fg"><label>Email</label><input id="cand-email" type="email"></div>
+            <div class="fg"><label>Phone</label><input id="cand-phone" placeholder="+971..."></div>
+          </div>
+          <div class="fg2">
+            <div class="fg"><label>Current salary (AED)</label><input id="cand-curr-sal" type="number" placeholder="0"></div>
+            <div class="fg"><label>Target salary (AED)</label><input id="cand-want-sal" type="number" placeholder="0"></div>
+          </div>
+          <div class="fg2">
+            <div class="fg"><label>Notice period</label><input id="cand-notice" placeholder="e.g. 3 months"></div>
+            <div class="fg"><label>LinkedIn URL</label><input id="cand-linkedin" placeholder="linkedin.com/in/..."></div>
+          </div>
+          <div class="fg2">
+            <div class="fg"><label>Stage</label>
+              <select id="cand-status">
+                <option value="sourced">Sourced</option>
+                <option value="screening">Screening</option>
+                <option value="shortlisted">Shortlisted</option>
+                <option value="presented">Presented</option>
+                <option value="interviewing">Interviewing</option>
+                <option value="offer">Offer stage</option>
+                <option value="placed">Placed</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div class="fg"><label>Source</label><input id="cand-source" placeholder="e.g. LinkedIn, Referral"></div>
+          </div>
+          <div class="fg"><label>Notes</label><textarea id="cand-notes" rows="3" placeholder="Key info, motivations, availability..."></textarea></div>
+        </div>
+        <div class="panel-ft">
+          <button class="btn btn-outline" onclick="document.getElementById('addCandidateOv').classList.remove('open')">Cancel</button>
+          <button class="btn btn-gold" onclick="saveCandidate()"><i class="ti ti-check"></i> Save candidate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NETWORK STRENGTH MAP -->
+    <div id="p-netmap" class="page">
+      <div class="ph">
+        <h1><i class="ti ti-topology-star"></i> Network Strength Map</h1>
+        <div class="ph-actions">
+          <button class="btn btn-gold" onclick="loadNetworkMap()"><i class="ti ti-refresh"></i> Refresh</button>
+        </div>
+      </div>
+      <p style="color:var(--muted);margin-bottom:20px;margin-top:-8px">Your connection density across target companies — darker = stronger foothold</p>
+      <div id="netmap-metrics" class="metrics" style="margin-bottom:20px"></div>
+      <div id="netmap-chart" style="display:grid;gap:8px"></div>
     </div>
 
     <!-- TASKS -->
@@ -1410,6 +1507,53 @@ textarea{resize:vertical;min-height:80px}
     </div>
 
     <!-- NETWORK MAP PAGE -->
+    <div id="p-bd-perf" class="page">
+      <div class="ph">
+        <h1><i class="ti ti-chart-bar"></i> BD Performance</h1>
+        <div class="ph-actions">
+          <button class="btn btn-gold" onclick="loadBDPerf()"><i class="ti ti-refresh"></i> Refresh</button>
+        </div>
+      </div>
+
+      <!-- Summary metrics -->
+      <div class="metrics" id="bdperf-metrics" style="margin-bottom:20px">
+        <div class="empty"><i class="ti ti-chart-bar"></i><p>Loading performance data...</p></div>
+      </div>
+
+      <div class="g2" style="margin-bottom:20px">
+        <!-- Conversion by signal type -->
+        <div class="card">
+          <div class="card-h"><h3><i class="ti ti-antenna"></i> Conversion by signal type</h3></div>
+          <div class="card-b p0" id="bdperf-by-signal">
+            <div class="empty" style="padding:24px"><i class="ti ti-chart-bar"></i><p>No outcomes recorded yet. Conversion rates will appear here as you log meetings.</p></div>
+          </div>
+        </div>
+        <!-- Avg days to outcome -->
+        <div class="card">
+          <div class="card-h"><h3><i class="ti ti-clock"></i> Speed to outcome</h3></div>
+          <div class="card-b p0" id="bdperf-speed">
+            <div class="empty" style="padding:24px"><i class="ti ti-clock"></i><p>No data yet.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent wins timeline -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-h"><h3><i class="ti ti-trophy"></i> Recent wins</h3></div>
+        <div class="card-b p0" id="bdperf-wins">
+          <div class="empty" style="padding:24px"><i class="ti ti-trophy"></i><p>Meetings booked and mandates won will appear here.</p></div>
+        </div>
+      </div>
+
+      <!-- Top converting companies -->
+      <div class="card">
+        <div class="card-h"><h3><i class="ti ti-building"></i> Top converting companies</h3></div>
+        <div class="card-b p0" id="bdperf-companies">
+          <div class="empty" style="padding:24px"><i class="ti ti-building"></i><p>Company conversion data will appear here.</p></div>
+        </div>
+      </div>
+    </div>
+
     <div id="p-network" class="page">
       <div class="ph">
         <h1><i class="ti ti-network"></i> Network Map</h1>
@@ -1971,8 +2115,156 @@ function saveContact(){
     createdAt:editId?contacts.find(x=>x.id===editId)?.createdAt:now,
     updatedAt:now
   };
+  // Detect stage upgrade → record outcome + trigger meeting prep / placement loop
+  if(editId){
+    const prev=contacts.find(x=>x.id===editId);
+    if(prev&&prev.stage!==c.stage){
+      const POSITIVE_STAGES=['engaged','meeting','active','placed'];
+      if(POSITIVE_STAGES.includes(c.stage)&&!POSITIVE_STAGES.includes(prev.stage)){
+        const outcomeMap={engaged:'replied',meeting:'meeting_booked',active:'mandate_won',placed:'mandate_won'};
+        recordOutcome({
+          contact_name:c.name,contact_title:c.title,company:c.company,linkedin_url:c.linkedin,
+          outcome:outcomeMap[c.stage]||c.stage,
+          notes:`Stage moved from ${prev.stage} to ${c.stage}`,
+          contact_id:editId
+        });
+        // Auto meeting prep brief
+        if(c.stage==='meeting') generateMeetingPrep(c);
+        // Post-placement relationship loop
+        if(c.stage==='placed') schedulePlacementFollowUps(c);
+      }
+    }
+  }
   contacts=editId?contacts.map(x=>x.id===editId?c:x):[c,...contacts];
   save();render();closeAdd();
+}
+
+async function recordOutcome(data){
+  const db=_db();if(!db)return;
+  try{
+    await db.from('outcomes').insert({
+      contact_name:data.contact_name||null,
+      contact_title:data.contact_title||null,
+      company:data.company||null,
+      linkedin_url:data.linkedin_url||null,
+      signal_type:data.signal_type||null,
+      signal_summary:data.signal_summary||null,
+      outreach_message:data.outreach_message||null,
+      days_to_outcome:data.days_to_outcome||null,
+      outcome:data.outcome,
+      notes:data.notes||null,
+      contact_id:data.contact_id||null
+    });
+    console.log('[Outcomes] Recorded:',data.outcome,'for',data.contact_name);
+  }catch(e){console.warn('[Outcomes] Failed:',e);}
+}
+
+async function generateMeetingPrep(c){
+  // Generate AI meeting prep brief and write to company_signals so it surfaces in Today's Actions
+  const db=_db();
+  showToast(`Generating meeting prep for ${c.name}...`);
+  try{
+    const prompt=`You are preparing Michael Stubbs at Vantage Search Group for a meeting with ${c.name}, ${c.title||'senior professional'} at ${c.company||'their company'}.
+
+Write a sharp meeting prep brief. Include:
+OBJECTIVE: What Michael wants to achieve in this meeting (1 sentence)
+CONTEXT: What we know about this person and company that's relevant to executive search
+LIKELY AGENDA: What they'll probably want to talk about
+KEY QUESTIONS: 3 smart questions Michael should ask
+WATCH FOR: Any risks or sensitivities to be aware of
+CLOSE: How Michael should end the meeting to move it forward
+
+Tone: Concise, intelligent. Written for someone who knows the GCC market. Under 250 words total.
+Rules: Never criticise UAE, Saudi, or any GCC government. No em-dashes.`;
+    const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    const brief=data.content||data.response||'';
+    if(brief&&db){
+      await db.from('company_signals').insert({
+        company_name:c.company||c.name,
+        signal_type:'news',
+        title:`Meeting prep: ${c.name}${c.followupDate?' — '+c.followupDate:''}`,
+        summary:brief,
+        importance:'high',
+        actioned:false
+      });
+      showToast(`Meeting prep ready — check Today's Actions`);
+    }
+  }catch(e){console.warn('Meeting prep error:',e);}
+}
+
+async function schedulePlacementFollowUps(c){
+  // Write two future follow-up signals (30d + 90d) into company_signals
+  const db=_db();if(!db)return;
+  const d30=new Date(Date.now()+30*864e5).toISOString().slice(0,10);
+  const d90=new Date(Date.now()+90*864e5).toISOString().slice(0,10);
+  const now=new Date().toISOString();
+  try{
+    await db.from('company_signals').insert([
+      {company_name:c.company||c.name,signal_type:'news',title:`30-day check-in: ${c.name} at ${c.company||'new role'}`,summary:`${c.name} was placed ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})}. Time for a 30-day check-in — how are they settling in? This maintains the relationship and often surfaces referrals or new mandates. CONTACT: ${c.name}`,importance:'high',actioned:false,created_at:new Date(Date.now()+30*864e5).toISOString()},
+      {company_name:c.company||c.name,signal_type:'news',title:`90-day check-in: ${c.name} at ${c.company||'new role'}`,summary:`${c.name} has been in role for ~90 days. Perfect time to check in — they'll be past the honeymoon phase and starting to think about building their team. Ask what hiring decisions are ahead of them. CONTACT: ${c.name}`,importance:'high',actioned:false,created_at:new Date(Date.now()+90*864e5).toISOString()}
+    ]);
+    showToast(`${c.name} placed — 30d and 90d check-ins scheduled`);
+  }catch(e){console.warn('Placement follow-up error:',e);}
+}
+
+async function loadBDPerf(){
+  const db=_db();
+  const metricsEl=document.getElementById('bdperf-metrics');
+  const signalEl=document.getElementById('bdperf-by-signal');
+  const speedEl=document.getElementById('bdperf-speed');
+  const winsEl=document.getElementById('bdperf-wins');
+  const coEl=document.getElementById('bdperf-companies');
+  if(!db){metricsEl.innerHTML='<div class="empty"><p>Connect Supabase to see performance data.</p></div>';return;}
+
+  try{
+    const{data:outcomes}=await db.from('outcomes').select('*').order('created_at',{ascending:false});
+    const all=outcomes||[];
+
+    // Summary metrics
+    const meetings=all.filter(o=>o.outcome==='meeting_booked').length;
+    const replies=all.filter(o=>o.outcome==='replied').length;
+    const mandates=all.filter(o=>o.outcome==='mandate_won').length;
+    const total=all.length;
+    metricsEl.innerHTML=`
+      <div class="m gold"><div class="m-icon" style="background:var(--gold-bg);color:#92680a"><i class="ti ti-trophy" style="font-size:20px"></i></div><div class="m-val">${meetings}</div><div class="m-lbl">Meetings booked</div><div class="m-sub">from tracked outreach</div></div>
+      <div class="m green"><div class="m-icon" style="background:var(--green-bg);color:var(--green)"><i class="ti ti-message-check" style="font-size:20px"></i></div><div class="m-val">${replies}</div><div class="m-lbl">Replies received</div><div class="m-sub">positive responses</div></div>
+      <div class="m navy"><div class="m-icon" style="background:rgba(13,27,62,.08);color:var(--navy)"><i class="ti ti-briefcase" style="font-size:20px"></i></div><div class="m-val">${mandates}</div><div class="m-lbl">Mandates won</div><div class="m-sub">from BD outcomes</div></div>
+      <div class="m amber"><div class="m-icon" style="background:var(--amber-bg);color:var(--amber)"><i class="ti ti-database" style="font-size:20px"></i></div><div class="m-val">${total}</div><div class="m-lbl">Total outcomes logged</div><div class="m-sub">building up over time</div></div>`;
+
+    if(all.length===0){
+      const empty='<div class="empty" style="padding:24px"><i class="ti ti-chart-bar"></i><p>No outcomes recorded yet — they\'ll appear here as you log meetings and move contacts through stages.</p></div>';
+      signalEl.innerHTML=speedEl.innerHTML=winsEl.innerHTML=coEl.innerHTML=empty;
+      return;
+    }
+
+    // Conversion by signal type
+    const bySignal={};
+    all.forEach(o=>{const k=o.signal_type||'manual';if(!bySignal[k])bySignal[k]={total:0,meetings:0,replies:0};bySignal[k].total++;if(o.outcome==='meeting_booked')bySignal[k].meetings++;if(o.outcome==='replied')bySignal[k].replies++;});
+    const sigRows=Object.entries(bySignal).sort((a,b)=>b[1].meetings-a[1].meetings);
+    signalEl.innerHTML=sigRows.length?`<table style="width:100%;border-collapse:collapse">${sigRows.map(([type,d])=>`<tr style="border-bottom:1px solid var(--border-soft)"><td style="padding:10px 14px;font-weight:600;color:var(--navy);font-size:13px">${type}</td><td style="padding:10px 6px;text-align:center;font-size:13px">${d.total} contacts</td><td style="padding:10px 6px;text-align:center"><span class="b b-placed">${d.meetings} meetings</span></td><td style="padding:10px 14px;text-align:center"><span class="b b-active">${d.replies} replies</span></td></tr>`).join('')}</table>`:'<div class="empty" style="padding:24px">No signal data yet.</div>';
+
+    // Speed to outcome (avg days)
+    const withDays=all.filter(o=>o.days_to_outcome>0);
+    if(withDays.length){
+      const byOutcome={};
+      withDays.forEach(o=>{if(!byOutcome[o.outcome])byOutcome[o.outcome]=[];byOutcome[o.outcome].push(o.days_to_outcome);});
+      speedEl.innerHTML=`<table style="width:100%;border-collapse:collapse">${Object.entries(byOutcome).map(([out,days])=>{const avg=Math.round(days.reduce((a,b)=>a+b,0)/days.length);return`<tr style="border-bottom:1px solid var(--border-soft)"><td style="padding:10px 14px;font-weight:600;color:var(--navy);font-size:13px">${out.replace(/_/g,' ')}</td><td style="padding:10px 14px;text-align:right"><span class="b b-cold">${avg} days avg</span></td></tr>`;}).join('')}</table>`;
+    }else{
+      speedEl.innerHTML='<div style="padding:14px;font-size:13px;color:var(--muted)">Days-to-outcome will track once you log more outcomes with timing data.</div>';
+    }
+
+    // Recent wins
+    const wins=all.filter(o=>['meeting_booked','mandate_won'].includes(o.outcome)).slice(0,10);
+    winsEl.innerHTML=wins.length?wins.map(o=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border-soft)"><div class="av" style="width:32px;height:32px;font-size:11px;flex-shrink:0;background:${o.outcome==='mandate_won'?'var(--gold-bg)':'var(--green-bg)'};color:${o.outcome==='mandate_won'?'#92680a':'var(--green)'}">${ini(o.contact_name||'?')}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--navy)">${esc(o.contact_name||'Unknown')}</div><div style="font-size:12px;color:var(--muted)">${esc(o.contact_title||'')}${o.company?' · '+esc(o.company):''}</div>${o.notes?`<div style="font-size:11px;color:var(--subtle);margin-top:2px">${esc(o.notes)}</div>`:''}</div><div style="flex-shrink:0;text-align:right"><span class="b ${o.outcome==='mandate_won'?'b-placed':'b-active'}" style="font-size:10px">${o.outcome.replace(/_/g,' ')}</span><div style="font-size:10px;color:var(--subtle);margin-top:3px">${new Date(o.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div></div></div>`).join(''):'<div class="empty" style="padding:24px">No wins recorded yet.</div>';
+
+    // Top converting companies
+    const byCo={};
+    all.forEach(o=>{if(!o.company)return;if(!byCo[o.company])byCo[o.company]={total:0,positive:0};byCo[o.company].total++;if(['meeting_booked','replied','mandate_won'].includes(o.outcome))byCo[o.company].positive++;});
+    const coRows=Object.entries(byCo).filter(([,d])=>d.total>0).sort((a,b)=>b[1].positive-a[1].positive).slice(0,10);
+    coEl.innerHTML=coRows.length?coRows.map(([co,d])=>{const pct=Math.round((d.positive/d.total)*100);return`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border-soft)"><div style="flex:1;font-size:13px;font-weight:600;color:var(--navy)">${esc(co)}</div><div style="display:flex;align-items:center;gap:8px"><div style="width:80px;height:6px;background:var(--border-soft);border-radius:3px"><div style="width:${pct}%;height:6px;background:var(--green);border-radius:3px"></div></div><span style="font-size:12px;color:var(--muted);min-width:28px">${pct}%</span></div><span class="b b-cold" style="font-size:10px">${d.total} contacts</span></div>`;}).join(''):'<div class="empty" style="padding:24px">No company data yet.</div>';
+
+  }catch(e){metricsEl.innerHTML=`<div class="empty"><p>Error loading performance data: ${e.message}</p></div>`;}
 }
 
 /* ── DETAIL ── */
@@ -2314,6 +2606,273 @@ function calcFee(){
   if(el)el.value=fee?fmtGBP(fee):'';
 }
 
+/* ═══════════════════════════════════════════════════
+   CANDIDATE PIPELINE
+════════════════════════════════════════════════════ */
+const CAND_STAGES={sourced:'Sourced',screening:'Screening',shortlisted:'Shortlisted',presented:'Presented',interviewing:'Interviewing',offer:'Offer',placed:'Placed',rejected:'Rejected',withdrawn:'Withdrawn'};
+const CAND_COLORS={sourced:'#64748b',screening:'#3b82f6',shortlisted:'#8b5cf6',presented:'#f59e0b',interviewing:'#f97316',offer:'#10b981',placed:'var(--gold)',rejected:'var(--red)',withdrawn:'var(--muted)'};
+let _allCandidates=[];let _candFilter='all';
+
+async function loadCandidates(){
+  const db=_db();
+  const metricsEl=document.getElementById('cand-metrics');
+  const listEl=document.getElementById('cand-list');
+  if(!db){listEl.innerHTML='<div class="empty"><p>Connect Supabase to manage candidates.</p></div>';return;}
+  try{
+    const{data}=await db.from('candidates').select('*').order('created_at',{ascending:false});
+    _allCandidates=data||[];
+    // Metrics
+    const active=_allCandidates.filter(c=>!['placed','rejected','withdrawn'].includes(c.status));
+    const placed=_allCandidates.filter(c=>c.status==='placed');
+    const interviewing=_allCandidates.filter(c=>['interviewing','offer'].includes(c.status));
+    metricsEl.innerHTML=`
+      <div class="m gold"><div class="m-icon" style="background:var(--gold-bg);color:#92680a"><i class="ti ti-users" style="font-size:20px"></i></div><div class="m-val">${_allCandidates.length}</div><div class="m-lbl">Total candidates</div><div class="m-sub">${active.length} active</div></div>
+      <div class="m green"><div class="m-icon" style="background:var(--green-bg);color:var(--green)"><i class="ti ti-user-check" style="font-size:20px"></i></div><div class="m-val">${interviewing.length}</div><div class="m-lbl">Interviewing / offer</div><div class="m-sub">hot pipeline</div></div>
+      <div class="m navy"><div class="m-icon" style="background:rgba(13,27,62,.08);color:var(--navy)"><i class="ti ti-trophy" style="font-size:20px"></i></div><div class="m-val">${placed.length}</div><div class="m-lbl">Placed</div><div class="m-sub">all time</div></div>`;
+    // Badge
+    const nb=document.getElementById('nb-cands');
+    if(interviewing.length>0){nb.textContent=interviewing.length;nb.style.display='';}else nb.style.display='none';
+    filterCandidates(_candFilter,null);
+  }catch(e){listEl.innerHTML=`<div class="empty"><p>Error loading candidates: ${e.message}</p></div>`;}
+}
+
+function filterCandidates(f,btn){
+  _candFilter=f;
+  document.querySelectorAll('#p-candidates .intel-filter').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  const list=document.getElementById('cand-list');
+  const filtered=f==='all'?_allCandidates:_allCandidates.filter(c=>c.status===f);
+  if(!filtered.length){list.innerHTML='<div class="empty"><i class="ti ti-users"></i><p>No candidates in this stage yet.</p></div>';return;}
+  list.innerHTML=filtered.map(c=>{
+    const color=CAND_COLORS[c.status]||'var(--muted)';
+    const liUrl=c.link?(c.link.startsWith('http')?c.link:'https://'+c.link):null;
+    return`<div class="signal-card" style="border-left:3px solid ${color};cursor:pointer" onclick="openCandidateDetail(${c.id})">
+      <div class="av" style="width:38px;height:38px;font-size:14px;flex-shrink:0;background:${color}18;color:${color}">${ini(c.name||'?')}</div>
+      <div class="signal-body">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div>
+            <div class="signal-title">${esc(c.name||'')} <span class="b" style="background:${color}18;color:${color};font-size:10px">${CAND_STAGES[c.status]||c.status}</span></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(c.role||'')}${c.company?' · '+esc(c.company):''}</div>
+          </div>
+          <div style="flex-shrink:0;text-align:right">
+            ${c.want_sal?`<div style="font-size:12px;font-weight:700;color:var(--navy)">AED ${Number(c.want_sal).toLocaleString()}</div>`:''}
+            ${c.notice_period?`<div style="font-size:11px;color:var(--muted)">${esc(c.notice_period)} notice</div>`:''}
+          </div>
+        </div>
+        ${c.notes?`<div class="signal-sub" style="margin-top:4px">${esc(c.notes.substring(0,120))}${c.notes.length>120?'...':''}</div>`:''}
+        <div class="signal-ft" style="margin-top:6px">
+          ${c.location?`<span class="b b-cold"><i class="ti ti-map-pin" style="font-size:10px"></i> ${esc(c.location)}</span>`:''}
+          ${liUrl?`<a href="${liUrl}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px;background:#0077b5;color:#fff;border-color:#0077b5" onclick="event.stopPropagation()"><i class="ti ti-brand-linkedin"></i> LinkedIn</a>`:''}
+          ${c.email?`<a href="mailto:${esc(c.email)}" class="btn btn-xs btn-ghost" onclick="event.stopPropagation()"><i class="ti ti-mail"></i></a>`:''}
+          <button class="btn btn-xs btn-outline" onclick="event.stopPropagation();openEditCandidate(${c.id})"><i class="ti ti-edit"></i></button>
+          <button class="btn btn-xs btn-gold" onclick="event.stopPropagation();openChatFromCandidateCtx(${c.id})"><i class="ti ti-message-circle"></i> Ask AI</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddCandidate(){
+  ['cand-name','cand-role','cand-company','cand-location','cand-email','cand-phone','cand-curr-sal','cand-want-sal','cand-notice','cand-linkedin','cand-notes','cand-source'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('cand-status').value='sourced';
+  document.getElementById('addCandidateOv')._editId=null;
+  document.getElementById('addCandidateOv').classList.add('open');
+}
+
+function openEditCandidate(id){
+  const c=_allCandidates.find(x=>x.id===id);if(!c)return;
+  document.getElementById('cand-name').value=c.name||'';
+  document.getElementById('cand-role').value=c.role||'';
+  document.getElementById('cand-company').value=c.company||'';
+  document.getElementById('cand-location').value=c.location||'';
+  document.getElementById('cand-email').value=c.email||'';
+  document.getElementById('cand-phone').value=c.phone||'';
+  document.getElementById('cand-curr-sal').value=c.curr_sal||'';
+  document.getElementById('cand-want-sal').value=c.want_sal||'';
+  document.getElementById('cand-notice').value=c.notice_period||'';
+  document.getElementById('cand-linkedin').value=c.link||'';
+  document.getElementById('cand-status').value=c.status||'sourced';
+  document.getElementById('cand-source').value=c.source||'';
+  document.getElementById('cand-notes').value=c.notes||'';
+  document.getElementById('addCandidateOv')._editId=id;
+  document.getElementById('addCandidateOv').classList.add('open');
+}
+
+async function saveCandidate(){
+  const db=_db();if(!db){showToast('Supabase not connected');return;}
+  const name=document.getElementById('cand-name').value.trim();
+  if(!name){alert('Name required');return;}
+  const editId=document.getElementById('addCandidateOv')._editId;
+  const row={
+    name,role:document.getElementById('cand-role').value.trim()||null,
+    company:document.getElementById('cand-company').value.trim()||null,
+    location:document.getElementById('cand-location').value.trim()||null,
+    email:document.getElementById('cand-email').value.trim()||null,
+    phone:document.getElementById('cand-phone').value.trim()||null,
+    curr_sal:parseInt(document.getElementById('cand-curr-sal').value)||null,
+    want_sal:parseInt(document.getElementById('cand-want-sal').value)||null,
+    notice_period:document.getElementById('cand-notice').value.trim()||null,
+    link:document.getElementById('cand-linkedin').value.trim()||null,
+    status:document.getElementById('cand-status').value,
+    source:document.getElementById('cand-source').value.trim()||null,
+    notes:document.getElementById('cand-notes').value.trim()||null
+  };
+  try{
+    if(editId){
+      // Check for stage upgrade → record outcome
+      const prev=_allCandidates.find(x=>x.id===editId);
+      if(prev&&prev.status!==row.status&&row.status==='placed'){
+        recordOutcome({contact_name:name,contact_title:row.role,company:row.company,outcome:'mandate_won',notes:`Candidate placed: ${name} at ${row.company||'?'}`});
+      }
+      await db.from('candidates').update(row).eq('id',editId);
+    }else{
+      await db.from('candidates').insert(row);
+    }
+    document.getElementById('addCandidateOv').classList.remove('open');
+    showToast(editId?'Candidate updated':'Candidate added');
+    loadCandidates();
+  }catch(e){showToast('Error: '+e.message);}
+}
+
+function openCandidateDetail(id){
+  const c=_allCandidates.find(x=>x.id===id);if(!c)return;
+  openChatFromCandidateCtx(id);
+}
+
+function openChatFromCandidateCtx(id){
+  const c=_allCandidates.find(x=>x.id===id);if(!c)return;
+  const av=document.getElementById('chat-av');
+  if(av){av.textContent=(c.name||'C')[0].toUpperCase();av.style.background='#6d28d9';av.style.color='#fff';}
+  document.getElementById('chat-name').textContent=c.name||'Candidate';
+  document.getElementById('chat-co').textContent=(c.role||'')+' · '+(CAND_STAGES[c.status]||c.status);
+  currentChatContact={name:c.name,company:c.company||'',title:c.role||'',industry:'',stage:c.status,linkedin:c.link||''};
+  chatContactId=null;chatMessages=[];
+  const welcome=`I have the context on ${c.name}. ${c.role||''}${c.company?' at '+c.company:''}, currently ${CAND_STAGES[c.status]||c.status} stage.${c.want_sal?' Target salary AED '+Number(c.want_sal).toLocaleString()+'.':''} ${c.notes?'Notes: '+c.notes.substring(0,150):''}`;
+  renderChatMessages([{role:'assistant',content:welcome+'\n\nWhat would you like to do? Draft a submission brief, check fit against a mandate, or ask me anything about this candidate.'}]);
+  const name=(c.name||'').replace(/'/g,"\\'");const co=(c.company||'').replace(/'/g,"\\'");
+  document.getElementById('chat-chips').innerHTML=`
+    <button class="chat-chip" onclick="quickChat('Write a concise candidate submission brief for ${name} — role, background, key strengths, and why they stand out. Under 150 words.')"><i class="ti ti-file-text"></i> Submission brief</button>
+    <button class="chat-chip" onclick="quickChat('What questions should I ask ${name} in a screening call to assess their fit for senior roles in the GCC?')"><i class="ti ti-help-circle"></i> Screening questions</button>
+    <button class="chat-chip" onclick="quickChat('What salary, package and role type would ${name} likely expect based on their background at ${co}?')"><i class="ti ti-coin"></i> Compensation guide</button>
+    <button class="chat-chip" onclick="quickChat('What are the potential concerns a client might raise about ${name} and how should I address them?')"><i class="ti ti-alert-triangle"></i> Handle objections</button>
+  `;
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatOverlay').classList.add('open');
+}
+
+/* ═══════════════════════════════════════════════════
+   NETWORK STRENGTH MAP
+════════════════════════════════════════════════════ */
+async function loadNetworkMap(){
+  const db=_db();
+  const chartEl=document.getElementById('netmap-chart');
+  const metricsEl=document.getElementById('netmap-metrics');
+  if(!db){chartEl.innerHTML='<div class="empty"><p>Connect Supabase to load network map.</p></div>';return;}
+
+  chartEl.innerHTML='<div class="empty"><i class="ti ti-loader"></i><p>Scanning your network...</p></div>';
+
+  try{
+    // Pull all data sources in parallel
+    const[contactsRes,liRes,signalsRes]=await Promise.all([
+      db.from('contacts').select('id,name,company,stage,linkedin').not('company','is',null),
+      db.from('linkedin_outreach').select('company,status,full_name').not('company','is',null),
+      db.from('company_signals').select('company_name,signal_type,actioned').not('company_name','is',null)
+    ]);
+    const contacts=contactsRes.data||[];
+    const liContacts=liRes.data||[];
+    const signals=signalsRes.data||[];
+
+    // Aggregate by company
+    const companyMap={};
+
+    contacts.forEach(c=>{
+      const co=(c.company||'').trim();if(!co)return;
+      if(!companyMap[co])companyMap[co]={contacts:[],linkedin:[],signals:[],actioned:0};
+      companyMap[co].contacts.push({name:c.name,stage:c.stage,linkedin:c.linkedin});
+    });
+    liContacts.forEach(c=>{
+      const co=(c.company||'').trim();if(!co)return;
+      if(!companyMap[co])companyMap[co]={contacts:[],linkedin:[],signals:[],actioned:0};
+      companyMap[co].linkedin.push({name:c.full_name,status:c.status});
+    });
+    signals.forEach(s=>{
+      const co=(s.company_name||'').trim();if(!co)return;
+      if(!companyMap[co])companyMap[co]={contacts:[],linkedin:[],signals:[],actioned:0};
+      companyMap[co].signals.push(s.signal_type);
+      if(s.actioned)companyMap[co].actioned++;
+    });
+
+    // Score each company
+    const STAGE_SCORES={placed:100,active:80,meeting:70,engaged:60,prospect:30,lead:20,cold:10};
+    const scored=Object.entries(companyMap).map(([co,data])=>{
+      // Contact score
+      const contactScore=data.contacts.reduce((sum,c)=>sum+(STAGE_SCORES[c.stage]||10),0);
+      // LinkedIn score
+      const liScore=data.linkedin.reduce((sum,c)=>sum+(c.status==='connected'?25:c.status==='pending'?10:5),0);
+      // Signal score
+      const sigScore=data.signals.length*8+data.actioned*5;
+      const total=Math.min(contactScore+liScore+sigScore,999);
+      const warmContacts=data.contacts.filter(c=>['engaged','meeting','active','placed'].includes(c.stage));
+      return{company:co,total,contactScore,liScore,sigScore,contacts:data.contacts,linkedin:data.linkedin,signals:data.signals,warmContacts};
+    }).filter(x=>x.total>0).sort((a,b)=>b.total-a.total);
+
+    // Metrics
+    const top=scored[0];
+    const warmCompanies=scored.filter(x=>x.warmContacts.length>0);
+    const blindSpots=scored.filter(x=>x.total<20&&x.signals.length>0);
+    metricsEl.innerHTML=`
+      <div class="m gold"><div class="m-icon" style="background:var(--gold-bg);color:#92680a"><i class="ti ti-building" style="font-size:20px"></i></div><div class="m-val">${scored.length}</div><div class="m-lbl">Companies mapped</div><div class="m-sub">in your network</div></div>
+      <div class="m green"><div class="m-icon" style="background:var(--green-bg);color:var(--green)"><i class="ti ti-flame" style="font-size:20px"></i></div><div class="m-val">${warmCompanies.length}</div><div class="m-lbl">Warm companies</div><div class="m-sub">engaged contact inside</div></div>
+      <div class="m red"><div class="m-icon" style="background:var(--red-bg,rgba(239,68,68,.08));color:var(--red)"><i class="ti ti-alert-triangle" style="font-size:20px"></i></div><div class="m-val">${blindSpots.length}</div><div class="m-lbl">Signal blind spots</div><div class="m-sub">signals, no warm contact</div></div>`;
+
+    // Render bars
+    const maxScore=scored[0]?.total||1;
+    chartEl.innerHTML=scored.slice(0,30).map(d=>{
+      const pct=Math.round((d.total/maxScore)*100);
+      const warmStages=['placed','active','meeting','engaged'];
+      const hottest=d.contacts.sort((a,b)=>(STAGE_SCORES[b.stage]||0)-(STAGE_SCORES[a.stage]||0))[0];
+      const barColor=d.warmContacts.length>0?'var(--gold)':d.liScore>20?'#3b82f6':'var(--muted)';
+      const tags=[
+        d.warmContacts.length?`<span class="b b-warm">${d.warmContacts.length} warm</span>`:'',
+        d.liScore>0?`<span class="b b-cold"><i class="ti ti-brand-linkedin" style="font-size:9px"></i> ${d.linkedin.filter(l=>l.status==='connected').length} connected</span>`:'',
+        d.signals.length?`<span class="b">${d.signals.length} signals</span>`:''
+      ].filter(Boolean).join('');
+      return`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="width:160px;min-width:140px;font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(d.company)}">${esc(d.company)}</div>
+        <div style="flex:1;position:relative;height:20px;background:var(--surface-2);border-radius:4px;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${barColor};border-radius:4px;transition:width .4s"></div>
+          <div style="position:absolute;right:8px;top:0;bottom:0;display:flex;align-items:center;font-size:11px;font-weight:700;color:var(--text-primary)">${d.total}</div>
+        </div>
+        <div style="width:220px;font-size:11px;color:var(--muted)">${hottest?esc(hottest.name)+' · ':''}<span style="color:${barColor}">${hottest?hottest.stage:'?'}</span></div>
+        <div style="width:180px">${tags}</div>
+        <button class="btn btn-xs btn-ghost" onclick="openChatFromNetworkCtx('${esc(d.company).replace(/'/g,"\\'")}',${d.total},${d.warmContacts.length})" title="Ask AI about this company"><i class="ti ti-message-circle"></i></button>
+      </div>`;
+    }).join('');
+
+    if(scored.length===0)chartEl.innerHTML='<div class="empty"><i class="ti ti-topology-star"></i><p>No company data yet. Add contacts and connect LinkedIn to build your map.</p></div>';
+  }catch(e){chartEl.innerHTML=`<div class="empty"><p>Error: ${e.message}</p></div>`;}
+}
+
+function openChatFromNetworkCtx(company,score,warmCount){
+  const av=document.getElementById('chat-av');
+  if(av){av.textContent=company[0];av.style.background='#0d1b3e';av.style.color='#fff';}
+  document.getElementById('chat-name').textContent=company;
+  document.getElementById('chat-co').textContent=`Network strength: ${score} · ${warmCount} warm contact${warmCount!==1?'s':''}`;
+  currentChatContact={name:'',company,title:'',stage:'',notes:''};
+  chatContactId=null;chatMessages=[];
+  const welcome=`I have your network data for **${company}**. Strength score: ${score}, ${warmCount} warm contact${warmCount!==1?'s':''}. What would you like to do with this company?`;
+  renderChatMessages([{role:'assistant',content:welcome}]);
+  const co=company.replace(/'/g,"\\'");
+  document.getElementById('chat-chips').innerHTML=`
+    <button class="chat-chip" onclick="quickChat('What is the BD strategy I should use to win a mandate from ${co} in the next 90 days? Be specific.')"><i class="ti ti-target"></i> BD strategy</button>
+    <button class="chat-chip" onclick="quickChat('Who are the most likely decision-makers for senior hiring at ${co} in the GCC?')"><i class="ti ti-users"></i> Key stakeholders</button>
+    <button class="chat-chip" onclick="quickChat('What recent news, hiring or growth signals might give me a reason to reach out to ${co} right now?')"><i class="ti ti-bell"></i> Find a hook</button>
+    <button class="chat-chip" onclick="quickChat('Draft a short, direct LinkedIn message to a senior leader at ${co} about VSG's executive search capability.')"><i class="ti ti-message"></i> Draft outreach</button>
+  `;
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatOverlay').classList.add('open');
+}
+
 /* ── ADD / EDIT JOB ── */
 function openAddJob(id=null){
   editJobId=id;
@@ -2357,8 +2916,58 @@ function saveJob(){
     createdAt:editJobId?jobs.find(x=>x.id===editJobId)?.createdAt:today(),
     updatedAt:today()
   };
+  const prevJob=editJobId?jobs.find(x=>x.id===editJobId):null;
+  const justActivated=j.status==='active'&&(!prevJob||prevJob.status!=='active');
   jobs=editJobId?jobs.map(x=>x.id===editJobId?j:x):[j,...jobs];
   saveJobs();renderJobs();renderRevenuePipeline();closeAddJob();
+  if(justActivated)sourceCandidatesForMandate(j);
+}
+
+async function sourceCandidatesForMandate(job){
+  /* When a mandate goes active, scan Supabase contacts for top fits and surface them */
+  const db=_db();if(!db)return;
+  showToast(`Scanning pipeline for ${job.title} at ${job.company||'client'}...`);
+  try{
+    const{data:allContacts}=await db.from('contacts')
+      .select('id,name,title,company,industry,stage,notes,linkedin')
+      .not('stage','in','("lost","rejected","closed")')
+      .limit(200);
+    if(!allContacts||allContacts.length===0)return;
+    // Build a scoring prompt — no API call needed, just rule-based match
+    const titleLower=(job.title||'').toLowerCase();
+    const industryLower=(job.industry||'').toLowerCase();
+    const scored=allContacts.map(c=>{
+      let score=0;
+      const cTitle=(c.title||'').toLowerCase();
+      const cIndustry=(c.industry||'').toLowerCase();
+      const cNotes=(c.notes||'').toLowerCase();
+      // Title keyword match
+      const jobWords=titleLower.split(/\s+/).filter(w=>w.length>3);
+      jobWords.forEach(w=>{if(cTitle.includes(w))score+=20;});
+      // Industry match
+      if(industryLower&&cIndustry&&cIndustry.includes(industryLower))score+=15;
+      // Warm stages score higher
+      if(['engaged','meeting','active'].includes(c.stage))score+=25;
+      else if(c.stage==='prospect')score+=10;
+      // Notes mention relevant keywords
+      jobWords.forEach(w=>{if(cNotes.includes(w))score+=5;});
+      return{...c,_fitScore:score};
+    }).filter(c=>c._fitScore>0).sort((a,b)=>b._fitScore-a._fitScore).slice(0,5);
+
+    if(scored.length===0){showToast('No matching contacts found in pipeline');return;}
+
+    // Write a signal so it surfaces in Today's Actions
+    const names=scored.map(c=>`${c.name} (${c.title||'?'}, ${c._fitScore}pts fit)`).join('; ');
+    await db.from('company_signals').insert({
+      company_name:job.company||'Mandate',
+      signal_type:'hiring',
+      title:`Top candidate fits for: ${job.title}`,
+      summary:`Mandate active — auto-scanned pipeline for "${job.title}" at ${job.company||'client'}.\n\nTop ${scored.length} matches:\n${scored.map((c,i)=>`${i+1}. ${c.name} — ${c.title||'?'} (stage: ${c.stage})`).join('\n')}\n\nReview these contacts and decide who to pitch.\n\nFull matches: ${names}`,
+      importance:'high',
+      actioned:false
+    });
+    showToast(`${scored.length} candidate fits surfaced in Today's Actions`);
+  }catch(e){console.warn('[Mandate Sourcing] Error:',e);}
 }
 
 function deleteJob(id){
@@ -3514,15 +4123,38 @@ function openProspectDetail(id){
 
 async function approveProspect(id){
   const p=prospectsQueue.find(x=>x.id===id);if(!p)return;
-  // Add as contact
+  const db=_db();
   const now=today();
-  const c={id:Date.now(),name:p.full_name,title:p.title||'',company:p.company||'',industry:'',email:p.email||'',phone:'',linkedin:p.linkedin_url||'',source:'AI Prospect',stage:'contacted',priority:'high',lastContact:now,followupDate:'',notes:p.draft_message?'Draft message: '+p.draft_message:'',createdAt:now,updatedAt:now};
+  // 1. Add to local contacts + sync to Supabase contacts table
+  const c={id:Date.now(),name:p.full_name,title:p.title||'',company:p.company||'',industry:'',email:p.email||'',phone:'',linkedin:p.linkedin_url||'',source:'AI Prospect',stage:'prospect',priority:'high',lastContact:now,followupDate:'',notes:p.draft_message?'Draft outreach idea: '+p.draft_message:'',createdAt:now,updatedAt:now};
   contacts=[c,...contacts];save();render();
-  // Mark as added
-  try{const db=_db();if(db)await db.from('prospects_queue').update({status:'added'}).eq('id',id);}catch(e){}
+  // 2. Mark prospects_queue as added
+  try{if(db)await db.from('prospects_queue').update({status:'added'}).eq('id',id);}catch(e){}
   prospectsQueue=prospectsQueue.map(x=>x.id===id?{...x,status:'added'}:x);
+  // 3. Auto-queue LinkedIn connection request if URL available
+  let linkedInQueued=false;
+  if(db&&p.linkedin_url){
+    try{
+      const cleanUrl=p.linkedin_url.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase();
+      // Check not already in outreach table
+      const{data:existing}=await db.from('linkedin_outreach').select('id').ilike('linkedin_url','%'+cleanUrl.split('/').pop()+'%').limit(1);
+      if(!existing||existing.length===0){
+        await db.from('linkedin_outreach').insert({
+          full_name:p.full_name,
+          title:p.title||null,
+          company:p.company||null,
+          linkedin_url:p.linkedin_url,
+          status:'pending',
+          source:'prospects_queue',
+          date_requested:now,
+          notes:p.draft_message?'Draft: '+p.draft_message:null
+        });
+        linkedInQueued=true;
+      }
+    }catch(e){console.warn('LinkedIn queue:',e);}
+  }
   renderProspects();updateProspectsBadge();
-  alert(`${p.full_name} added to contacts!`);
+  showToast(`${p.full_name} added to contacts${linkedInQueued?' + queued for LinkedIn request':''}`);
 }
 
 async function rejectProspect(id){
@@ -3682,688 +4314,4 @@ function addChatMessage(role,content,typing=false){
 async function sendChat(){
   const input=document.getElementById('chat-input');
   const text=(input?.value||'').trim();
-  if(!text||!currentChatContact)return;
-  input.value='';
-  addChatMessage('user',text);
-  addChatMessage('assistant','Thinking...',true);
-  try{
-    let fetchBody;
-    if(_actionCtx){
-      // Action chat — pass full action context as systemOverride so Claude knows exactly what was seen and why
-      const sys=`You are an AI BD assistant for Michael Stubbs at Vantage Search Group, a boutique GCC executive search firm headquartered in Dubai. VSG has placed leaders at Mubadala, PIF, TAQA, Red Sea Global, Diriyah Gate, ADNOC, Accenture, Kearney and many others.
-
-Michael is following up on a specific BD action from his dashboard. Here is the full context:
-
-CONTACT: ${_actionCtx.contact||'Unknown'}
-COMPANY: ${_actionCtx.company||'Unknown'}
-ACTION: ${_actionCtx.title||''}
-SIGNAL (what was observed): ${_actionCtx.signal||''}
-WHY ACT NOW: ${_actionCtx.why||''}
-DRAFTED MESSAGE: ${_actionCtx.suggested_message||'None'}
-CONTACTS TO REACH: ${(_actionCtx.contacts_to_reach&&_actionCtx.contacts_to_reach.length)?_actionCtx.contacts_to_reach.map(c=>`${c.name} (${c.title||''}${c.company?' at '+c.company:''})${c.linkedin?' LinkedIn: '+c.linkedin:''}${c.email?' Email: '+c.email:''}`).join('; '):'Not specified'}
-
-Help Michael: refine or rewrite the message, find a different angle, provide company or person intel, answer any question about this outreach. Be concise and direct. No em-dashes. No corporate language.`;
-      fetchBody={
-        messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
-        systemOverride:sys,
-        maxTokens:1024
-      };
-    } else if(window._seoCtx&&currentChatContact&&currentChatContact.name==='SEO Assistant'){
-      // SEO chat mode
-      const seaSys=`You are an SEO advisor for Vantage Search Group, a boutique executive search firm headquartered in Dubai serving the GCC. The website is vantagesearchgroup.com.
-VSG publishes SEO articles targeting: executive search Dubai, C-suite recruitment GCC, executive headhunter Saudi Arabia, CFO recruitment UAE, sovereign wealth fund talent, and similar.
-CURRENT TRAFFIC DATA:
-${window._seoCtx}
-Give Michael specific, actionable SEO advice. Suggest keywords, content ideas, technical quick wins, or help draft content. Be direct and concise. No em-dashes.`;
-      fetchBody={
-        messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
-        systemOverride:seaSys,
-        maxTokens:1024
-      };
-    } else {
-      fetchBody={
-        messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
-        contactContext:{
-          name:currentChatContact.name,title:currentChatContact.title,
-          company:currentChatContact.company,industry:currentChatContact.industry,
-          stage:currentChatContact.stage,lastContact:currentChatContact.lastContact,
-          followupDate:currentChatContact.followupDate,linkedin:currentChatContact.linkedin,
-          notes:currentChatContact.notes
-        }
-      };
-    }
-    const res=await fetch('/.netlify/functions/chat',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(fetchBody)
-    });
-    const data=await res.json();
-    if(data.error)throw new Error(data.error);
-    // Replace typing indicator
-    chatMessages=chatMessages.filter(m=>!m.typing);
-    addChatMessage('assistant',data.content);
-    // Save to Supabase
-    try{
-      const db=_db();
-      if(db&&chatContactId){
-        await db.from('chat_history').insert([
-          {contact_id:chatContactId,role:'user',content:text},
-          {contact_id:chatContactId,role:'assistant',content:data.content}
-        ]);
-      }
-    }catch(e){console.error('chat save:',e);}
-  }catch(err){
-    chatMessages=chatMessages.filter(m=>!m.typing);
-    addChatMessage('assistant',err.message.includes('CLAUDE_API_KEY')?
-      'The AI chat needs the CLAUDE_API_KEY configured in Netlify. Go to Netlify Dashboard, Site Settings, Environment Variables, and add your Claude API key as CLAUDE_API_KEY.':
-      'Could not reach the AI right now. Make sure the Netlify function is deployed and your API key is configured.');
-  }
-}
-
-function quickChat(prompt){
-  const input=document.getElementById('chat-input');
-  if(input){input.value=prompt;sendChat();}
-}
-
-function copyToClipboard(text){
-  const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
-  document.body.appendChild(ta);ta.focus();ta.select();document.execCommand('copy');
-  document.body.removeChild(ta);
-  // Toast
-  const t=document.createElement('div');
-  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2)';
-  t.textContent='Copied to clipboard';document.body.appendChild(t);
-  setTimeout(()=>t.remove(),2000);
-}
-
-// ── Extend contact detail to include AI Chat button ──
-// Wrap original openDetail to inject chat button
-const _origOpenDetail=window.openDetail;
-window.openDetail=function(id){
-  _origOpenDetail(id);
-  // Add AI chat button to the detail footer
-  setTimeout(()=>{
-    const body=document.getElementById('detail-body');
-    if(!body)return;
-    const footer=body.querySelector('[style*="border-top"]');
-    if(footer&&!footer.querySelector('.ai-chat-btn')){
-      const btn=document.createElement('button');
-      btn.className='btn btn-sm btn-purple ai-chat-btn';
-      btn.innerHTML='<i class="ti ti-message-circle-2"></i> Ask AI';
-      btn.onclick=()=>{document.getElementById('detailOv').classList.remove('open');openChatPanel(id);};
-      footer.insertBefore(btn,footer.firstChild);
-    }
-  },50);
-};
-
-// ── Wire up Supabase db reference for AI features ──
-// The Supabase block uses a local const db; expose it globally
-(function waitForDb(){
-  const interval=setInterval(()=>{
-    // The supabase sync block creates 'db' in its closure; we re-create access here
-    if(window.supabase){
-      const SUPA_URL='https://mkqbegnqrgveiygrycyg.supabase.co';
-      const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcWJlZ25xcmd2ZWl5Z3J5Y3lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjE3NjAsImV4cCI6MjA5Nzc5Nzc2MH0.0Qprp9wRW8iPhmqPbmXEkp0toz3z8TGXoVEESkP6Tp4';
-      window._vsgDb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
-      clearInterval(interval);
-      // Initial load of AI features
-      setTimeout(()=>{loadIntelligence();loadProspects();},1500);
-    }
-  },200);
-})();
-
-// ── Add intelligence section to Overview page ──
-(function enhanceOverview(){
-  const obs=new MutationObserver(()=>{
-    const ov=document.getElementById('p-overview');
-    if(ov&&!document.getElementById('ov-intel-section')){
-      const section=document.createElement('div');
-      section.id='ov-intel-section';
-      section.style.marginTop='20px';
-      section.innerHTML=`<div class="card"><div class="card-h"><h3><i class="ti ti-cpu"></i> Latest intelligence</h3><button class="btn btn-xs btn-ghost" onclick="goPage('intelligence',document.querySelectorAll('.nav-btn')[7])">View all</button></div><div id="ov-intel-feed" class="intel-feed card-b p0" style="max-height:280px;overflow-y:auto"></div></div>`;
-      ov.appendChild(section);
-      obs.disconnect();
-    }
-  });
-  obs.observe(document.body,{childList:true,subtree:true});
-})();
-
-/* ═══════════════════════════════════════════════════
-   TODAY'S ACTIONS
-════════════════════════════════════════════════════ */
-let _actionsGenerated=false;
-async function loadTodaysActions(){
-  if(_actionsGenerated)return;
-  // Try loading today's saved actions from Supabase first
-  try{
-    const today=new Date().toISOString().slice(0,10);
-    const db=_db();
-    if(db){
-      const{data}=await db.from('todays_actions').select('*').eq('action_date',today).order('generated_at',{ascending:false}).limit(1);
-      if(data&&data.length>0&&data[0].actions&&data[0].actions.length>0){
-        const row=data[0];
-        const modeData={mode:row.mode||'prospecting',jobs:0,pipeline:0};
-        renderTodaysActions({mode:row.mode,daily_effort_total:row.daily_effort_total,actions:row.actions},modeData);
-        _actionsGenerated=true;
-        const ts=new Date(row.generated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-        const src=row.source==='scheduled'?' (auto)':'';
-        document.getElementById('actions-timestamp').textContent='Generated '+ts+src;
-        document.getElementById('run-actions-btn').innerHTML='<i class="ti ti-bolt"></i> Regenerate';
-        return;
-      }
-    }
-  }catch(e){console.warn('Could not load saved actions:',e);}
-  // No saved actions for today — show empty state
-  document.getElementById('actions-empty').style.display='block';
-  document.getElementById('actions-mode-card').style.display='none';
-  document.getElementById('actions-list').innerHTML='';
-}
-
-async function runTodaysActions(){
-  const btn=document.getElementById('run-actions-btn');
-  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Running...';
-  document.getElementById('actions-empty').style.display='none';
-  document.getElementById('actions-loading').style.display='block';
-  document.getElementById('actions-list').innerHTML='';
-
-  // Animate progress bar
-  let pct=0;
-  const bar=document.getElementById('actions-progress-bar');
-  const ticker=setInterval(()=>{pct=Math.min(pct+2,92);bar.style.width=pct+'%';},500);
-
-  // Assess business mode from Supabase
-  let modeData={mode:'prospecting',jobs:0,pipeline:0};
-  try{
-    const{data:jobs}=await supabase.from('jobs').select('id,status').eq('status','active');
-    const jobCount=(jobs||[]).length;
-    const{data:contacts}=await supabase.from('contacts').select('stage,value_aed');
-    const pipeline=(contacts||[]).reduce((s,c)=>s+(parseFloat(c.value_aed)||0),0);
-    modeData.jobs=jobCount;modeData.pipeline=pipeline;
-    if(jobCount>=4)modeData.mode='delivery';
-    else if(jobCount>=2)modeData.mode='mixed';
-    else modeData.mode='prospecting';
-  }catch(e){}
-
-  // Build the master system prompt
-  const modeDescriptions={
-    prospecting:`VSG currently has ${modeData.jobs} live mandate(s). This is PROSPECTING MODE — weight actions 70% opportunity triggers and new BD, 20% relationship maintenance, 10% admin.`,
-    mixed:`VSG currently has ${modeData.jobs} live mandates. This is MIXED MODE — weight actions 50% delivery, 30% BD outreach, 20% relationship maintenance.`,
-    delivery:`VSG currently has ${modeData.jobs} live mandates. This is DELIVERY MODE — weight actions 60% delivery, 25% relationship maintenance, 15% new BD.`
-  };
-
-  const systemPrompt=`You are Michael Stubbs' AI BD engine at Vantage Search Group. VSG is a boutique executive search firm in the GCC.
-
-${modeDescriptions[modeData.mode]}
-
-Generate Michael's Today's Actions list. Output as a JSON array of action objects. Each object has:
-- rank: number (1 = most urgent)
-- priority: "critical" | "high" | "medium" | "low"
-- type: e.g. "Reply needed" | "Follow-up overdue" | "Opportunity trigger" | "Relationship check-in" | "New prospect" | "Pipeline admin"
-- title: short action title (max 12 words)
-- contact: name of person (if applicable, else null)
-- company: company name (if applicable, else null)
-- signal: EXACTLY where this came from. Be specific and transparent. Format: "[Source type]: [what was observed]". Source types: "LinkedIn message received [date]:", "Email received [date/time]:", "LinkedIn post by [name] on [date]:", "Publicly reported [date]:", "Pipeline data:", "Follow-up date passed:", "Notes record:". Examples: "LinkedIn message received 25 Jun: Dmitry messaged asking about senior finance hiring in Abu Dhabi", "Email received 26 Jun 09:14: Subject 'CFO Search — interested in working together', from khalid@gulfcapital.com", "Publicly reported 24 Jun: ADNOC announced a new downstream expansion — likely to need transformation leadership", "Follow-up date passed 12 days ago — last contact was 14 Jun per pipeline", "Pipeline data: no contact recorded in 47 days, stage is Warm". CRITICAL: NEVER invent a communication. If you have no real signal, say "Suggested action based on [reason]:" not a fake received message.
-- why: one sentence on commercial reason to act now
-- contacts_to_reach: array of specific people Michael should contact for this action. Each entry: {"name": "Full Name", "title": "Their title", "company": "Company", "linkedin": "linkedin.com/in/profile-url or null", "email": "email if known or null", "approach": "why this person specifically"}. If no specific contacts known, return empty array.
-- suggested_message: a short, human outreach message (max 60 words, no em-dashes, no corporate language). Follow this exact 3-part structure: (1) One sentence showing you know something specific about their situation, referencing the actual signal — e.g. "I saw the Geneva and Houston expansion announcement." (2) One sentence making a soft, natural observation about the consequence — e.g. "I'm sure that's creating some real hiring pressure." (3) Close with a genuine open question that is easy to answer — e.g. "Would love to understand whether that's something we could help with." NEVER use phrases like "let's discuss", "let's explore", "I'd love to connect", "we've placed X executives", or any boastful claim about VSG. The message should feel like it came from a human who did their homework, not a sales email. Or null if not applicable.
-- effort_mins: 2 | 5 | 15 | 30
-- effort_label: "2 min" | "5 min" | "15 min" | "30 min"
-
-Business mode label to show: ${modeData.mode.toUpperCase()} MODE
-Mode sub-text: ${modeDescriptions[modeData.mode]}
-
-Rules:
-- Never criticise the UAE, Saudi Arabia, or any GCC government
-- No em-dashes anywhere
-- Maximum 9 actions
-- Start with any pending replies, then overdue follow-ups, then opportunity triggers ranked by recency
-- Add a "daily_effort_total" field at the root of the response (number of total minutes)
-- Wrap everything in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
-- CRITICAL: Return ONLY raw JSON. No markdown. No code fences. No backticks. The first character of your response must be { and the last must be }.
-
-Since you cannot currently query Supabase directly, generate example actions for a GCC executive search firm. Be honest about sources: prefix all signals correctly. For company news signals, use "Publicly reported [date]:" and cite a real, plausible recent GCC business event. For relationship suggestions, use "Suggested action:". For each action, populate contacts_to_reach with the most relevant real people Michael should contact — include realistic LinkedIn URLs (linkedin.com/in/firstname-lastname format). The suggested_message must reference the signal directly so it reads as informed and specific, not generic.`;
-
-  try{
-    const resp=await fetch('/.netlify/functions/chat',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt})
-    });
-    const data=await resp.json();
-    clearInterval(ticker);bar.style.width='100%';
-    await new Promise(r=>setTimeout(r,400));
-    document.getElementById('actions-loading').style.display='none';
-
-    // Parse response — strip markdown fences, fix trailing commas, then parse
-    let parsed;
-    try{
-      const raw=data.content||data.response||'';
-      // Strip any markdown code fences Claude may have added
-      let cleaned=raw.replace(/^```(?:json)?\s*\n?/,'').replace(/\n?```\s*$/,'').trim();
-      // Extract the outermost JSON object
-      const jsonMatch=cleaned.match(/\{[\s\S]*\}/);
-      let jsonStr=jsonMatch?jsonMatch[0]:cleaned;
-      // Fix trailing commas before ] or } (common LLM mistake)
-      jsonStr=jsonStr.replace(/,(\s*[}\]])/g,'$1');
-      parsed=JSON.parse(jsonStr);
-    }catch(e){
-      parsed={mode:modeData.mode,daily_effort_total:45,actions:[{rank:1,priority:'high',type:'System',title:'Actions generated — review below',contact:null,company:null,why:'AI returned content in unexpected format. Try regenerating.',suggested_message:data.content||data.response||'No response received',effort_mins:5,effort_label:'5 min'}]};
-    }
-
-    renderTodaysActions(parsed,modeData);
-    _actionsGenerated=true;
-    document.getElementById('actions-timestamp').textContent='Generated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    // Save to Supabase so actions persist across refreshes
-    try{
-      const db=_db();
-      if(db){
-        const today=new Date().toISOString().slice(0,10);
-        await db.from('todays_actions').upsert({
-          action_date:today,
-          generated_at:new Date().toISOString(),
-          mode:parsed.mode||modeData.mode,
-          daily_effort_total:parsed.daily_effort_total||0,
-          actions:parsed.actions||[],
-          source:'manual'
-        },{onConflict:'action_date'});
-      }
-    }catch(e){console.warn('Could not save actions:',e);}
-  }catch(e){
-    clearInterval(ticker);
-    document.getElementById('actions-loading').style.display='none';
-    document.getElementById('actions-empty').style.display='block';
-    document.getElementById('actions-empty').innerHTML=`<i class="ti ti-alert-circle" style="font-size:36px;display:block;margin-bottom:12px;color:var(--red);opacity:.6"></i><div style="font-size:14px;font-weight:700;color:var(--red);margin-bottom:8px">Could not connect to AI</div><div style="font-size:13px;color:var(--muted);margin-bottom:16px">Check that the CLAUDE_API_KEY is set in Netlify and try again.</div><button class="btn btn-gold" onclick="runTodaysActions()">Retry</button>`;
-  }
-  btn.disabled=false;btn.innerHTML='<i class="ti ti-bolt"></i> Regenerate';
-}
-
-async function autoQueueLinkedInContacts(actions){
-  const db=_db();if(!db)return;
-  // Collect all contacts_to_reach with a linkedin URL across all actions
-  const toQueue=[];
-  (actions||[]).forEach(a=>{
-    (a.contacts_to_reach||[]).forEach(c=>{
-      if(c.linkedin&&c.name){
-        const cleanUrl=c.linkedin.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase();
-        toQueue.push({name:c.name,title:c.title||null,company:c.company||null,linkedin_url:c.linkedin,_clean:cleanUrl});
-      }
-    });
-  });
-  if(!toQueue.length)return;
-
-  // Check which are already in linkedin_outreach
-  try{
-    const{data:existing}=await db.from('linkedin_outreach').select('linkedin_url,status,full_name');
-    const existingUrls=new Set((existing||[]).map(r=>(r.linkedin_url||'').replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase()));
-
-    const newContacts=toQueue.filter(c=>!existingUrls.has(c._clean));
-    if(!newContacts.length)return;
-
-    const today=new Date().toISOString().slice(0,10);
-    const rows=newContacts.map(c=>({
-      full_name:c.name,
-      title:c.title,
-      company:c.company,
-      linkedin_url:c.linkedin_url.startsWith('http')?c.linkedin_url:'https://'+c.linkedin_url,
-      status:'pending',
-      date_requested:today,
-      source:'todays_actions',
-      notes:"Auto-queued from Today's Actions"
-    }));
-
-    await db.from('linkedin_outreach').insert(rows);
-    console.log(`[LinkedIn] Auto-queued ${rows.length} new contact(s):`,rows.map(r=>r.full_name).join(', '));
-    showToast(`${rows.length} contact${rows.length>1?'s':''} queued for LinkedIn request — nightly agent will send`);
-  }catch(e){console.warn('autoQueueLinkedIn:',e);}
-
-  // After queuing, update status badges on all contact cards
-  try{
-    const{data:all}=await db.from('linkedin_outreach').select('full_name,linkedin_url,status');
-    const statusMap=new Map();
-    (all||[]).forEach(r=>{
-      const key=(r.linkedin_url||'').replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase();
-      statusMap.set(key,r.status);
-      statusMap.set((r.full_name||'').toLowerCase(),r.status);
-    });
-    // Update any [data-li-status] badges in the DOM
-    document.querySelectorAll('[data-li-key]').forEach(el=>{
-      const key=el.getAttribute('data-li-key');
-      const st=statusMap.get(key);
-      if(st){
-        const colors={pending:'#6366f1',connected:'#10b981',replied:'#f59e0b',contacted:'#3b82f6'};
-        const labels={pending:'Request queued',connected:'Connected',replied:'Replied',contacted:'Messaged'};
-        el.innerHTML=`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:${colors[st]||'#6b7280'}22;color:${colors[st]||'#6b7280'};font-weight:600"><i class="ti ti-brand-linkedin" style="font-size:9px"></i> ${labels[st]||st}</span>`;
-      }
-    });
-  }catch(e){}
-}
-
-function renderTodaysActions(data,modeData){
-  window._todaysActionsData=data.actions||[]; // store for action chat context
-  const modeCard=document.getElementById('actions-mode-card');
-  modeCard.className='actions-mode '+data.mode;
-  modeCard.style.display='flex';
-  const icons={prospecting:'ti-telescope',mixed:'ti-adjust',delivery:'ti-rocket'};
-  modeCard.querySelector('.actions-mode-icon').innerHTML=`<i class="ti ${icons[data.mode]||'ti-bolt'}"></i>`;
-  document.getElementById('actions-mode-label').textContent=data.mode.toUpperCase()+' MODE';
-  document.getElementById('actions-mode-sub').textContent=`${modeData.jobs} live mandate${modeData.jobs!==1?'s':''} — ${data.mode==='prospecting'?'Full prospecting focus today':data.mode==='mixed'?'Balance delivery with pipeline development':'Heavy delivery load'}`;
-  document.getElementById('actions-effort-badge').textContent=`~${data.daily_effort_total||45} min today`;
-
-  // Auto-queue any new contacts for LinkedIn outreach (runs silently in background)
-  autoQueueLinkedInContacts(data.actions||[]);
-
-  const list=document.getElementById('actions-list');
-  if(!data.actions||!data.actions.length){list.innerHTML='<div class="empty"><i class="ti ti-bolt"></i><p>No actions generated. Try again.</p></div>';return;}
-
-  const priorityColors={critical:'var(--red)',high:'var(--amber)',medium:'#3b82f6',low:'var(--border)'};
-  list.innerHTML=data.actions.map((a,i)=>`
-    <div class="action-item ${a.priority}" id="action-${i}">
-      <div class="action-rank">${a.rank||i+1}</div>
-      <div class="action-body">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap">
-          <span class="b b-${a.priority==='critical'?'high':a.priority==='high'?'followup':a.priority==='medium'?'contacted':'cold'}">${esc(a.type||'Action')}</span>
-          ${a.contact?`<span style="font-size:12px;color:var(--muted)">${esc(a.contact)}${a.company?' — '+esc(a.company):''}</span>`:''}
-        </div>
-        <div class="action-title">${esc(a.title)}</div>
-        ${a.signal?`<div style="display:flex;align-items:flex-start;gap:6px;margin:5px 0 4px;padding:6px 10px;background:rgba(59,130,246,0.07);border-left:3px solid #3b82f6;border-radius:0 6px 6px 0"><i class="ti ti-eye" style="font-size:12px;color:#3b82f6;margin-top:1px;flex-shrink:0"></i><span style="font-size:12px;color:#1e3a5f;font-weight:500">${esc(a.signal)}</span></div>`:''}
-        <div class="action-sub">${esc(a.why)}</div>
-        ${(a.contacts_to_reach&&a.contacts_to_reach.length)?`<div style="margin:7px 0 5px;padding:8px 10px;background:rgba(201,168,76,0.07);border-left:3px solid var(--gold);border-radius:0 6px 6px 0"><div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Who to contact</div>${a.contacts_to_reach.map(c=>{const liKey=c.linkedin?(c.linkedin.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase()):(c.name||'').toLowerCase();const url=c.linkedin?(c.linkedin.startsWith('http')?c.linkedin:'https://'+c.linkedin):'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(c.name+(c.company?' '+c.company:''));return`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;flex-wrap:wrap"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:var(--navy)">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.title||'')}${c.company?' — '+esc(c.company):''}</div>${c.approach?`<div style="font-size:11px;color:var(--text);margin-top:2px;font-style:italic">${esc(c.approach)}</div>`:''}<div data-li-key="${liKey}" style="margin-top:3px"></div></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><a href="${url}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px;background:${c.linkedin?'#0077b5':'transparent'};color:${c.linkedin?'#fff':'inherit'};border-color:${c.linkedin?'#0077b5':'inherit'}"><i class="ti ti-brand-linkedin"></i>${c.linkedin?' LinkedIn':' Search'}</a>${c.email?`<a href="mailto:${c.email}" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-mail"></i></a>`:''}</div></div>`;}).join('')}</div>`:'' }
-        ${a.suggested_message?`<div class="action-msg">"${esc(a.suggested_message)}"</div>`:''}
-        <div class="action-ft">
-          <span class="effort-tag"><i class="ti ti-clock" style="font-size:10px"></i> ${esc(a.effort_label||'5 min')}</span>
-          ${a.suggested_message?`<button class="btn btn-xs btn-outline" onclick="copyAction(${i})"><i class="ti ti-copy"></i> Copy</button>`:''}
-          <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask AI</button>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function copyAction(i){
-  const msg=document.querySelector(`#action-${i} .action-msg`);
-  if(msg){navigator.clipboard.writeText(msg.textContent.replace(/^"|"$/g,'').trim());showToast('Message copied to clipboard');}
-}
-function openChatFromAction(idx){
-  const a=(window._todaysActionsData||[])[idx];
-  if(!a)return;
-  _actionCtx=a;
-  // Set a fake currentChatContact so sendChat() doesn't bail
-  currentChatContact={name:a.contact||'Contact',company:a.company||'',title:'',industry:'',stage:'',lastContact:'',followupDate:'',linkedin:'',notes:''};
-  chatContactId=null;
-  chatMessages=[];
-  // Update header
-  const av=document.getElementById('chat-av');
-  if(av){av.textContent=(a.contact||'A')[0].toUpperCase();av.style.background='#b8860b';av.style.color='#fff';}
-  document.getElementById('chat-name').textContent=a.contact||(a.company||'Action Chat');
-  document.getElementById('chat-co').textContent=a.company||'Today\'s Action';
-  // Welcome message with full context
-  const welcomeParts=[`I have the full context on this action.`];
-  if(a.signal) welcomeParts.push(`Signal: ${a.signal}`);
-  if(a.why) welcomeParts.push(`Why now: ${a.why}`);
-  if(a.suggested_message) welcomeParts.push(`Drafted message:\n"${a.suggested_message}"`);
-  welcomeParts.push(`What would you like to do? Refine the message, try a different angle, or ask me anything.`);
-  renderChatMessages([{role:'assistant',content:welcomeParts.join('\n\n')}]);
-  // Contextual chips
-  const co=a.company?a.company.replace(/'/g,"\\'"):'this company';
-  const ct=a.contact?a.contact.replace(/'/g,"\\'"):'this person';
-  document.getElementById('chat-chips').innerHTML=`
-    <button class="chat-chip" onclick="quickChat('Explain the signal — where exactly was this seen or observed, and how confident are you in it?')"><i class="ti ti-eye"></i> Explain signal</button>
-    <button class="chat-chip" onclick="quickChat('Rewrite the suggested message with a slightly different angle — keep it under 70 words')"><i class="ti ti-refresh"></i> Rewrite</button>
-    <button class="chat-chip" onclick="quickChat('Make the message shorter and more punchy — under 40 words')"><i class="ti ti-arrows-minimize"></i> Shorter</button>
-    <button class="chat-chip" onclick="quickChat('What else should I know about ${co} before reaching out?')"><i class="ti ti-building"></i> Company intel</button>
-  `;
-  document.getElementById('chatPanel').classList.add('open');
-  document.getElementById('chatOverlay').classList.add('open');
-}
-
-function showToast(msg){
-  let t=document.getElementById('vsg-toast');
-  if(!t){t=document.createElement('div');t.id='vsg-toast';t.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 18px;border-radius:var(--rs);font-size:13px;font-weight:600;z-index:9999;box-shadow:var(--sh-lg);transition:opacity .3s';document.body.appendChild(t);}
-  t.textContent=msg;t.style.opacity='1';
-  setTimeout(()=>{t.style.opacity='0';},2500);
-}
-
-/* ═══════════════════════════════════════════════════
-   LINKEDIN LEADS
-════════════════════════════════════════════════════ */
-async function loadLeads(){
-  const db=_db();
-  const todayStr=new Date().toISOString().slice(0,10);
-  const nextMonthStr=new Date(Date.now()+31*864e5).toISOString().slice(0,10);
-
-  const [leadsRes,outreachRes,engagedRes]=await Promise.all([
-    db?db.from('linkedin_leads').select('*').order('follow_up_date',{ascending:true}):Promise.resolve({data:[]}),
-    db?db.from('linkedin_outreach').select('status'):Promise.resolve({data:[]}),
-    db?db.from('contacts').select('name,title,company,linkedin,stage,notes,last_contact,follow_up_date').in('stage',['engaged','meeting']).not('linkedin','is',null):Promise.resolve({data:[]})
-  ]);
-  const leadsRaw=leadsRes.data||[];
-  const outreach=outreachRes.data||[];
-  const engagedContacts=engagedRes.data||[];
-
-  // Merge engaged contacts (deduplicate by linkedin URL)
-  const seenUrls=new Set(leadsRaw.map(l=>(l.linkedin_url||'').split('?')[0].toLowerCase()));
-  const engagedAsLeads=engagedContacts.filter(c=>{
-    const url=(c.linkedin||'').split('?')[0].toLowerCase();
-    return url&&!seenUrls.has(url);
-  }).map(c=>({
-    full_name:c.name,title:c.title,company:c.company,
-    linkedin_url:c.linkedin,
-    status:c.stage==='meeting'?'meeting':'engaged',
-    notes:c.notes,
-    follow_up_date:c.follow_up_date||null,
-    _source:'contacts'
-  }));
-
-  const leads=[...leadsRaw,...engagedAsLeads].sort((a,b)=>{
-    if(!a.follow_up_date&&!b.follow_up_date)return 0;
-    if(!a.follow_up_date)return 1;if(!b.follow_up_date)return -1;
-    return a.follow_up_date.localeCompare(b.follow_up_date);
-  });
-
-  // Metrics
-  const replied=leadsRaw.filter(l=>l.status==='replied').length;
-  const outPending=outreach.filter(o=>o.status==='pending').length;
-  const outConnected=outreach.filter(o=>o.status==='connected').length;
-  const outReplied=outreach.filter(o=>o.status==='replied').length;
-
-  document.getElementById('leads-metrics').innerHTML=`
-    <div class="m gold"><div class="m-icon" style="background:var(--gold-bg);color:#92680a"><i class="ti ti-user-star" style="font-size:20px"></i></div>
-      <div class="m-val">${leads.length}</div><div class="m-lbl">Warm leads</div><div class="m-sub">${replied} replied · ${engagedAsLeads.length} engaged</div></div>
-    <div class="m navy"><div class="m-icon" style="background:rgba(13,27,62,.08);color:var(--navy)"><i class="ti ti-send" style="font-size:20px"></i></div>
-      <div class="m-val">${outPending}</div><div class="m-lbl">Outreach pending</div><div class="m-sub">${outConnected} connected · ${outReplied} replied</div></div>
-    <div class="m amber"><div class="m-icon" style="background:var(--amber-bg);color:var(--amber)"><i class="ti ti-calendar-event" style="font-size:20px"></i></div>
-      <div class="m-val">${leads.filter(l=>l.follow_up_date).length}</div><div class="m-lbl">With follow-up date</div><div class="m-sub">Set for nurturing</div></div>`;
-
-  const warmStatuses=new Set(['pending','replied','engaged','meeting']);
-  const overdue=leads.filter(l=>l.follow_up_date&&l.follow_up_date<todayStr&&warmStatuses.has(l.status));
-  const soon=leads.filter(l=>l.follow_up_date&&l.follow_up_date>=todayStr&&l.follow_up_date<=nextMonthStr&&warmStatuses.has(l.status));
-
-  // Update badge
-  const urgentCount=overdue.length+soon.length;
-  const nb=document.getElementById('nb-leads');
-  if(urgentCount>0){nb.textContent=urgentCount;nb.style.display='';}else nb.style.display='none';
-
-  const renderLeadCard=(l)=>{
-    const fu=l.follow_up_date;
-    const isOverdue=fu&&fu<todayStr&&warmStatuses.has(l.status);
-    const isSoon=fu&&fu>=todayStr&&fu<=nextMonthStr&&warmStatuses.has(l.status);
-    const fuLabel=fu?(isOverdue?`<span class="b b-overdue">Overdue — ${fu}</span>`:isSoon?`<span class="b b-today">Follow up by ${fu}</span>`:`<span class="b b-cold">Follow up ${fu}</span>`):'';
-    const borderClass=isOverdue?'border-left:4px solid var(--red)':isSoon?'border-left:4px solid var(--amber)':'';
-    const statusBadge=l.status==='contacted'?'<span class="b b-active">Contacted</span>'
-      :l.status==='converted'?'<span class="b b-placed">Converted</span>'
-      :l.status==='replied'?'<span class="b b-active" style="background:rgba(16,185,129,.12);color:#065f46">Replied</span>'
-      :l.status==='meeting'?'<span class="b b-active" style="background:rgba(99,102,241,.12);color:#3730a3">Meeting booked</span>'
-      :l.status==='engaged'?'<span class="b b-active" style="background:rgba(245,158,11,.12);color:#92400e">Engaged</span>'
-      :'<span class="b b-cold">Pending</span>';
-    const sourceTag=l._source==='contacts'?'<span class="b b-cold" style="font-size:9px;opacity:.6">All Contacts</span>':'<span class="b b-cold" style="font-size:9px;opacity:.6">LinkedIn reply</span>';
-    const actionBtns=l.id
-      ?`<button class="btn btn-sm btn-green" onclick="markLeadContacted('${l.id}')"><i class="ti ti-check"></i> Mark contacted</button>
-         <button class="btn btn-sm btn-ghost" onclick="markLeadConverted('${l.id}')"><i class="ti ti-star"></i> Converted</button>`
-      :`<span style="font-size:11px;color:var(--muted)">Edit in All Contacts</span>`;
-    return `<div class="fu ${isOverdue?'overdue':isSoon?'today':''}" style="${borderClass}">
-      <div class="fu-top">
-        <div class="fu-meta">
-          <div class="av" style="width:40px;height:40px;background:var(--navy);color:#fff;font-size:14px;flex-shrink:0">${(l.full_name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
-          <div style="flex:1;min-width:0">
-            <div class="fu-name">${esc(l.full_name||'—')}</div>
-            <div class="fu-detail">${esc((l.title||'').split('|')[0].trim())}${l.company?' at '+esc(l.company):''}${l.location?' · '+esc(l.location):''}</div>
-            <div class="fu-badges">${fuLabel} ${statusBadge} ${sourceTag}</div>
-          </div>
-        </div>
-      </div>
-      ${l.notes?`<div class="fu-note">${esc(l.notes.substring(0,200))}</div>`:''}
-      <div class="fu-actions">
-        <a href="${l.linkedin_url||'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(l.full_name||'')}" target="_blank" class="btn btn-sm" style="background:#0077b5;color:#fff;border:none"><i class="ti ti-brand-linkedin"></i> View on LinkedIn</a>
-        ${actionBtns}
-      </div>
-    </div>`;
-  };
-
-  // Overdue
-  if(overdue.length>0){document.getElementById('leads-overdue-section').style.display='';document.getElementById('leads-overdue').innerHTML=overdue.map(renderLeadCard).join('');}
-  else document.getElementById('leads-overdue-section').style.display='none';
-  // Soon
-  if(soon.length>0){document.getElementById('leads-soon-section').style.display='';document.getElementById('leads-soon').innerHTML=soon.map(renderLeadCard).join('');}
-  else document.getElementById('leads-soon-section').style.display='none';
-  // All
-  document.getElementById('leads-all').innerHTML=leads.length>0
-    ?leads.map(renderLeadCard).join('')
-    :'<div class="empty"><i class="ti ti-user-star"></i><p>No leads yet. Replied LinkedIn contacts and engaged prospects will appear here automatically.</p></div>';
-}
-
-window.markLeadContacted=async function(id){
-  const db=_db();if(!db)return;
-  await db.from('linkedin_leads').update({status:'contacted'}).eq('id',id);
-  loadLeads();
-};
-window.markLeadConverted=async function(id){
-  const db=_db();if(!db)return;
-  await db.from('linkedin_leads').update({status:'converted'}).eq('id',id);
-  loadLeads();
-};
-
-/* ═══════════════════════════════════════════════════
-   HIRING SIGNALS
-════════════════════════════════════════════════════ */
-let hiringSignals=JSON.parse(localStorage.getItem('vsg_signals')||'[]');
-function saveSignals(){localStorage.setItem('vsg_signals',JSON.stringify(hiringSignals));}
-
-async function loadSignals(){
-  const list=document.getElementById('signals-list');
-  const today=new Date();
-  const db=_db();
-
-  // Load from Supabase company_signals (AI-generated) + localStorage (manual)
-  let sbSignals=[];
-  if(db){
-    try{
-      const{data}=await db.from('company_signals')
-        .select('*')
-        .in('signal_type',['hiring','funding','expansion','news'])
-        .eq('actioned',false)
-        .order('created_at',{ascending:false})
-        .limit(50);
-      sbSignals=data||[];
-    }catch(e){console.warn('signals load:',e);}
-  }
-
-  // Map Supabase signals to display format
-  const sbMapped=sbSignals.map(s=>({
-    _id:s.id,
-    _source:'supabase',
-    company:s.company_name,
-    title:s.title,
-    summary:s.summary,
-    signal_type:s.signal_type,
-    importance:s.importance,
-    source_url:s.source_url,
-    date:s.created_at,
-    actioned:s.actioned
-  }));
-
-  // Combine with manual localStorage signals
-  const manualMapped=hiringSignals.map((s,i)=>({
-    _idx:i,
-    _source:'local',
-    company:s.company,
-    title:s.company+' — '+( s.roles_posted||'?')+' senior roles posted',
-    summary:(s.connection?'Contact: '+s.connection+'. ':'')+( s.notes||''),
-    signal_type:'hiring',
-    importance:'medium',
-    date:s.date,
-    actioned:false
-  }));
-
-  const allSignals=[...sbMapped,...manualMapped];
-
-  let hot=0,warm=0;
-  allSignals.forEach(s=>{
-    const days=Math.floor((today-new Date(s.date))/(1000*60*60*24));
-    if(days<=30)hot++;else if(days<=60)warm++;
-  });
-  document.getElementById('signals-hot-count').textContent=hot;
-  document.getElementById('signals-warm-count').textContent=warm;
-
-  if(!allSignals.length){
-    list.innerHTML='<div class="empty"><i class="ti ti-trending-up"></i><p>No hiring signals yet. The signal monitor runs at 8am, 12pm and 4pm and populates this automatically.</p></div>';
-    return;
-  }
-
-  const typeIcon={hiring:'ti-trending-up',funding:'ti-coin',expansion:'ti-world',news:'ti-news',leadership_change:'ti-user-star'};
-  const typeColor={hiring:'var(--red)',funding:'var(--green)',expansion:'#2563eb',news:'var(--muted)',leadership_change:'var(--gold)'};
-
-  list.innerHTML=allSignals.map((s,i)=>{
-    const days=Math.floor((today-new Date(s.date))/(1000*60*60*24));
-    const heat=days<=30?'hot':days<=60?'warm':'cool';
-    const heatLabel=s.importance==='high'?'🔥 High priority':'🟡 Medium';
-    const icon=typeIcon[s.signal_type]||'ti-trending-up';
-    const color=typeColor[s.signal_type]||'var(--muted)';
-
-    // Extract CONTACT line from summary if present
-    const contactMatch=(s.summary||'').match(/CONTACT:\s*([^|.]+)/i);
-    const contactLine=contactMatch?`<div style="margin-top:6px;padding:6px 10px;background:var(--gold-bg);border-radius:6px;font-size:12px"><i class="ti ti-user" style="color:var(--gold);margin-right:4px"></i><strong>${contactMatch[1].trim()}</strong></div>`:'';
-    const summaryClean=(s.summary||'').replace(/CONTACT:[^|]*/i,'').replace(/\|.*$/,'').trim();
-
-    const actionButtons=s._source==='supabase'
-      ? `<button class="btn btn-xs btn-outline" onclick="markSignalActioned('${s._id}')"><i class="ti ti-check"></i> Mark done</button>`
-      : `<button class="btn btn-xs btn-ghost" onclick="deleteSignal(${s._idx})"><i class="ti ti-trash"></i></button>`;
-
-    return `<div class="signal-card ${heat}" style="border-left:3px solid ${color}">
-      <div class="signal-icon" style="background:${heat==='hot'?'var(--red-bg)':heat==='warm'?'var(--amber-bg)':'#eff6ff'};color:${color}"><i class="ti ${icon}"></i></div>
-      <div class="signal-body">
-        <div class="signal-title">${esc(s.company||'')} <span class="b b-${s.importance==='high'?'high':'cold'}" style="font-size:10px">${s.signal_type}</span></div>
-        <div style="font-size:13px;font-weight:600;color:var(--navy);margin:4px 0">${esc(s.title||'')}</div>
-        <div class="signal-sub">${esc(summaryClean.substring(0,200))}${summaryClean.length>200?'...':''}</div>
-        ${contactLine}
-        <div class="signal-ft" style="margin-top:8px">
-          <span class="b b-${heat==='hot'?'high':'followup'}">${heatLabel} · ${days}d ago</span>
-          ${s.source_url?`<a href="${esc(s.source_url)}" target="_blank" class="btn btn-xs btn-ghost"><i class="ti ti-external-link"></i> Source</a>`:''}
-          <button class="btn btn-xs btn-outline" onclick="openChatFromSignal(${JSON.stringify({company:s.company,contact:contactMatch?contactMatch[1].trim():'',title:s.title}).replace(/"/g,'&quot;')})"><i class="ti ti-message"></i> Draft outreach</button>
-          ${actionButtons}
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-async function markSignalActioned(id){
-  const db=_db();
-  if(!db)return;
-  await db.from('company_signals').update({actioned:true}).eq('id',id);
-  showToast('Signal marked done');
-  loadSignals();
-}
-
-function openChatFromSignal(s){
-  document.getElementById('chat-contact-name').textContent=s.contact||s.company;
-  document.getElementById('chat-company-name').textContent=s.company;
-  document.getElementById('chat-messages').innerHTML='';
-  document.getElementById('chatPanel').classList.add('open');
-  document.getElementById('chatOverlay').classList.add('open');
-}
-
-function openAddSignal(){document.getElementById('sig-date').value=new Date().toISOString().split('T')[0];document.getElementById('addSignalOv').classList.add('open');}
-function saveSignal(){
-  const company=document.getElementById('sig-company').value.trim();
-  if(!company){alert('Company name required');return;}
-  hiringSignals.push({id:Date.now(),company,roles_posted:parseInt(document.getElementById('sig-roles').value)||0,date:documen
+  if(!text||!currentC

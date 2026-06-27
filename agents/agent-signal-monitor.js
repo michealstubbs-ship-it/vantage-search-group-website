@@ -116,11 +116,23 @@ async function run() {
 
   // Check which companies we've already processed this week to avoid duplicates
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const fortnightAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
   const { data: recentSignals } = await db
     .from('company_signals')
-    .select('company_name, title')
+    .select('company_name, signal_type, title, actioned')
     .gte('created_at', weekAgo);
   const recentTitles = new Set((recentSignals || []).map(s => s.title));
+
+  // Also check recently actioned signals (14 days) — don't re-surface same company+type
+  const { data: actionedSignals } = await db
+    .from('company_signals')
+    .select('company_name, signal_type')
+    .eq('actioned', true)
+    .gte('created_at', fortnightAgo);
+  const recentlyActioned = new Set(
+    (actionedSignals || []).map(s => `${(s.company_name||'').toLowerCase()}::${s.signal_type}`)
+  );
+  console.log(`[Signal Monitor] ${recentTitles.size} recent titles, ${recentlyActioned.size} recently-actioned company+type combos to skip`);
 
   for (const company of TARGET_COMPANIES) {
     console.log(`[Signal Monitor] Scanning: ${company}`);
@@ -143,6 +155,13 @@ async function run() {
 
         // Only add high-relevance signals
         if (importance !== 'high' && signalType === 'news') continue;
+
+        // Skip if same company+type was already actioned within 14 days
+        const actionedKey = `${company.toLowerCase()}::${signalType}`;
+        if (recentlyActioned.has(actionedKey)) {
+          console.log(`[Signal Monitor] Skipping ${company} (${signalType}) — actioned recently`);
+          continue;
+        }
 
         signals.push({
           company_name: company,
