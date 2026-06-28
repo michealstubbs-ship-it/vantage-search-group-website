@@ -312,6 +312,26 @@ textarea{resize:vertical;min-height:80px}
 .b-jlost{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr)}
 .b-jonhold{background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0}
 
+/* ── COMMAND BAR ── */
+.cmd-bar-wrap{position:sticky;top:0;z-index:200;background:var(--bg);border-bottom:1px solid var(--border);padding:8px 20px}
+.cmd-bar{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:0 14px;transition:border-color .15s;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.cmd-bar:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.12)}
+.cmd-bar i.search-icon{font-size:17px;color:var(--muted);flex-shrink:0}
+.cmd-bar input{flex:1;border:none;background:transparent;font-size:15px;color:var(--text);padding:11px 0;outline:none}
+.cmd-bar input::placeholder{color:var(--muted)}
+.cmd-bar-kbd{font-size:11px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 6px;white-space:nowrap;flex-shrink:0}
+.cmd-results{position:absolute;top:calc(100% + 4px);left:20px;right:20px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:300;max-height:480px;overflow-y:auto;display:none}
+.cmd-results.open{display:block}
+.cmd-group-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;padding:10px 14px 4px}
+.cmd-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;transition:background .1s}
+.cmd-item:hover,.cmd-item.cmd-active{background:rgba(201,168,76,.08)}
+.cmd-item-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.cmd-item-body{flex:1;min-width:0}
+.cmd-item-title{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmd-item-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmd-item-badge{font-size:11px;color:var(--gold);font-weight:600;flex-shrink:0}
+.cmd-divider{height:1px;background:var(--border);margin:4px 0}
+
 @media(max-width:1100px){
   .ov-grid{grid-template-columns:1fr 1fr}
   .ov-col-rev{grid-column:1/-1}
@@ -649,6 +669,18 @@ textarea{resize:vertical;min-height:80px}
 </div>
 
 <div class="shell">
+
+  <!-- GLOBAL COMMAND BAR -->
+  <div class="cmd-bar-wrap" id="cmd-wrap" style="grid-column:1/-1;position:sticky;top:0;z-index:200">
+    <div class="cmd-bar" onclick="document.getElementById('cmd-input').focus()">
+      <i class="ti ti-search search-icon"></i>
+      <input id="cmd-input" type="text" placeholder="Search contacts, companies, signals — or ask Annie anything…"
+        autocomplete="off" spellcheck="false"
+        oninput="cmdSearch(this.value)" onkeydown="cmdKey(event)" onfocus="cmdSearch(this.value)"/>
+      <span class="cmd-bar-kbd">⌘K</span>
+    </div>
+    <div class="cmd-results" id="cmd-results"></div>
+  </div>
 
   <!-- SIDEBAR -->
   <div class="sidebar">
@@ -5233,6 +5265,99 @@ async function submitAnnieFeedback(btn){
   }catch(e){showToast('Annie failed: '+e.message,'error');}
   btn.disabled=false;btn.textContent=origText;
 }
+
+/* ─── Global Command Bar ─── */
+let _cmdIdx=-1,_cmdGroups=[];
+
+const QUICK_ACTIONS=[
+  {icon:'ti-bolt',color:'#b8860b',bg:'rgba(201,168,76,.12)',title:"Generate Today's Actions",sub:"Run the AI to produce today's prioritised action list",fn:()=>{goPage('actions',document.querySelector('[onclick*="actions"]'));loadTodaysActions();setTimeout(()=>runTodaysActions(),400);}},
+  {icon:'ti-layout-columns',color:'#3b82f6',bg:'rgba(59,130,246,.1)',title:'Go to Pipeline',sub:'View your full BD pipeline',fn:()=>goPage('pipeline',document.querySelector('[onclick*="pipeline"]'))},
+  {icon:'ti-trending-up',color:'#10b981',bg:'rgba(16,185,129,.1)',title:'Hiring Signals',sub:'Browse latest company signals',fn:()=>{goPage('signals',document.querySelector('[onclick*="signals"]'));loadSignals();}},
+  {icon:'ti-brand-linkedin',color:'#0077b5',bg:'rgba(0,119,181,.1)',title:'LinkedIn Leads',sub:'View replied and engaged contacts',fn:()=>{goPage('li-leads',document.querySelector('[onclick*="li-leads"]'));loadLeads();}},
+  {icon:'ti-news',color:'#8b5cf6',bg:'rgba(139,92,246,.1)',title:'Leadership Digest',sub:'GCC leadership moves and market intel',fn:()=>{goPage('digest',document.querySelector('[onclick*="digest"]'));loadDigest();}},
+  {icon:'ti-sparkles',color:'#f59e0b',bg:'rgba(245,158,11,.1)',title:'AI Prospects',sub:'Surface new BD prospects with AI',fn:()=>{goPage('prospects',document.querySelector('[onclick*="prospects"]'));loadProspects();}},
+  {icon:'ti-bell',color:'#ef4444',bg:'rgba(239,68,68,.1)',title:'Follow-ups',sub:'View overdue and upcoming follow-ups',fn:()=>goPage('followups',document.querySelector('[onclick*="followups"]'))},
+  {icon:'ti-building',color:'#6366f1',bg:'rgba(99,102,241,.08)',title:'Companies',sub:'Browse all target companies',fn:()=>{goPage('companies',document.querySelector('[onclick*="companies"]'));renderCompanies();}},
+];
+
+function cmdSearch(q){
+  const box=document.getElementById('cmd-results');
+  _cmdIdx=-1;_cmdGroups=[];
+  q=(q||'').trim();
+  const ql=q.toLowerCase();
+
+  // Quick actions
+  const qa=q?QUICK_ACTIONS.filter(a=>a.title.toLowerCase().includes(ql)||a.sub.toLowerCase().includes(ql)):QUICK_ACTIONS.slice(0,4);
+  if(qa.length) _cmdGroups.push({label:'Quick Actions',items:qa.map(a=>({icon:a.icon,color:a.color,bg:a.bg,title:a.title,sub:a.sub,badge:'Go',fn:a.fn}))});
+
+  if(q.length>=2){
+    // Contacts
+    const mc=(contacts||[]).filter(c=>(c.name||'').toLowerCase().includes(ql)||(c.company||'').toLowerCase().includes(ql)||(c.title||'').toLowerCase().includes(ql)).slice(0,5);
+    if(mc.length) _cmdGroups.push({label:'Contacts',items:mc.map(c=>({icon:'ti-user',color:'#1e3a5f',bg:'rgba(30,58,95,.08)',title:c.name||'',sub:(c.title||'')+(c.company?' — '+c.company:''),badge:'Open',fn:()=>openOverlay(c)}))});
+
+    // Today's actions
+    const ma=(window._todaysActionsData||[]).filter(a=>(a.title||'').toLowerCase().includes(ql)||(a.contact||'').toLowerCase().includes(ql)||(a.company||'').toLowerCase().includes(ql)).slice(0,4);
+    if(ma.length) _cmdGroups.push({label:"Today's Actions",items:ma.map((a,ai)=>({icon:'ti-bolt',color:'#b8860b',bg:'rgba(201,168,76,.08)',title:a.title||'',sub:(a.contact||'')+(a.company?' — '+a.company:''),badge:'View',fn:()=>{goPage('actions',document.querySelector('[onclick*="actions"]'));loadTodaysActions();setTimeout(()=>{const el=document.getElementById('action-'+ai);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},600);}}))});
+
+    // Companies from contacts
+    const coMap={};(contacts||[]).forEach(c=>{if(c.company){const k=c.company.toLowerCase();if(k.includes(ql)){if(!coMap[k])coMap[k]={name:c.company,count:0};coMap[k].count++;}}});
+    const mco=Object.values(coMap).slice(0,4);
+    if(mco.length) _cmdGroups.push({label:'Companies',items:mco.map(co=>({icon:'ti-building',color:'#6366f1',bg:'rgba(99,102,241,.08)',title:co.name,sub:co.count+' contact'+(co.count!==1?'s':''),badge:'Filter',fn:()=>{goPage('contacts',document.querySelector('[onclick*="contacts"]'));setTimeout(()=>{const si=document.getElementById('srch');if(si){si.value=co.name;renderContacts();}},200);}}))});
+
+    // Ask Annie
+    _cmdGroups.push({label:'Ask Annie',items:[{icon:'ti-sparkles',color:'var(--gold)',bg:'rgba(201,168,76,.1)',title:'Ask Annie: "'+q+'"',sub:'Research, draft, or answer anything',badge:'Ask',fn:()=>{const inp=document.getElementById('cmd-input');const txt=inp?inp.value:q;cmdClose();setTimeout(()=>{const chatEl=document.getElementById('chat-input');if(chatEl){chatEl.value=txt;chatEl.dispatchEvent(new Event('input'));}const chatPage=document.querySelector('[onclick*="\'chat\'"]');if(chatPage)chatPage.click();},100);}}]});
+  }
+
+  if(!_cmdGroups.length){box.classList.remove('open');return;}
+
+  let out='';
+  _cmdGroups.forEach((g,gi)=>{
+    if(gi>0)out+='<div class="cmd-divider"></div>';
+    out+='<div class="cmd-group-label">'+g.label+'</div>';
+    g.items.forEach((item,ii)=>{
+      out+='<div class="cmd-item" data-gi="'+gi+'" data-ii="'+ii+'" onclick="cmdRun('+gi+','+ii+')">'
+        +'<div class="cmd-item-icon" style="background:'+item.bg+';color:'+item.color+'"><i class="ti '+item.icon+'"></i></div>'
+        +'<div class="cmd-item-body"><div class="cmd-item-title">'+esc(item.title)+'</div><div class="cmd-item-sub">'+esc(item.sub||'')+'</div></div>'
+        +'<div class="cmd-item-badge">'+item.badge+' →</div>'
+        +'</div>';
+    });
+  });
+  box.innerHTML=out;
+  box.classList.add('open');
+}
+
+function cmdRun(gi,ii){
+  const item=(_cmdGroups[gi]||{items:[]}).items[ii];
+  if(item&&item.fn){item.fn();cmdClose();}
+}
+
+function cmdKey(e){
+  const box=document.getElementById('cmd-results');
+  const items=box.querySelectorAll('.cmd-item');
+  if(!items.length)return;
+  if(e.key==='ArrowDown'){e.preventDefault();_cmdIdx=Math.min(_cmdIdx+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('cmd-active',i===_cmdIdx));}
+  else if(e.key==='ArrowUp'){e.preventDefault();_cmdIdx=Math.max(_cmdIdx-1,0);items.forEach((el,i)=>el.classList.toggle('cmd-active',i===_cmdIdx));}
+  else if(e.key==='Enter'&&_cmdIdx>=0){e.preventDefault();items[_cmdIdx]?.click();}
+  else if(e.key==='Escape'){cmdClose();}
+}
+
+function cmdClose(){
+  document.getElementById('cmd-results').classList.remove('open');
+  document.getElementById('cmd-input').value='';
+  _cmdIdx=-1;
+}
+
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){
+    e.preventDefault();
+    const inp=document.getElementById('cmd-input');
+    if(inp){inp.focus();inp.select();cmdSearch('');}
+  }
+  if(e.key==='Escape')cmdClose();
+});
+document.addEventListener('click',e=>{
+  if(!document.getElementById('cmd-wrap')?.contains(e.target))document.getElementById('cmd-results')?.classList.remove('open');
+});
 
 function showToast(msg){
   let t=document.getElementById('vsg-toast');
