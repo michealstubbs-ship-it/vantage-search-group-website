@@ -4620,7 +4620,7 @@ async function runTodaysActions(){
           .order('days_since_reply',{ascending:false}).limit(8),
         db.from('jobs').select('title,company,status,deadline,notes').eq('status','active').limit(5),
         db.from('linkedin_outreach').select('full_name,title,company,date_connected,custom_welcome_msg')
-          .eq('status','connected').gte('date_connected',sevenDaysAgo).is('welcome_sent',null).limit(6),
+          .eq('status','connected').gte('date_connected',sevenDaysAgo).is('welcome_sent',null).limit(2),
         db.from('company_signals').select('company_name,title,summary,importance,created_at')
           .eq('actioned',false).ilike('title','%review%message%').gte('created_at',fourteenDaysAgo)
           .order('created_at',{ascending:false}).limit(6),
@@ -4777,6 +4777,7 @@ Rules:
 - Maximum 9 actions
 - Do not surface OPPORTUNITY_FLAG actions with conviction_level "low"
 - If a data section says "None", skip it entirely — do not fabricate actions
+- NEW CONNECTION WELCOME MESSAGES are the LOWEST possible priority. Maximum 1 such action per run. Only include a new connection welcome if there are fewer than 3 high-conviction signal, overdue, or reply actions available. Never let welcome messages dominate or take more than 1 slot. Signal-driven actions (Opportunity trigger, Follow-up overdue, Reply needed, Mandate delivery) must always come first.
 - WARM ROUTING RULE (ADDITIVE ONLY — never suppress a signal-driven contact): Always surface the signal's primary target contact first. Then, additionally, if Michael has a confirmed 1st-degree connection at the same firm, include them as a second entry in contacts_to_reach with a warm message tailored to their role. Do not replace the primary target. Do not let warm connections crowd out high-conviction signal actions — Tabby hiring news should still produce an action about Tabby even if Michael is connected to someone there.
 - Use the Learning Layer to prefer signal types and approaches that have converted before
 - Add "daily_effort_total" (total minutes) at the root level
