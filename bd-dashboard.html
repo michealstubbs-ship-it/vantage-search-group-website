@@ -4732,7 +4732,7 @@ Output a JSON array. Each action object:
 - company: company name (from the data above, or null)
 - signal: EXACTLY where this came from — cite the source section and specific data point. Examples: "Follow-ups overdue: Sarah Al-Rashidi at G42, due 18 Jun, last contact 2 Jun", "LinkedIn reply: Dmitry Volkov replied 4 days ago", "Intelligence signal (HIGH): Checkout.com | hiring | 3 senior product roles posted (24 Jun)", "New connection: Ahmed connected yesterday, welcome message not sent". CRITICAL: only cite data from the sections above. If a section says "None", do not generate actions from it.
 - why: one sentence — commercial reason to act now, referencing the specific signal
-- contacts_to_reach: [{"name":"Full Name","title":"title","company":"company","linkedin":"url or null","email":"email or null","approach":"why this person"}]
+- contacts_to_reach: [{"name":"Full Name","title":"title","company":"company","linkedin":"url or null","email":"email or null","approach":"why this person","message":"personalised 60-word message tailored specifically to this person's role and the signal — distinct from suggested_message. 3 parts: specific reference to what you observed, natural observation relevant to their role, easy open question. No em-dashes, no corporate language."}]
 - suggested_message: max 60 words, no em-dashes, no corporate language. 3 parts: (1) specific reference to what you observed, (2) natural observation about consequence, (3) easy open question. Never say "let's discuss", "let's explore", "I'd love to connect", or boast about VSG. Null if not a messaging action.
 - connect_note: if contacts_to_reach has a linkedin URL and this is first outreach to someone VSG has not previously messaged: write a LinkedIn connection invite note of 250 characters or fewer. One sentence of genuine context referencing the specific signal. One sentence on why you are reaching out. No "I hope this finds you well", no "I came across your profile", no "I'd love to connect", no em-dashes. Null if this is a follow-up or reply to someone already in conversation with Michael.
 - effort_mins: 2 | 5 | 15 | 30
@@ -4893,12 +4893,12 @@ function renderTodaysActions(data,modeData){
         <div class="action-title">${esc(a.title)}</div>
         ${a.signal?`<div style="display:flex;align-items:flex-start;gap:6px;margin:5px 0 4px;padding:6px 10px;background:rgba(59,130,246,0.07);border-left:3px solid #3b82f6;border-radius:0 6px 6px 0"><i class="ti ti-eye" style="font-size:12px;color:#3b82f6;margin-top:1px;flex-shrink:0"></i><span style="font-size:12px;color:#1e3a5f;font-weight:500">${esc(a.signal)}</span></div>`:''}
         <div class="action-sub">${esc(a.why)}</div>
-        ${(a.contacts_to_reach&&a.contacts_to_reach.length)?`<div style="margin:7px 0 5px;padding:8px 10px;background:rgba(201,168,76,0.07);border-left:3px solid var(--gold);border-radius:0 6px 6px 0"><div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Who to contact</div>${a.contacts_to_reach.map(c=>{const liKey=c.linkedin?(c.linkedin.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase()):(c.name||'').toLowerCase();const url=c.linkedin?(c.linkedin.startsWith('http')?c.linkedin:'https://'+c.linkedin):'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(c.name+(c.company?' '+c.company:''));return`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;flex-wrap:wrap"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:var(--navy)">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.title||'')}${c.company?' — '+esc(c.company):''}</div>${c.approach?`<div style="font-size:11px;color:var(--text);margin-top:2px;font-style:italic">${esc(c.approach)}</div>`:''}<div data-li-key="${liKey}" style="margin-top:3px"></div></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><a href="${url}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px;background:${c.linkedin?'#0077b5':'transparent'};color:${c.linkedin?'#fff':'inherit'};border-color:${c.linkedin?'#0077b5':'inherit'}"><i class="ti ti-brand-linkedin"></i>${c.linkedin?' LinkedIn':' Search'}</a>${c.email?`<a href="mailto:${c.email}" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-mail"></i></a>`:''}</div></div>`;}).join('')}</div>`:'' }
+        ${(a.contacts_to_reach&&a.contacts_to_reach.length)?`<div style="margin:7px 0 5px"><div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Who to contact</div>${a.contacts_to_reach.map((c,ci)=>{const msg=c.message||(ci===0?a.suggested_message||'':'');const msgId='contact-msg-'+i+'-'+ci;const btnId='contact-btn-'+i+'-'+ci;const lblId='contact-lbl-'+i+'-'+ci;const annieId='annie-'+i+'-'+ci;const fbId='annie-fb-'+i+'-'+ci;let h='<div style="margin-bottom:10px;padding:8px 10px;background:rgba(201,168,76,0.06);border-left:2px solid var(--gold);border-radius:0 6px 6px 0">';h+='<div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:2px">'+esc(c.name)+'</div>';h+='<div style="font-size:11px;color:var(--muted);margin-bottom:4px">'+esc(c.title||'')+(c.company?' — '+esc(c.company):'')+'</div>';if(c.approach)h+='<div style="font-size:11px;color:var(--text);font-style:italic;margin-bottom:5px">'+esc(c.approach)+'</div>';if(msg){h+='<textarea id="'+msgId+'" style="width:100%;min-height:64px;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);resize:vertical;box-sizing:border-box;margin-bottom:6px;line-height:1.45" placeholder="Message...">'+esc(msg)+'</textarea>';h+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">';if(c.linkedin)h+='<button class="btn btn-xs btn-outline" id="'+btnId+'" onclick="initContactLinkedIn('+i+','+ci+')" style="gap:3px"><i class="ti ti-brand-linkedin"></i> <span id="'+lblId+'">Send</span></button>';if(c.email)h+='<a href="mailto:'+c.email+'" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-mail"></i> Email</a>';h+='<button class="btn btn-xs btn-ghost" data-card="'+i+'" data-ci="'+ci+'" onclick="askAnnieContact(this)" style="font-size:11px;color:var(--gold);gap:3px"><i class="ti ti-sparkles"></i> Ask Annie</button>';h+='</div>';h+='<div id="'+annieId+'" style="display:none;margin-top:7px;padding:7px 8px;background:rgba(201,168,76,0.05);border-radius:6px;border:1px solid rgba(201,168,76,.2)">';h+='<div style="font-size:11px;color:var(--muted);margin-bottom:4px">Tell Annie what to change:</div>';h+='<textarea id="'+fbId+'" style="width:100%;height:38px;font-size:11px;padding:4px 8px;border:1px solid var(--gold);border-radius:4px;background:var(--card);color:var(--text);resize:none;box-sizing:border-box" placeholder="e.g. too formal, mention the Series B, make it shorter"></textarea>';h+='<div style="display:flex;gap:6px;margin-top:5px">';h+='<button class="btn btn-xs btn-gold" data-card="'+i+'" data-ci="'+ci+'" data-signal="'+(a.signal||'').substring(0,120).replace(/"/g,'&quot;')+'" onclick="submitAnnieFeedback(this)" style="font-size:11px">Rewrite</button>';h+='<button class="btn btn-xs btn-ghost" onclick="document.getElementById(\''+annieId+'\').style.display=\'none\'" style="font-size:11px">Cancel</button>';h+='</div></div>';}h+='</div>';return h;}).join('')}</div>`:'' }
         ${a.suggested_message?`<div class="action-msg">"${esc(a.suggested_message)}"</div>`:''}
         <div class="action-ft" id="action-ft-${i}">
           <span class="effort-tag"><i class="ti ti-clock" style="font-size:10px"></i> ${esc(a.effort_label||'5 min')}</span>
           ${a.suggested_message?`<button class="btn btn-xs btn-outline" onclick="copyAction(${i})"><i class="ti ti-copy"></i> Copy</button>`:''}
-          ${(()=>{const li=(a.contacts_to_reach||[])[0]?.linkedin;return li?`<button class="btn btn-xs btn-outline" id="li-btn-${i}" onclick="initLinkedInAction(${i})" style="gap:3px"><i class="ti ti-brand-linkedin"></i> <span id="li-lbl-${i}">LinkedIn</span></button>`:'';})()}
+          ${(()=>{if(a.contacts_to_reach&&a.contacts_to_reach.length)return'';const li=(a.contacts_to_reach||[])[0]?.linkedin;return li?`<button class="btn btn-xs btn-outline" id="li-btn-${i}" onclick="initLinkedInAction(${i})" style="gap:3px"><i class="ti ti-brand-linkedin"></i> <span id="li-lbl-${i}">LinkedIn</span></button>`:'';})()}
           <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask AI</button>
           ${actionBtns}
         </div>
@@ -5112,6 +5112,125 @@ async function sendLinkedInInvite(i){
     btn.disabled=false;
     if(status)status.textContent='Invite failed: '+e.message;
   }
+}
+
+/* ─── Per-contact LinkedIn Send / Connect ─── */
+async function initContactLinkedIn(i,ci){
+  const a=(window._todaysActionsData||[])[i];if(!a)return;
+  const c=(a.contacts_to_reach||[])[ci];if(!c||!c.linkedin)return;
+  const btn=document.getElementById('contact-btn-'+i+'-'+ci);
+  const lbl=document.getElementById('contact-lbl-'+i+'-'+ci);
+  if(!btn)return;
+  btn.disabled=true;if(lbl)lbl.textContent='Checking...';
+  try{
+    const resp=await fetch('/.netlify/functions/send-linkedin-invite',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({linkedin_url:c.linkedin,contact_name:c.name||'',check_only:true})
+    });
+    const data=await resp.json();
+    if(data.already_connected||data.is_connected){
+      if(lbl)lbl.textContent='Send Message';
+      btn.disabled=false;btn.style.background='var(--gold)';btn.style.color='#000';
+      btn.onclick=null;btn.addEventListener('click',()=>sendContactMsg(i,ci),{once:true});
+    }else{
+      if(lbl)lbl.textContent='Connect';
+      btn.disabled=false;
+      btn.onclick=null;btn.addEventListener('click',()=>sendContactInvite(i,ci),{once:true});
+    }
+  }catch(e){
+    if(lbl)lbl.textContent='Send';btn.disabled=false;
+    btn.onclick=null;btn.addEventListener('click',()=>initContactLinkedIn(i,ci),{once:true});
+  }
+}
+
+async function sendContactMsg(i,ci){
+  const a=(window._todaysActionsData||[])[i];if(!a)return;
+  const c=(a.contacts_to_reach||[])[ci];if(!c)return;
+  const btn=document.getElementById('contact-btn-'+i+'-'+ci);
+  const msgEl=document.getElementById('contact-msg-'+i+'-'+ci);
+  const msg=(msgEl?msgEl.value:null)||c.message||a.suggested_message||'';
+  if(!msg)return;
+  btn.disabled=true;
+  try{
+    const resp=await fetch('/.netlify/functions/send-linkedin',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contact_name:c.name||'',message:msg})
+    });
+    const data=await resp.json();
+    if(data.success){
+      btn.style.background='#166534';btn.style.color='#fff';
+      btn.innerHTML='<i class="ti ti-check"></i> Sent';
+      showToast('Message sent to '+esc(c.name));
+      await _recordMichaelAction(a.rank||i+1,'sent_linkedin');
+    }else{
+      btn.disabled=false;
+      showToast((data.error||'Send failed')+' — copy and send manually','error');
+    }
+  }catch(e){btn.disabled=false;showToast('Send failed: '+e.message,'error');}
+}
+
+async function sendContactInvite(i,ci){
+  const a=(window._todaysActionsData||[])[i];if(!a)return;
+  const c=(a.contacts_to_reach||[])[ci];if(!c||!c.linkedin)return;
+  const btn=document.getElementById('contact-btn-'+i+'-'+ci);
+  const lbl=document.getElementById('contact-lbl-'+i+'-'+ci);
+  if(lbl)lbl.textContent='Sending...';btn.disabled=true;
+  try{
+    const resp=await fetch('/.netlify/functions/send-linkedin-invite',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({linkedin_url:c.linkedin,contact_name:c.name||'',invite_note:a.connect_note||''})
+    });
+    const data=await resp.json();
+    if(data.success){
+      btn.style.background='#166534';btn.style.color='#fff';
+      btn.innerHTML='<i class="ti ti-check"></i> Invite Sent';
+      await _recordMichaelAction(a.rank||i+1,'sent_invite');
+    }else if(data.already_connected){
+      if(lbl)lbl.textContent='Send Message';
+      btn.disabled=false;btn.style.background='var(--gold)';btn.style.color='#000';
+      btn.onclick=null;btn.addEventListener('click',()=>sendContactMsg(i,ci),{once:true});
+    }else{
+      btn.disabled=false;if(lbl)lbl.textContent='Connect';
+      showToast('Invite failed: '+(data.error||'unknown error'),'error');
+    }
+  }catch(e){btn.disabled=false;if(lbl)lbl.textContent='Connect';showToast('Invite failed: '+e.message,'error');}
+}
+
+function askAnnieContact(btn){
+  const i=btn.dataset.card,ci=btn.dataset.ci;
+  const panel=document.getElementById('annie-'+i+'-'+ci);
+  if(panel){panel.style.display=panel.style.display==='none'?'block':'none';}
+}
+
+async function submitAnnieFeedback(btn){
+  const i=+btn.dataset.card,ci=+btn.dataset.ci;
+  const signal=btn.dataset.signal||'';
+  const a=(window._todaysActionsData||[])[i];if(!a)return;
+  const c=(a.contacts_to_reach||[])[ci];if(!c)return;
+  const fbEl=document.getElementById('annie-fb-'+i+'-'+ci);
+  const msgEl=document.getElementById('contact-msg-'+i+'-'+ci);
+  const feedback=(fbEl?fbEl.value:'').trim();
+  const currentMsg=(msgEl?msgEl.value:'').trim();
+  if(!feedback){showToast('Tell Annie what to change first');return;}
+  const origText=btn.textContent;btn.disabled=true;btn.textContent='Rewriting...';
+  try{
+    const resp=await fetch('/.netlify/functions/chat',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        messages:[{role:'user',content:'Rewrite this LinkedIn message based on the feedback.\n\nContact: '+esc(c.name)+' ('+(c.title||'')+(c.company?' at '+c.company:'')+')\nSignal: '+signal+'\n\nCurrent message:\n'+currentMsg+'\n\nFeedback: '+feedback+'\n\nRules: max 60 words, no em-dashes, no "lets discuss", no "Id love to connect", no corporate language, conversational tone. Return ONLY the rewritten message text.'}],
+        maxTokens:200
+      })
+    });
+    const data=await resp.json();
+    const newMsg=(data.content||data.response||'').trim();
+    if(newMsg&&msgEl){
+      msgEl.value=newMsg;
+      document.getElementById('annie-'+i+'-'+ci).style.display='none';
+      if(fbEl)fbEl.value='';
+      showToast('Message rewritten by Annie');
+    }
+  }catch(e){showToast('Annie failed: '+e.message,'error');}
+  btn.disabled=false;btn.textContent=origText;
 }
 
 function showToast(msg){
