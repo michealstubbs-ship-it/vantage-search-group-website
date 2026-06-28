@@ -4717,7 +4717,6 @@ Output a JSON array. Each action object:
 - why: one sentence — commercial reason to act now, referencing the specific signal
 - contacts_to_reach: [{"name":"Full Name","title":"title","company":"company","linkedin":"url or null","email":"email or null","approach":"why this person"}]
 - suggested_message: max 60 words, no em-dashes, no corporate language. 3 parts: (1) specific reference to what you observed, (2) natural observation about consequence, (3) easy open question. Never say "let's discuss", "let's explore", "I'd love to connect", or boast about VSG. Null if not a messaging action.
-- connect_note: if contacts_to_reach has a linkedin URL and this is first outreach to someone VSG has not previously messaged: write a LinkedIn connection invite note of 250 characters or fewer. One sentence of genuine context referencing the specific signal. One sentence on why you are reaching out. No "I hope this finds you well", no "I came across your profile", no "I'd love to connect", no em-dashes. Null if this is a follow-up or reply to someone already in conversation with Michael.
 - effort_mins: 2 | 5 | 15 | 30
 - effort_label: "2 min" | "5 min" | "15 min" | "30 min"
 
@@ -4880,11 +4879,9 @@ function renderTodaysActions(data,modeData){
         <div class="action-ft" id="action-ft-${i}">
           <span class="effort-tag"><i class="ti ti-clock" style="font-size:10px"></i> ${esc(a.effort_label||'5 min')}</span>
           ${a.suggested_message?`<button class="btn btn-xs btn-outline" onclick="copyAction(${i})"><i class="ti ti-copy"></i> Copy</button>`:''}
-          ${(()=>{const li=(a.contacts_to_reach||[])[0]?.linkedin;return li?`<button class="btn btn-xs btn-outline" id="li-btn-${i}" onclick="initLinkedInAction(${i})" style="gap:3px"><i class="ti ti-brand-linkedin"></i> <span id="li-lbl-${i}">LinkedIn</span></button>`:'';})()}
           <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask AI</button>
           ${actionBtns}
         </div>
-        <div id="li-status-${i}" style="font-size:11px;color:var(--muted);padding:2px 0 0 2px;min-height:14px"></div>
       </div>
     </div>`;
   }).join('');
@@ -5000,100 +4997,6 @@ async function snoozeActionItem(i){
   }
   showToast('Snoozed — will reappear tomorrow');
   await Promise.all([_persistActionStates(), _recordMichaelAction(a.rank||i+1,'snoozed')]);
-}
-
-/* ─── LinkedIn Send / Connect via Unipile ─── */
-async function initLinkedInAction(i){
-  const a=(window._todaysActionsData||[])[i];if(!a)return;
-  const li=(a.contacts_to_reach||[])[0]?.linkedin;if(!li)return;
-  const btn=document.getElementById(`li-btn-${i}`);
-  const lbl=document.getElementById(`li-lbl-${i}`);
-  const status=document.getElementById(`li-status-${i}`);
-  btn.disabled=true;if(lbl)lbl.textContent='Checking...';
-  try{
-    const resp=await fetch('/.netlify/functions/send-linkedin-invite',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({linkedin_url:li,contact_name:a.contact||'',check_only:true})
-    });
-    const data=await resp.json();
-    if(data.already_connected||data.is_connected){
-      if(lbl)lbl.textContent='Send Message';
-      btn.disabled=false;btn.style.background='var(--gold)';btn.style.color='#000';
-      btn.onclick=null;btn.addEventListener('click',()=>sendLinkedInMsg(i),{once:true});
-      if(status)status.textContent='Connected on LinkedIn';
-    }else{
-      if(lbl)lbl.textContent='Connect';
-      btn.disabled=false;
-      btn.onclick=null;btn.addEventListener('click',()=>sendLinkedInInvite(i),{once:true});
-      if(status)status.textContent='Not yet connected';
-    }
-  }catch(e){
-    if(lbl)lbl.textContent='LinkedIn';btn.disabled=false;
-    btn.onclick=null;btn.addEventListener('click',()=>initLinkedInAction(i),{once:true});
-    if(status)status.textContent='Status check failed — tap to retry';
-  }
-}
-
-async function sendLinkedInMsg(i){
-  const a=(window._todaysActionsData||[])[i];if(!a||!a.suggested_message)return;
-  const btn=document.getElementById(`li-btn-${i}`);
-  const status=document.getElementById(`li-status-${i}`);
-  btn.disabled=true;if(status)status.textContent='Sending...';
-  try{
-    const resp=await fetch('/.netlify/functions/send-linkedin',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contact_name:a.contact||'',message:a.suggested_message})
-    });
-    const data=await resp.json();
-    if(data.success){
-      btn.style.background='#166534';btn.style.color='#fff';
-      btn.innerHTML='<i class="ti ti-check"></i> Sent';
-      if(status)status.textContent='Message sent via LinkedIn';
-      await _recordMichaelAction(a.rank||i+1,'sent_linkedin');
-    }else if(data.fallback){
-      btn.disabled=false;
-      if(status)status.textContent=(data.error||'Send failed')+' — copy and send manually';
-    }else{
-      btn.disabled=false;
-      if(status)status.textContent='Send failed: '+(data.error||'unknown error');
-    }
-  }catch(e){
-    btn.disabled=false;
-    if(status)status.textContent='Send failed: '+e.message;
-  }
-}
-
-async function sendLinkedInInvite(i){
-  const a=(window._todaysActionsData||[])[i];if(!a)return;
-  const li=(a.contacts_to_reach||[])[0]?.linkedin;if(!li)return;
-  const btn=document.getElementById(`li-btn-${i}`);
-  const lbl=document.getElementById(`li-lbl-${i}`);
-  const status=document.getElementById(`li-status-${i}`);
-  btn.disabled=true;if(status)status.textContent='Sending invite...';
-  try{
-    const resp=await fetch('/.netlify/functions/send-linkedin-invite',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({linkedin_url:li,contact_name:a.contact||'',invite_note:a.connect_note||''})
-    });
-    const data=await resp.json();
-    if(data.success){
-      btn.style.background='#166534';btn.style.color='#fff';
-      btn.innerHTML='<i class="ti ti-check"></i> Invite Sent';
-      if(status)status.textContent='Connection invite sent';
-      await _recordMichaelAction(a.rank||i+1,'sent_invite');
-    }else if(data.already_connected){
-      if(lbl)lbl.textContent='Send Message';
-      btn.disabled=false;btn.style.background='var(--gold)';btn.style.color='#000';
-      btn.onclick=null;btn.addEventListener('click',()=>sendLinkedInMsg(i),{once:true});
-      if(status)status.textContent='Already connected — click to send message';
-    }else{
-      btn.disabled=false;
-      if(status)status.textContent='Invite failed: '+(data.error||'unknown error');
-    }
-  }catch(e){
-    btn.disabled=false;
-    if(status)status.textContent='Invite failed: '+e.message;
-  }
 }
 
 function showToast(msg){
@@ -5538,133 +5441,36 @@ function switchDigestTab(seg,btn){
 }
 
 function toggleDigestPreview(){
- _digestPreviewMode=!_digestPreviewMode;
- const btn=document.getElementById('digest-toggle-preview');
- btn.innerHTML=_digestPreviewMode?'<i class="ti ti-pencil"></i> Edit':'<i class="ti ti-eye"></i> Preview';
- DIGEST_SEGMENTS.forEach(seg=>{
- const editDiv=document.getElementById('digest-'+seg+'-edit');
- const prevDiv=document.getElementById('digest-'+seg+'-preview');
- if(_digestPreviewMode){
- saveDigestToStorage();
- const moves=document.getElementById('digest-'+seg+'-moves')?.value||'';
- const building=document.getElementById('digest-'+seg+'-building')?.value||'';
- const obs=document.getElementById('digest-'+seg+'-obs')?.value||'';
- const q=document.getElementById('digest-'+seg+'-q')?.value||'';
- const close=document.getElementById('digest-'+seg+'-close')?.value||'';
- prevDiv.innerHTML=`<div style="white-space:pre-wrap;font-family:var(--ff);font-size:13.5px;line-height:1.7;color:var(--text)"><strong>MOVES OF THE WEEK</strong>\n\n${esc(moves)||'<em>Not filled in yet</em>'}\n\n<strong>COMPANIES BUILDING</strong>\n\n${esc(building)||'<em>Not filled in yet</em>'}\n\n<strong>MARKET OBSERVATION</strong>\n\n${esc(obs)||'<em>Not filled in yet</em>'}${q?'\n\n<em>'+esc(q)+'</em>':''}${close?'\n\n'+esc(close):''}</div>`;
- if(editDiv)editDiv.style.display='none';
- if(prevDiv)prevDiv.style.display='block';
- }else{
- if(editDiv)editDiv.style.display='block';
- if(prevDiv)prevDiv.style.display='none';
- }
- });
+  _digestPreviewMode=!_digestPreviewMode;
+  const btn=document.getElementById('digest-toggle-preview');
+  btn.innerHTML=_digestPreviewMode?'<i class="ti ti-edit"></i> Edit':'<i class="ti ti-eye"></i> Preview';
+  DIGEST_SEGMENTS.forEach(seg=>{
+    const editDiv=document.getElementById('digest-'+seg+'-edit');
+    const prevDiv=document.getElementById('digest-'+seg+'-preview');
+    if(_digestPreviewMode){
+      saveDigestToStorage();
+      const moves=document.getElementById('digest-'+seg+'-moves')?.value||'';
+      const building=document.getElementById('digest-'+seg+'-building')?.value||'';
+      const obs=document.getElementById('digest-'+seg+'-obs')?.value||'';
+      const q=document.getElementById('digest-'+seg+'-q')?.value||'';
+      const close=document.getElementById('digest-'+seg+'-close')?.value||'';
+      prevDiv.innerHTML=`<div style="margin-bottom:16px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">MOVES OF THE WEEK</div><div>${esc(moves)||'<em style="color:var(--subtle)">Not filled in yet</em>'}</div></div><div style="margin-bottom:16px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">COMPANIES BUILDING</div><div>${esc(building)||'<em style="color:var(--subtle)">Not filled in yet</em>'}</div></div><div style="margin-bottom:16px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">MARKET OBSERVATION</div><div>${esc(obs)||'<em style="color:var(--subtle)">Not filled in yet</em>'}</div></div>${q?'<div style="margin-bottom:16px;padding:14px;background:#f8fafc;border-left:3px solid var(--gold);border-radius:0 var(--rs) var(--rs) 0"><em>'+esc(q)+'</em></div>':''}${close?'<div style="color:var(--muted);font-style:italic">'+esc(close)+'</div>':''}`;
+      if(editDiv)editDiv.style.display='none';
+      if(prevDiv)prevDiv.style.display='block';
+    }else{
+      if(editDiv)editDiv.style.display='block';
+      if(prevDiv)prevDiv.style.display='none';
+    }
+  });
 }
 
 async function generateSegment(seg){
- const segNames={banking:'Banking (commercial/investment banks — FAB, Emirates NBD, Goldman GCC, HSBC etc)',swf:'Sovereign Wealth Funds (ADIA, Mubadala, ADQ, PIF, QIA etc)',pe:'Private Equity and Asset Management (Carlyle, KKR, Blackstone, regional PE, family offices)',fintech:'Fintech, Digital, and AI (Tabby, Tamara, Wio Bank, Revolut UAE, regional tech)',consulting:'Strategy and Consulting (McKinsey, BCG, Bain, Strategy&, Oliver Wyman, Big 4)',general:'General GCC senior leadership (cross-sector C-suite moves)'};
- const btn=document.querySelector(`#digest-seg-${seg} button`);
- btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Generating...';
- const prompt=`Generate one edition of the GCC Leadership Moves Digest for the ${segNames[seg]} segment.\n\nOutput format (each section labelled clearly):\nMOVES: [5-8 real or plausible GCC senior leadership moves relevant to ${segNames[seg]}. Format: Name — Previous Role, Previous Company to New Role, New Company. One sentence on why it matters.]\nBUILDING: [2-3 companies in this segment visibly scaling their senior teams. One line each.]\nOBSERVATION: [Michael's first-person read on the market in one paragraph. Intelligent, specific, opinionated. Not generic. Starts with "This week,"]\nQUESTION: [One provocative question for this segment's senior professionals]\nCLOSE: [One warm closing line positioning VSG as search partner — not salesy]\n\nTone: Sharp, intelligent briefing. Reads like it came from someone who genuinely knows the GCC.\nRules: Never criticise the UAE, Saudi, or any GCC government. No em-dashes.`;
- try{
- const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
- const data=await resp.json();
- const text=data.content||data.response||'';
- const extract=(label,next)=>{const r=new RegExp(label+'\\s*:?\\s*([\\s\\S]*?)(?='+next+':|$)','i');const m=text.match(r);return m?m[1].trim():'';};
- document.getElementById('digest-'+seg+'-moves').value=extract('MOVES','BUILDING');
- document.getElementById('digest-'+seg+'-building').value=extract('BUILDING','OBSERVATION');
- document.getElementById('digest-'+seg+'-obs').value=extract('OBSERVATION','QUESTION');
- document.getElementById('digest-'+seg+'-q').value=extract('QUESTION','CLOSE');
- document.getElementById('digest-'+seg+'-close').value=extract('CLOSE','$$$');
- saveDigestToStorage();showToast('Segment generated');
- }catch(e){showToast('Error generating — check API key');}
- btn.disabled=false;btn.innerHTML='<i class="ti ti-sparkles"></i> Generate with AI';
-}
-
-function generateAllSegments(){DIGEST_SEGMENTS.forEach((seg,i)=>setTimeout(()=>generateSegment(seg),i*3000));}
-
-function openSendDigest(){loadDigestRecipientSummary();document.getElementById('digestSendOv').classList.add('open');}
-
-async function loadDigestRecipientSummary(){
- try{
- const db=_db();
- const{data:cts}=await (db?db.from('contacts').select('name,industry,company,email').not('email','is',null):Promise.resolve({data:[]}));
- const segMap={Banking:['bank','finance'],SWF:['adia','mubadala','adq','pif','qia'],PE:['carlyle','kkr','blackstone','asset management','private equity'],Fintech:['fintech','tech','digital'],Consulting:['mckinsey','bcg','bain','strategy','accenture','deloitte','pwc']};
- const counts={Banking:0,SWF:0,PE:0,Fintech:0,Consulting:0,General:0};
- (cts||[]).forEach(c=>{
- const hay=((c.industry||'')+(c.company||'')).toLowerCase();
- let hit=false;
- for(const[seg,keys]of Object.entries(segMap)){if(keys.some(k=>hay.includes(k))){counts[seg]++;hit=true;break;}}
- if(!hit)counts.General++;
- });
- const total=Object.values(counts).reduce((a,b)=>a+b,0);
- document.getElementById('digest-recipient-summary').innerHTML=
- Object.entries(counts).filter(([,v])=>v>0).map(([seg,n])=>`<div><strong>${seg}:</strong> ${n} contact${n!==1?'s':''}</div>`).join('')+
- `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:6px"><strong>Total:</strong> ${total} recipients</div>`;
- }catch(e){document.getElementById('digest-recipient-summary').innerHTML='<em>Could not load recipients</em>';}
-}
-
-async function sendDigest(){
- const db=_db();
- const subject=document.getElementById('digest-subject')?.value||'GCC Leadership Moves Digest';
- showToast('Digest marked as sent — extracting leadership moves...');
- document.getElementById('digestSendOv').classList.remove('open');
- if(db){
- const movesSignals=[];
- const now=new Date().toISOString();
- DIGEST_SEGMENTS.forEach(seg=>{
- const movesText=document.getElementById('digest-'+seg+'-moves')?.value||'';
- if(!movesText.trim())return;
- const lines=movesText.split('\n').filter(l=>l.trim()&&l.includes('—')&&l.length>10);
- lines.forEach(line=>{
- const toMatch=line.match(/\bto\s+([^,]+),\s*([^.]+)/i);
- const company=toMatch?toMatch[2].trim():(line.split(',').pop()||'').trim();
- const nameMatch=line.match(/^([^—]+)/);
- const name=nameMatch?nameMatch[1].trim():'';
- if(name&&company){
- movesSignals.push({company_name:company.substring(0,100),signal_type:'leadership_change',title:line.substring(0,200),summary:`From GCC Leadership Moves Digest (${subject}). CONTACT: ${name}`,importance:'high',actioned:false,created_at:now});
- }
- });
- });
- if(movesSignals.length>0){
- try{
- await db.from('company_signals').insert(movesSignals);
- showToast(`Digest sent — ${movesSignals.length} leadership move${movesSignals.length!==1?'s':''} added to Appointment Triggers`);
- }catch(e){console.warn('Digest → signals error:',e);}
- }
- }
- const saved=JSON.parse(localStorage.getItem('vsg_digest')||'{}');
- saved._lastSent=new Date().toISOString();
- saved._lastSubject=subject;
- localStorage.setItem('vsg_digest',JSON.stringify(saved));
- if(typeof loadTriggers==='function')setTimeout(loadTriggers,500);
-}
-
-/* ═══════════════════════════════════════════════════
- GAP 4 — LinkedIn connection follow-up wiring
-════════════════════════════════════════════════════ */
-async function checkNewConnections(){
- const db=_db();if(!db)return;
- const yesterday=new Date(Date.now()-26*60*60*1000).toISOString().slice(0,10);
- try{
- const{data}=await db.from('linkedin_outreach')
- .select('full_name,title,company,linkedin_url,date_connected')
- .eq('status','connected')
- .gte('date_connected',yesterday);
- if(!data||data.length===0)return;
- const signals=data.map(p=>({
- company_name:p.company||'LinkedIn',
- signal_type:'news',
- title:`${p.full_name} accepted your LinkedIn connection request`,
- summary:`New connection: ${p.full_name}${p.title?' ('+p.title+')':''}${p.company?' at '+p.company:''}. Send a warm welcome message now while you're fresh in their mind. CONTACT: ${p.full_name}`,
- importance:'high',
- actioned:false
- }));
- await db.from('company_signals').insert(signals);
- showToast(`${data.length} new LinkedIn connection${data.length!==1?'s':''} — follow-up prompts added`);
- }catch(e){console.warn('checkNewConnections:',e);}
-}
-setTimeout(()=>{if(typeof checkNewConnections==='function')checkNewConnections();},3000);
-</script>
-</body>
-</html>
+  const segNames={banking:'Banking (commercial/investment banks — FAB, Emirates NBD, Goldman GCC, HSBC etc)',swf:'Sovereign Wealth Funds (ADIA, Mubadala, ADQ, PIF, QIA etc)',pe:'Private Equity and Asset Management (Carlyle, KKR, Blackstone, regional PE, family offices)',fintech:'Fintech, Digital, and AI (Tabby, Tamara, Wio Bank, Revolut UAE, regional tech)',consulting:'Strategy and Consulting (McKinsey, BCG, Bain, Strategy&, Oliver Wyman, Big 4)',general:'General GCC senior leadership (cross-sector C-suite moves)'};
+  const btn=document.querySelector(`#digest-seg-${seg} button`);
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Generating...';
+  const prompt=`Generate one edition of the GCC Leadership Moves Digest for the ${segNames[seg]} segment.\n\nOutput format (each section labelled clearly):\nMOVES: [5-8 real or plausible GCC senior leadership moves relevant to ${segNames[seg]}. Format: Name — Previous Role, Previous Company to New Role, New Company. One sentence on why it matters.]\nBUILDING: [2-3 companies in this segment visibly scaling their senior teams. One line each.]\nOBSERVATION: [Michael's first-person read on the market in one paragraph. Intelligent, specific, opinionated. Not generic. Starts with "This week,"]\nQUESTION: [One provocative question for this segment's senior professionals]\nCLOSE: [One warm closing line positioning VSG as search partner — not salesy]\n\nTone: Sharp, intelligent briefing. Reads like it came from someone who genuinely knows the GCC.\nRules: Never criticise the UAE, Saudi, or any GCC government. No em-dashes.`;
+  try{
+    const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    const text=data.content||data.response||'';
+    const extract=(label,next)=>{const r=new RegExp(label+'\\s*:?\\s*([\\s\\S]*?)(?='+next+':|$)','i');const m=text.match(r);return m?m[1].tr
