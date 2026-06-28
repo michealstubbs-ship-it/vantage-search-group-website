@@ -4509,6 +4509,21 @@ ${sequencesCtx}
 ━━━ OUTCOME MEMORY ━━━
 ${outcomesContext}
 
+━━━ CONTACT RELEVANCE FILTER (apply before generating any action) ━━━
+
+VSG is a retained/contingency executive search firm. Our clients are companies that hire senior permanent talent and pay us to find it. Before including any contact, ask: "Is their company a potential CLIENT of VSG?"
+
+EXCLUDE entirely — do not generate an action for contacts at:
+- Recruitment agencies, staffing firms, headhunters, RPO providers (they compete with or replicate what we do)
+- Freelance/contractor marketplaces or platforms (e.g. Toptal, Hightekers, Deel — their model is freelance, not permanent hire)
+- Outsourcing companies whose core product is placing/managing contract workers
+- Job boards, talent platforms, or talent marketplaces
+- Anyone whose company name or description contains "Recruitment", "Staffing", "Talent Solutions", "Headhunting", "RPO", or "Workforce Solutions" as their primary business
+
+INCLUDE contacts at companies that hire senior permanent employees and could use VSG: tech firms, banks, fintechs, PE/VC-backed scale-ups, corporates, government-linked entities, professional services firms, logistics companies, healthcare businesses, etc.
+
+If a signal mentions a company you are uncertain about, default to asking yourself: "Do they pay search firms to hire people, or are they themselves in the business of finding/placing people?" If the latter — skip them.
+
 ━━━ OUTPUT FORMAT ━━━
 
 Return JSON: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
