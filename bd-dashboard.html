@@ -2432,12 +2432,14 @@ function runGlobalSearch(q){
 function _gsSelect(type,id){
   document.getElementById('global-search-input').value='';
   document.getElementById('global-search-results').classList.remove('open');
+  // Coerce id back to number if it looks numeric (Supabase uses integer PKs)
+  const rid = isNaN(id) ? id : Number(id);
   if(type==='contact'){
     // Open detail overlay directly — it's a modal, works on any page
-    openDetail(id);
+    openDetail(rid);
   } else if(type==='job'){
     goPage('jobs',document.querySelector('.nav-btn[onclick*="jobs"]'));
-    setTimeout(()=>openEditJob(id),100);
+    setTimeout(()=>openEditJob(rid),100);
   } else if(type==='candidate'){
     goPage('candidates',document.querySelector('.nav-btn[onclick*="candidates"]'));
     setTimeout(()=>loadCandidates(),200);
