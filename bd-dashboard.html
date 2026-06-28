@@ -5460,16 +5460,4 @@ async function checkNewConnections(){
     const signals=data.map(p=>({
       company_name:p.company||'LinkedIn',
       signal_type:'news',
-      title:`${p.full_name} accepted your LinkedIn connection request`,
-      summary:`New connection: ${p.full_name}${p.title?' ('+p.title+')':''}${p.company?' at '+p.company:''}. Send a warm welcome message now while you're fresh in their mind. CONTACT: ${p.full_name}`,
-      importance:'high',
-      actioned:false
-    }));
-    await db.from('company_signals').insert(signals);
-    showToast(`${data.length} new LinkedIn connection${data.length!==1?'s':''} — follow-up prompts added`);
-  }catch(e){console.warn('checkNewConnections:',e);}
-}
-setTimeout(()=>{if(typeof checkNewConnections==='function')checkNewConnections();},3000);
-</script>
-</body>
-</html>
+      title:`${p.full_name} acc
