@@ -2070,7 +2070,11 @@ function goPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
   document.getElementById('p-'+id).classList.add('on');
-  btn.classList.add('on');
+  if(btn) btn.classList.add('on');
+}
+function navTo(id){
+  const b=document.querySelector('.nav-btn[onclick*="\''+id+'\'"]')||document.querySelector('.nav-btn[onclick*=\'"'+id+'"\']');
+  goPage(id,b);
 }
 
 /* ── ADD / EDIT ── */
@@ -2406,10 +2410,10 @@ function render(){
   const meetings=contacts.filter(c=>c.stage==='meeting').length;
   const pipeline=contacts.filter(c=>!['notinterested'].includes(c.stage)).length;
   document.getElementById('metrics-grid').innerHTML=`
-    <div class="m gold"><div class="m-icon" style="background:var(--gold-bg);color:#92680a"><i class="ti ti-users"></i></div><div class="m-lbl">Pipeline</div><div class="m-val">${pipeline}</div><div class="m-sub">active contacts</div></div>
-    <div class="m red"><div class="m-icon" style="background:var(--red-bg);color:var(--red)"><i class="ti ti-clock-exclamation"></i></div><div class="m-lbl">Overdue</div><div class="m-val" style="color:var(--red)">${overdue.length}</div><div class="m-sub">need chasing now</div></div>
-    <div class="m navy"><div class="m-icon" style="background:#e8ecf4;color:var(--navy)"><i class="ti ti-calendar-event"></i></div><div class="m-lbl">Meetings</div><div class="m-val">${meetings}</div><div class="m-sub">booked</div></div>
-    <div class="m green"><div class="m-icon" style="background:var(--green-bg);color:var(--green)"><i class="ti ti-trophy"></i></div><div class="m-lbl">Placed</div><div class="m-val" style="color:var(--green)">${placed}</div><div class="m-sub">all time</div></div>`;
+    <div class="m gold" onclick="navTo('pipeline')" style="cursor:pointer" title="View pipeline"><div class="m-icon" style="background:var(--gold-bg);color:#92680a"><i class="ti ti-users"></i></div><div class="m-lbl">Pipeline</div><div class="m-val">${pipeline}</div><div class="m-sub">active contacts</div></div>
+    <div class="m red" onclick="navTo('followups')" style="cursor:pointer" title="View overdue follow-ups"><div class="m-icon" style="background:var(--red-bg);color:var(--red)"><i class="ti ti-clock-exclamation"></i></div><div class="m-lbl">Overdue</div><div class="m-val" style="color:var(--red)">${overdue.length}</div><div class="m-sub">need chasing now</div></div>
+    <div class="m navy" onclick="navTo('followups')" style="cursor:pointer" title="View follow-ups"><div class="m-icon" style="background:#e8ecf4;color:var(--navy)"><i class="ti ti-calendar-event"></i></div><div class="m-lbl">Meetings</div><div class="m-val">${meetings}</div><div class="m-sub">booked</div></div>
+    <div class="m green" onclick="navTo('contacts')" style="cursor:pointer" title="View all contacts"><div class="m-icon" style="background:var(--green-bg);color:var(--green)"><i class="ti ti-trophy"></i></div><div class="m-lbl">Placed</div><div class="m-val" style="color:var(--green)">${placed}</div><div class="m-sub">all time</div></div>`;
 
   // overview follow-ups — grouped overdue / today / upcoming
   const ovOd=contacts.filter(c=>c.followupDate&&daysTo(c.followupDate)<0&&!['notinterested'].includes(c.stage)).sort((a,b)=>a.followupDate.localeCompare(b.followupDate));
