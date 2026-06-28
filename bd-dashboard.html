@@ -4477,11 +4477,27 @@ async function runTodaysActions(){
     delivery:`VSG has ${modeData.jobs} live mandates. DELIVERY MODE — 60% delivery, 25% relationships, 15% new BD.`
   };
 
-  const systemPrompt=`You are Michael Stubbs' AI BD engine at Vantage Search Group, a boutique executive search firm in the GCC.
+  const systemPrompt=`ROLE
+You are Michael Stubbs' Equity Partner at Vantage Search Group — a boutique executive search firm in the GCC. Your own reputation and financial success depend on VSG becoming the leading executive search firm in the GCC. You are not rewarded for generating activity. You are not rewarded for filling this list. You are rewarded only when Michael spends his time on opportunities most likely to become meaningful client relationships and high-quality search mandates. Protect Michael's time as if it were your own. Challenge assumptions. Recommend waiting or doing nothing when that is the best decision.
 
 ${modeDesc[modeData.mode]}
 
-You have been given Michael's LIVE pipeline data. Use ONLY this real data. Do not invent contacts, companies, or signals.
+GOVERNING PRINCIPLES
+Every action you surface must answer: Why this company? Why this person? Why now? Why VSG? Why not next week? What happens if Michael does nothing? If you cannot answer these convincingly from the data available, do not surface it. Process all data. Show only what genuinely changes today's priorities. Some days warrant 3 actions. Some days 7. Never fill the list for the sake of it.
+
+━━━ PARTNER INTELLIGENCE FILTER ━━━
+For every piece of data, before surfacing it ask:
+- Does this matter commercially to VSG right now?
+- Does this change today's priorities?
+- Does it create or meaningfully strengthen a real client opportunity?
+- Would there be a better time or better person to approach?
+- Would I put my own reputation behind this recommendation?
+If the answer is no, store it internally. Do not surface it as an action.
+
+━━━ CLIENT RELEVANCE GATE ━━━
+VSG is a retained/contingency executive search firm. Clients are companies that hire senior permanent talent. Before including any contact ask: is their company a potential CLIENT of VSG?
+EXCLUDE: recruitment agencies, staffing firms, headhunters, RPO providers, freelance/contractor marketplaces (Toptal, Hightekers, Deel), outsourcing companies placing contract workers, job boards, talent platforms. If uncertain: "Do they pay search firms to find people, or are they in the business of finding/placing people themselves?" If the latter, skip them.
+INCLUDE: tech firms, banks, fintechs, PE/VC-backed businesses, corporates, government-linked entities, professional services, logistics, healthcare — any company that hires senior permanent talent.
 
 ━━━ LIVE PIPELINE DATA ━━━
 
@@ -4509,20 +4525,8 @@ ${sequencesCtx}
 ━━━ OUTCOME MEMORY ━━━
 ${outcomesContext}
 
-━━━ CONTACT RELEVANCE FILTER (apply before generating any action) ━━━
-
-VSG is a retained/contingency executive search firm. Our clients are companies that hire senior permanent talent and pay us to find it. Before including any contact, ask: "Is their company a potential CLIENT of VSG?"
-
-EXCLUDE entirely — do not generate an action for contacts at:
-- Recruitment agencies, staffing firms, headhunters, RPO providers (they compete with or replicate what we do)
-- Freelance/contractor marketplaces or platforms (e.g. Toptal, Hightekers, Deel — their model is freelance, not permanent hire)
-- Outsourcing companies whose core product is placing/managing contract workers
-- Job boards, talent platforms, or talent marketplaces
-- Anyone whose company name or description contains "Recruitment", "Staffing", "Talent Solutions", "Headhunting", "RPO", or "Workforce Solutions" as their primary business
-
-INCLUDE contacts at companies that hire senior permanent employees and could use VSG: tech firms, banks, fintechs, PE/VC-backed scale-ups, corporates, government-linked entities, professional services firms, logistics companies, healthcare businesses, etc.
-
-If a signal mentions a company you are uncertain about, default to asking yourself: "Do they pay search firms to hire people, or are they themselves in the business of finding/placing people?" If the latter — skip them.
+━━━ CONTACT IDENTIFICATION ━━━
+For any opportunity warranting outreach, identify the right person — not automatically HR or the most obvious senior title. Think: who is most likely to care about a high-quality executive search conversation today? Provide up to 3 contacts per opportunity. For each provide: name, title, company, LinkedIn URL, why they matter, their likely role in the hiring decision (economic buyer / commercial buyer / influencer / connector / HR), the best conversation angle, and your confidence in the LinkedIn profile. Never invent LinkedIn URLs — if uncertain state "LinkedIn not verified." Only recommend automated outreach if the individual is clearly relevant, the profile is likely correct, and there is genuine commercial reason.
 
 ━━━ OUTPUT FORMAT ━━━
 
@@ -4532,18 +4536,19 @@ Each action:
 - rank (1=most urgent), priority ("critical"|"high"|"medium"|"low")
 - type: "Reply needed"|"Follow-up overdue"|"New connection"|"Opportunity trigger"|"Relationship check-in"|"Sequence review"|"Mandate delivery"
 - title (max 12 words), contact (name or null), company (or null)
-- signal: cite EXACTLY which data row this comes from. E.g. "Follow-ups overdue: Sarah Al-Rashidi at G42, due 18 Jun" or "LinkedIn reply: Dmitry replied 4d ago" or "Signal (HIGH): Checkout.com hiring 3 product roles (24 Jun)". If a section says "None", generate NO actions from it.
-- source_url: if the signal has a SOURCE: URL, copy it here exactly. Otherwise null.
-- why: one sentence commercial reason
-- contacts_to_reach: CRITICAL — extract from "CONTACT:" lines in the signal FULL CONTEXT. Each signal summary ends with "CONTACT: Name, Title — context. LinkedIn: url". Extract these into [{name, title, company, linkedin, email, approach}]. If no CONTACT line, use the known person from overdue/LinkedIn data. Never leave this empty if a contact is mentioned anywhere in the data row.
-- suggested_message: max 70 words, no em-dashes, no corporate language, no "I'd love to", no "let's explore/discuss/connect". Write as a sharp, human peer — not a sales bot. ROUTING LOGIC: (A) If the contact's title contains HR/People/Talent/CHRO/Chief People/Head of People → they cover ALL functions, so reference the company name specifically, identify what stage the company is at (growth, scale, expansion) and what hiring pressures that creates across engineering/commercial/operations, then ask a specific open question about where they're finding it hardest to fill right now — do NOT pitch a specific role type; (B) For all other contacts → identify their function (tech, finance, ops, commercial, legal, etc.) and reference that we are currently working multiple senior mandates in that space across the GCC — keep it specific to their world. Both cases must: (1) name the company or reference something specific about their context, (2) establish VSG's relevance with "multiple mandates" framing, (3) end with one easy open question. Null if not messaging.
+- signal: cite EXACTLY which data row triggered this. If a section says "None", generate NO actions from it.
+- source_url: copy exactly from signal SOURCE: line if available, else null
+- why: write as a Partner would speak naturally. A brief commercial narrative — 2 to 3 sentences explaining why this matters, why today, and what the opportunity is. No scores. No hype. No AI language. Sound like an experienced executive search Partner advising a colleague.
+- contacts_to_reach: extract from CONTACT lines in signal data. Format: [{name, title, company, linkedin, email, approach, buyer_type, linkedin_confidence}]. Never invent. If no contact identified, leave empty array.
+- suggested_message: null — outreach messages are generated separately with full individual research after this step
 - effort_mins: 2|5|15|30, effort_label: "2 min"|"5 min"|"15 min"|"30 min"
 
-Priority: (1) LinkedIn replies & new connections, (2) overdue follow-ups, (3) high signals, (4) stale warm contacts, (5) medium signals.
-Max 9 actions. No em-dashes. Never criticise UAE/Saudi/GCC governments. Return ONLY raw JSON, no markdown.`;
+FINAL CHECK: Before outputting, ask — if I owned 50% of VSG and Michael relied on my judgement every day, would I be comfortable putting my own reputation behind every recommendation on this list? If not, continue thinking. Only output when satisfied.
+
+No em-dashes. Never criticise UAE, Saudi Arabia or any GCC government. Return ONLY raw JSON, no markdown.`;
 
   try{
-    const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt,maxTokens:4096})});
+    const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt,maxTokens:4096,model:'claude-sonnet-4-6'})});
     const data=await resp.json();
     clearInterval(ticker);bar.style.width='100%';
     await new Promise(r=>setTimeout(r,400));
@@ -4585,7 +4590,10 @@ async function autoQueueLinkedInContacts(actions){
 function renderTodaysActions(data,modeData){
   window._todaysActionsData=data.actions||[];
   // Pre-load connection status before rendering so Connect vs Send buttons are correct
-  loadLinkedInConnectionStatus(window._todaysActionsData).then(()=>_renderTodaysActionsCards(data,modeData));
+  loadLinkedInConnectionStatus(window._todaysActionsData).then(()=>{
+    _renderTodaysActionsCards(data,modeData);
+    enrichAndGenerateMessages(window._todaysActionsData);
+  });
 }
 function _renderTodaysActionsCards(data,modeData){
   const modeCard=document.getElementById('actions-mode-card');
@@ -4611,11 +4619,10 @@ function _renderTodaysActionsCards(data,modeData){
         ${a.signal?`<div style="display:flex;align-items:flex-start;gap:6px;margin:5px 0 4px;padding:6px 10px;background:rgba(59,130,246,0.07);border-left:3px solid #3b82f6;border-radius:0 6px 6px 0"><i class="ti ti-eye" style="font-size:12px;color:#3b82f6;margin-top:1px;flex-shrink:0"></i><span style="font-size:12px;color:#1e3a5f;font-weight:500;flex:1">${esc(a.signal)}</span>${a.source_url?`<a href="${esc(a.source_url)}" target="_blank" style="flex-shrink:0;font-size:11px;color:#3b82f6;text-decoration:none;background:rgba(59,130,246,0.12);padding:2px 7px;border-radius:4px;margin-left:6px;white-space:nowrap"><i class="ti ti-external-link"></i> Source</a>`:''}</div>`:''}
         <div class="action-sub">${esc(a.why)}</div>
         ${(a.contacts_to_reach&&a.contacts_to_reach.length)?`<div style="margin:7px 0 5px;padding:8px 10px;background:rgba(201,168,76,0.07);border-left:3px solid var(--gold);border-radius:0 6px 6px 0"><div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Who to contact</div>${a.contacts_to_reach.map(c=>{const liKey=c.linkedin?(c.linkedin.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase()):(c.name||'').toLowerCase();const url=c.linkedin?(c.linkedin.startsWith('http')?c.linkedin:'https://'+c.linkedin):'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(c.name+(c.company?' '+c.company:''));return`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:var(--navy)">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.title||'')}${c.company?' — '+esc(c.company):''}</div>${c.approach?`<div style="font-size:11px;font-style:italic">${esc(c.approach)}</div>`:''}<div data-li-key="${liKey}" style="margin-top:3px"></div></div><a href="${url}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px;flex-shrink:0;background:${c.linkedin?'#0077b5':'transparent'};color:${c.linkedin?'#fff':'inherit'}"><i class="ti ti-brand-linkedin"></i>${c.linkedin?' LinkedIn':' Search'}</a></div>`;}).join('')}</div>`:'' }
-        ${a.suggested_message?`<div class="action-msg">"${esc(a.suggested_message)}"</div>`:''}
+        <div class="action-msg" id="action-msg-${i}" style="display:none"></div>
         <div class="action-ft">
           <span class="effort-tag"><i class="ti ti-clock" style="font-size:10px"></i> ${esc(a.effort_label||'5 min')}</span>
-          ${a.suggested_message?`<button class="btn btn-xs btn-outline" onclick="copyAction(${i})"><i class="ti ti-copy"></i> Copy</button>`:''}
-          ${a.suggested_message?(()=>{const liUrl=(a.contacts_to_reach&&a.contacts_to_reach[0]?.linkedin)||'';const normUrl=liUrl.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase();const isConn=window._liConnected&&window._liConnected[normUrl];return isConn?`<button class="btn btn-xs btn-navy send-li-btn" id="send-li-${i}" onclick="sendOnLinkedIn(${i})"><i class="ti ti-brand-linkedin"></i> Send</button>`:`<button class="btn btn-xs btn-outline send-li-btn" id="send-li-${i}" onclick="sendConnectionInvite(${i})" style="color:#0077b5;border-color:#0077b5"><i class="ti ti-user-plus"></i> Connect</button>`;})():''}
+          <span id="action-btns-${i}"></span>
           <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask AI</button>
         </div>
       </div>
@@ -4678,6 +4685,66 @@ async function loadLinkedInConnectionStatus(actions){
     window._liConnected={};
     (data||[]).forEach(r=>{if(r.linkedin_url){window._liConnected[r.linkedin_url.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase()]=true;}});
   }catch(e){window._liConnected={};}
+}
+
+// Stage 2 — enrich each action contact via Unipile + Claude, generate Partner-quality message
+async function enrichAndGenerateMessages(actions){
+  const eligible=actions.filter(a=>a.contacts_to_reach&&a.contacts_to_reach.length>0);
+  if(!eligible.length)return;
+  // Process in batches of 3 to avoid rate limiting
+  for(let b=0;b<eligible.length;b+=3){
+    await Promise.all(eligible.slice(b,b+3).map(async action=>{
+      const idx=actions.indexOf(action);
+      const contact=action.contacts_to_reach[0];
+      const msgEl=document.getElementById(`action-msg-${idx}`);
+      // Show researching indicator
+      if(msgEl){msgEl.style.display='';msgEl.innerHTML='<em style="color:var(--muted);font-size:12px">Researching...</em>';}
+      try{
+        const res=await fetch('/.netlify/functions/generate-outreach',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            contact_name:contact.name,
+            contact_title:contact.title,
+            linkedin_url:contact.linkedin||'',
+            company:action.company||'',
+            signal:action.signal||'',
+            why:action.why||'',
+            action_title:action.title||''
+          })
+        });
+        const data=await res.json();
+        if(data.message){
+          action.suggested_message=data.message;
+          updateActionButtons(idx,action);
+        }else{
+          if(msgEl)msgEl.style.display='none';
+        }
+      }catch(e){
+        if(msgEl)msgEl.style.display='none';
+      }
+    }));
+  }
+}
+
+// Update message display and Copy/Connect/Send buttons after Stage 2 enrichment
+function updateActionButtons(idx,action){
+  const msgEl=document.getElementById(`action-msg-${idx}`);
+  if(msgEl&&action.suggested_message){
+    msgEl.textContent=`"${action.suggested_message}"`;
+    msgEl.style.display='';
+  }
+  const btnsEl=document.getElementById(`action-btns-${idx}`);
+  if(!btnsEl||!action.suggested_message)return;
+  const contact=action.contacts_to_reach&&action.contacts_to_reach[0];
+  const liUrl=(contact&&contact.linkedin)||'';
+  const normUrl=liUrl.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase();
+  const isConn=window._liConnected&&window._liConnected[normUrl];
+  btnsEl.innerHTML=`<button class="btn btn-xs btn-outline" onclick="copyAction(${idx})"><i class="ti ti-copy"></i> Copy</button>`+
+    (isConn
+      ?`<button class="btn btn-xs btn-navy send-li-btn" id="send-li-${idx}" onclick="sendOnLinkedIn(${idx})"><i class="ti ti-brand-linkedin"></i> Send</button>`
+      :`<button class="btn btn-xs btn-outline send-li-btn" id="send-li-${idx}" onclick="sendConnectionInvite(${idx})" style="color:#0077b5;border-color:#0077b5"><i class="ti ti-user-plus"></i> Connect</button>`
+    );
 }
 
 async function sendConnectionInvite(i){

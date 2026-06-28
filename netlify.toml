@@ -8,6 +8,12 @@
 [functions."chat"]
   timeout = 26
 
+[functions."generate-outreach"]
+  timeout = 26
+
+[functions."send-linkedin-invite"]
+  timeout = 26
+
 [[headers]]
   for = "/*"
   [headers.values]
