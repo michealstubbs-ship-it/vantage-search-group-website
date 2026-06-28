@@ -11,12 +11,13 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
-  let linkedin_url, contact_name, invite_note;
+  let linkedin_url, contact_name, invite_note, check_only;
   try {
     const body = JSON.parse(event.body || '{}');
     linkedin_url = body.linkedin_url || '';
     contact_name = body.contact_name || '';
     invite_note = body.invite_note || '';
+    check_only = body.check_only || false;
   } catch (e) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON body' }) };
   }
@@ -68,7 +69,16 @@ exports.handler = async (event) => {
       return { statusCode: 404, headers, body: JSON.stringify({ error: 'Could not resolve LinkedIn provider ID', fallback: true }) };
     }
 
-    // Step 3: If already connected, return that status (caller should use send-linkedin instead)
+    // Step 3a: check_only — return status without sending
+    if (check_only) {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ is_connected: isConnected, already_connected: isConnected, provider_id: providerId }),
+      };
+    }
+
+    // Step 3b: If already connected, return that status (caller should use send-linkedin instead)
     if (isConnected) {
       return {
         statusCode: 200,
@@ -104,15 +114,4 @@ exports.handler = async (event) => {
       return {
         statusCode: inviteRes.status,
         headers,
-        body: JSON.stringify({ error: inviteData.title || inviteData.detail || 'Invite failed', fallback: true }),
-      };
-    }
-  } catch (e) {
-    console.error('[send-linkedin-invite] Unexpected error:', e.message);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: e.message, fallback: true }),
-    };
-  }
-};
+        body: JSON.st
