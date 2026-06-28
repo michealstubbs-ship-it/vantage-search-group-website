@@ -2433,14 +2433,14 @@ function _gsSelect(type,id){
   document.getElementById('global-search-input').value='';
   document.getElementById('global-search-results').classList.remove('open');
   if(type==='contact'){
-    goPage('contacts',document.querySelector('.nav-btn[onclick*="contacts"]'));
-    setTimeout(()=>openDetail(id),100);
+    // Open detail overlay directly — it's a modal, works on any page
+    openDetail(id);
   } else if(type==='job'){
     goPage('jobs',document.querySelector('.nav-btn[onclick*="jobs"]'));
     setTimeout(()=>openEditJob(id),100);
   } else if(type==='candidate'){
     goPage('candidates',document.querySelector('.nav-btn[onclick*="candidates"]'));
-    setTimeout(()=>loadCandidates(id),200);
+    setTimeout(()=>loadCandidates(),200);
   }
 }
 
