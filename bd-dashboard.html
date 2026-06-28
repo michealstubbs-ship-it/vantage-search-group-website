@@ -5048,7 +5048,7 @@ async function loadSignals(){
   const manualMapped=hiringSignals.map((s,i)=>({
     _idx:i,_source:'local',company:s.company,
     title:s.company+' — '+(s.roles_posted||'?')+' senior roles posted',
-    summary:(s.connection?'Contact: '+s.connection+'. ')+(s.notes||''),
+    summary:(s.connection?'Contact: '+s.connection+'. ':'')+(s.notes||''),
     signal_type:'hiring',importance:'medium',date:s.date,actioned:false
   }));
 
@@ -5465,3 +5465,6 @@ async function checkNewConnections(){
   }catch(e){console.warn('checkNewConnections:',e);}
 }
 setTimeout(()=>{if(typeof checkNewConnections==='function')checkNewConnections();},3000);
+</script>
+</body>
+</html>
