@@ -4677,7 +4677,7 @@ async function runTodaysActions(){
     connByCompany[co].push(`${c.full_name} (${c.title||'?'})${c.linkedin_url?' | '+c.linkedin_url:''}`);
   });
   const myConnectionsCtx=Object.keys(connByCompany).length
-    ? Object.entries(connByCompany).map(([co,people])=>`${co}: ${people.join('; ')}`).join('\n')
+    ? Object.entries(connByCompany).slice(0,30).map(([co,people])=>`${co}: ${people.slice(0,2).join('; ')}`).join('\n')
     : 'None on record';
 
   const modeDescriptions={
@@ -4778,7 +4778,7 @@ Rules:
 - Maximum 9 actions
 - Do not surface OPPORTUNITY_FLAG actions with conviction_level "low"
 - If a data section says "None", skip it entirely — do not fabricate actions
-- WARM ROUTING RULE: Before recommending outreach to any company, follow this priority order for contacts_to_reach: (1) If the signal has a "Role-matched contact" listed, include them as a contact — they are the most commercially relevant person for this specific signal; write a message tailored to their role and the signal. (2) If Michael has a confirmed 1st-degree connection at that firm (see CONFIRMED CONNECTIONS above), include them with a warm message. (3) If neither exists, recommend the best cold connect target with a connect_note. You may include multiple contacts_to_reach if both a role-matched contact AND an existing connection exist at the same firm — give each a distinct message.
+- WARM ROUTING RULE (ADDITIVE ONLY — never suppress a signal-driven contact): Always surface the signal's primary target contact first. Then, additionally, if Michael has a confirmed 1st-degree connection at the same firm, include them as a second entry in contacts_to_reach with a warm message tailored to their role. Do not replace the primary target. Do not let warm connections crowd out high-conviction signal actions — Tabby hiring news should still produce an action about Tabby even if Michael is connected to someone there.
 - Use the Learning Layer to prefer signal types and approaches that have converted before
 - Add "daily_effort_total" (total minutes) at the root level
 - Wrap everything in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
