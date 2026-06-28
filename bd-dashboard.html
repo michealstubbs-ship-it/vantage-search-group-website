@@ -1080,6 +1080,7 @@ textarea{resize:vertical;min-height:80px}
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <span id="actions-timestamp" style="font-size:11px;color:var(--muted)"></span>
           <button class="btn btn-gold" id="run-actions-btn" onclick="runTodaysActions()"><i class="ti ti-bolt"></i> Generate Actions</button>
+          <button class="btn btn-sm btn-ghost" id="sync-li-btn" onclick="syncLinkedInConnections()" title="Sync your LinkedIn connections so warm routing works"><i class="ti ti-brand-linkedin"></i> <span id="sync-li-lbl">Sync Connections</span></button>
         </div>
       </div>
 
@@ -4623,7 +4624,7 @@ async function runTodaysActions(){
         db.from('company_signals').select('company_name,title,summary,importance,created_at')
           .eq('actioned',false).ilike('title','%review%message%').gte('created_at',fourteenDaysAgo)
           .order('created_at',{ascending:false}).limit(6),
-        db.from('linkedin_outreach').select('full_name,title,company,linkedin_url').eq('status','connected').limit(500),
+        db.from('linkedin_connections').select('full_name,title,company,linkedin_url').order('full_name',{ascending:true}).limit(500),
       ]);
       overdueFollowUps=fuRes.data||[];
       staleContacts=staleRes.data||[];
@@ -5356,6 +5357,28 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('click',e=>{
   if(!document.getElementById('cmd-wrap')?.contains(e.target))document.getElementById('cmd-results')?.classList.remove('open');
 });
+
+async function syncLinkedInConnections(){
+  const btn=document.getElementById('sync-li-btn');
+  const lbl=document.getElementById('sync-li-lbl');
+  if(btn)btn.disabled=true;
+  if(lbl)lbl.textContent='Syncing...';
+  try{
+    const resp=await fetch('/.netlify/functions/sync-linkedin-connections',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const data=await resp.json();
+    if(data.synced!==undefined){
+      showToast('Synced '+data.synced+' LinkedIn connections — regenerate actions to use them');
+      if(lbl)lbl.textContent='Synced ('+data.synced+')';
+    }else{
+      showToast(data.error||'Sync failed','error');
+      if(lbl)lbl.textContent='Sync Connections';
+    }
+  }catch(e){
+    showToast('Sync failed: '+e.message,'error');
+    if(lbl)lbl.textContent='Sync Connections';
+  }
+  if(btn)btn.disabled=false;
+}
 
 function showToast(msg){
   let t=document.getElementById('vsg-toast');
