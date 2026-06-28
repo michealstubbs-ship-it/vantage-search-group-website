@@ -4461,18 +4461,43 @@ async function loadTodaysActions(){
   if(_actionsGenerated)return;
   try{
     const today=new Date().toISOString().slice(0,10);
+    const yesterday=new Date(Date.now()-864e5).toISOString().slice(0,10);
     const db=_db();
     if(db){
-      const{data}=await db.from('todays_actions').select('*').eq('action_date',today).order('generated_at',{ascending:false}).limit(1);
-      if(data&&data.length>0&&data[0].actions&&data[0].actions.length>0){
-        const row=data[0];
+      const[todayRes,yestRes]=await Promise.all([
+        db.from('todays_actions').select('*').eq('action_date',today).order('generated_at',{ascending:false}).limit(1),
+        db.from('todays_actions').select('*').eq('action_date',yesterday).order('generated_at',{ascending:false}).limit(1)
+      ]);
+      // Collect snoozed or untouched items from yesterday
+      let carried=[];
+      if(yestRes.data&&yestRes.data.length>0){
+        const yact=yestRes.data[0].actions||[];
+        carried=yact.filter(a=>a.status==='snoozed'||!a.status||a.status==='pending')
+          .map(a=>({...a,status:undefined,_carriedFrom:'yesterday'}));
+      }
+      if(todayRes.data&&todayRes.data.length>0&&todayRes.data[0].actions&&todayRes.data[0].actions.length>0){
+        const row=todayRes.data[0];
         const modeData={mode:row.mode||'prospecting',jobs:0,pipeline:0};
-        renderTodaysActions({mode:row.mode,daily_effort_total:row.daily_effort_total,actions:row.actions},modeData);
+        // Prepend carried items not already in today's list (dedup by title)
+        let actions=row.actions;
+        if(carried.length){
+          const existing=new Set(actions.map(a=>a.title));
+          const fresh=carried.filter(a=>!existing.has(a.title));
+          if(fresh.length) actions=[...fresh,...actions];
+        }
+        renderTodaysActions({mode:row.mode,daily_effort_total:row.daily_effort_total,actions},modeData);
         _actionsGenerated=true;
         const ts=new Date(row.generated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
         const src=row.source==='scheduled'?' (auto)':'';
         document.getElementById('actions-timestamp').textContent='Generated '+ts+src;
         document.getElementById('run-actions-btn').innerHTML='<i class="ti ti-bolt"></i> Regenerate';
+        return;
+      } else if(carried.length){
+        // No today's actions yet — show yesterday's unfinished items
+        renderTodaysActions({mode:'prospecting',daily_effort_total:0,actions:carried},{mode:'prospecting',jobs:0,pipeline:0});
+        _actionsGenerated=true;
+        document.getElementById('actions-timestamp').textContent='Carried from yesterday — generate fresh when ready';
+        document.getElementById('run-actions-btn').innerHTML='<i class="ti ti-bolt"></i> Generate today\'s actions';
         return;
       }
     }
@@ -4757,6 +4782,7 @@ function renderTodaysActions(data,modeData){
     const isDone=a.status==='done'||a.status==='acted';
     const isDismissed=a.status==='dismissed';
     const isSnoozed=a.status==='snoozed';
+    const isCarried=a._carriedFrom==='yesterday';
     const isResolved=isDone||isDismissed;
     let statusBadge='';
     if(isDone) statusBadge=`<span style="margin-left:auto;font-size:11px;color:var(--green);font-weight:600"><i class="ti ti-check-circle"></i> Done</span>`;
@@ -4774,6 +4800,7 @@ function renderTodaysActions(data,modeData){
       <div class="action-body">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap">
           <span class="b b-${a.priority==='critical'?'high':a.priority==='high'?'followup':a.priority==='medium'?'contacted':'cold'}">${esc(a.type||'Action')}</span>
+          ${isCarried?`<span style="font-size:11px;color:var(--amber);font-weight:600;background:rgba(201,168,76,.1);padding:2px 7px;border-radius:4px"><i class="ti ti-calendar-up"></i> From yesterday</span>`:''}
           ${a.contact?`<span style="font-size:12px;color:var(--muted)">${esc(a.contact)}${a.company?' — '+esc(a.company):''}</span>`:''}
         </div>
         <div class="action-title">${esc(a.title)}</div>
@@ -5427,37 +5454,4 @@ async function sendDigest(){
         const nameMatch=line.match(/^([^—]+)/);
         const name=nameMatch?nameMatch[1].trim():'';
         if(name&&company){
-          movesSignals.push({company_name:company.substring(0,100),signal_type:'leadership_change',title:line.substring(0,200),summary:`From GCC Leadership Moves Digest (${subject}). CONTACT: ${name}`,importance:'high',actioned:false,created_at:now});
-        }
-      });
-    });
-    if(movesSignals.length>0){
-      try{
-        await db.from('company_signals').insert(movesSignals);
-        showToast(`Digest sent — ${movesSignals.length} leadership move${movesSignals.length!==1?'s':''} added to Appointment Triggers`);
-      }catch(e){console.warn('Digest → signals error:',e);}
-    }
-  }
-  const saved=JSON.parse(localStorage.getItem('vsg_digest')||'{}');
-  saved._lastSent=new Date().toISOString();
-  saved._lastSubject=subject;
-  localStorage.setItem('vsg_digest',JSON.stringify(saved));
-  if(typeof loadTriggers==='function')setTimeout(loadTriggers,500);
-}
-
-/* ═══════════════════════════════════════════════════
-   GAP 4 — LinkedIn connection follow-up wiring
-════════════════════════════════════════════════════ */
-async function checkNewConnections(){
-  const db=_db();if(!db)return;
-  const yesterday=new Date(Date.now()-26*60*60*1000).toISOString().slice(0,10);
-  try{
-    const{data}=await db.from('linkedin_outreach')
-      .select('full_name,title,company,linkedin_url,date_connected')
-      .eq('status','connected')
-      .gte('date_connected',yesterday);
-    if(!data||data.length===0)return;
-    const signals=data.map(p=>({
-      company_name:p.company||'LinkedIn',
-      signal_type:'news',
-      title:`${p.full_name} acc
+          movesSignals.push({
