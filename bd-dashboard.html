@@ -651,12 +651,22 @@ textarea{resize:vertical;min-height:80px}
 <body>
 
 <!-- TOP BAR -->
-<div class="bar">
+<div class="bar" style="position:relative">
   <div class="bar-brand">
     <div>
       <div class="bar-name">Vantage Search Group</div>
       <div class="bar-tag">BD Dashboard</div>
     </div>
+  </div>
+  <div id="cmd-wrap" style="flex:1;max-width:520px;margin:0 20px;position:relative">
+    <div class="cmd-bar" onclick="document.getElementById('cmd-input').focus()" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)">
+      <i class="ti ti-search search-icon" style="color:rgba(255,255,255,.6)"></i>
+      <input id="cmd-input" type="text" placeholder="Search anything, or ask Annie…"
+        autocomplete="off" spellcheck="false" style="color:#fff"
+        oninput="cmdSearch(this.value)" onkeydown="cmdKey(event)" onfocus="cmdSearch(this.value)"/>
+      <span class="cmd-bar-kbd" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.7)">⌘K</span>
+    </div>
+    <div class="cmd-results" id="cmd-results" style="left:0;right:0;top:calc(100% + 6px)"></div>
   </div>
   <div class="bar-actions">
     <button class="btn btn-sm btn-green" onclick="saveBackup()" title="Save backup"><i class="ti ti-device-floppy"></i></button>
@@ -669,18 +679,6 @@ textarea{resize:vertical;min-height:80px}
 </div>
 
 <div class="shell">
-
-  <!-- GLOBAL COMMAND BAR -->
-  <div class="cmd-bar-wrap" id="cmd-wrap" style="grid-column:1/-1;position:sticky;top:0;z-index:200">
-    <div class="cmd-bar" onclick="document.getElementById('cmd-input').focus()">
-      <i class="ti ti-search search-icon"></i>
-      <input id="cmd-input" type="text" placeholder="Search contacts, companies, signals — or ask Annie anything…"
-        autocomplete="off" spellcheck="false"
-        oninput="cmdSearch(this.value)" onkeydown="cmdKey(event)" onfocus="cmdSearch(this.value)"/>
-      <span class="cmd-bar-kbd">⌘K</span>
-    </div>
-    <div class="cmd-results" id="cmd-results"></div>
-  </div>
 
   <!-- SIDEBAR -->
   <div class="sidebar">
