@@ -31,6 +31,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .bar-name{color:#fff;font-size:14px;font-weight:700;white-space:nowrap}
 .bar-tag{font-size:9px;color:var(--gold);font-weight:600;letter-spacing:1px;text-transform:uppercase}
 .bar-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:nowrap}
+/* ── CONTACT DETAIL TABS ── */
+.detail-tabs{display:flex;gap:2px;border-bottom:2px solid var(--border-soft);margin:-2px -2px 16px;padding:0 2px}
+.detail-tab{background:none;border:none;padding:10px 16px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s}
+.detail-tab.active{color:var(--navy);border-bottom-color:var(--gold)}
+.detail-tab:hover:not(.active){color:var(--navy)}
+.detail-tab-pane{display:none}
+.detail-tab-pane.active{display:block}
+.comm-item{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--border-soft)}
+.comm-item:last-child{border-bottom:none}
+.comm-icon{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:13px;flex-shrink:0}
+.comm-icon.email{background:#eff6ff;color:#2563eb}
+.comm-icon.linkedin{background:#e0f2fe;color:#0369a1}
+.comm-icon.note{background:var(--gold-bg);color:#92680a}
+.comm-icon.call{background:var(--green-bg);color:var(--green)}
+.comm-icon.meeting{background:#f5f3ff;color:#7c3aed}
+.comm-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.comm-summary{font-size:13px;color:var(--navy);margin-top:4px;line-height:1.5}
+.comm-dir{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px}
+.comm-dir.in{background:var(--green-bg);color:var(--green)}
+.comm-dir.out{background:rgba(13,27,62,.08);color:var(--navy)}
+.log-comm-form{background:var(--bg);border-radius:10px;padding:14px;margin-top:12px;border:1px solid var(--border-soft)}
+.log-comm-form .fg{margin-bottom:10px}
+.log-comm-form label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
+.log-comm-form input,.log-comm-form select,.log-comm-form textarea{width:100%;font-size:13px}
+.log-comm-form textarea{height:60px;resize:vertical}
 .bar-search{flex:1;max-width:420px;position:relative}
 .bar-search input{width:100%;height:34px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:0 36px 0 14px;color:#fff;font-size:13px;outline:none;transition:background .15s,border-color .15s}
 .bar-search input::placeholder{color:rgba(255,255,255,.45)}
@@ -2290,11 +2315,14 @@ async function loadBDPerf(){
 /* ── DETAIL ── */
 function openDetail(id){
   const c=contacts.find(x=>x.id===id);if(!c)return;
+  window._detailContactId=id;
   document.getElementById('detail-name').textContent=c.name;
   const d=daysTo(c.followupDate);
   const fuB=d===null?'':d<0?`<span class="b b-overdue">${Math.abs(d)}d overdue</span>`:d===0?`<span class="b b-today">Due today</span>`:`<span class="b b-soon">In ${d}d</span>`;
   const since=daysSince(c.lastContact);
-  document.getElementById('detail-body').innerHTML=`
+
+  // Overview tab content
+  const overviewHtml=`
     <div class="dp-hero">
       <div class="av" style="width:52px;height:52px;font-size:18px;background:${avColor(c.name)}18;color:${avColor(c.name)}">${ini(c.name)}</div>
       <div style="flex:1;min-width:0">
@@ -2314,15 +2342,150 @@ function openDetail(id){
     ${c.notes?`<div class="df"><div class="df-label">Notes</div><div class="dp-notes">${esc(c.notes)}</div></div>`:''}
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--border-soft)">
       ${c.email?`<a href="mailto:${esc(c.email)}" class="btn btn-sm btn-navy"><i class="ti ti-mail"></i> Email</a>`:''}
-      ${c.followupDate?`<button class="btn btn-sm" onclick="makeIcs('Follow up: ${c.name.replace(/'/g,"\\'")}','${c.followupDate}','${esc(c.company)}')"><i class="ti ti-calendar"></i> Add to calendar</button>`:''}
+      ${c.followupDate?`<button class="btn btn-sm" onclick="makeIcs('Follow up: ${c.name.replace(/'/g,"\\'")}','${c.followupDate}','${esc(c.company)}')"><i class="ti ti-calendar"></i> Calendar</button>`:''}
       ${c.linkedin?`<a href="https://${c.linkedin.replace(/^https?:\/\//,'')}" target="_blank" class="btn btn-sm"><i class="ti ti-brand-linkedin"></i> LinkedIn</a>`:''}
       <button class="btn btn-sm btn-gold" onclick="closeDetail();openAdd(${c.id})"><i class="ti ti-edit"></i> Edit</button>
       <button class="btn btn-sm btn-ghost" onclick="markDone(${c.id})"><i class="ti ti-check"></i> Mark followed up</button>
       ${daysSince(c.lastContact)>=30?`<button class="btn btn-sm btn-purple" onclick="openReEngage(${c.id})"><i class="ti ti-refresh-alert"></i> Re-engage</button>`:''}
       <button class="btn btn-sm btn-red" onclick="del(${c.id})"><i class="ti ti-trash"></i></button>
     </div>`;
+
+  document.getElementById('detail-body').innerHTML=`
+    <div class="detail-tabs">
+      <button class="detail-tab active" onclick="switchDetailTab('overview',this)"><i class="ti ti-user" style="margin-right:4px"></i>Overview</button>
+      <button class="detail-tab" onclick="switchDetailTab('comms',this)"><i class="ti ti-messages" style="margin-right:4px"></i>Communications</button>
+      <button class="detail-tab" onclick="switchDetailTab('tasks',this)"><i class="ti ti-checkbox" style="margin-right:4px"></i>Tasks</button>
+    </div>
+    <div class="detail-tab-pane active" id="dtab-overview">${overviewHtml}</div>
+    <div class="detail-tab-pane" id="dtab-comms"><div class="empty" style="padding:20px"><i class="ti ti-loader ti-spin"></i><p>Loading communications...</p></div></div>
+    <div class="detail-tab-pane" id="dtab-tasks"><div class="empty" style="padding:20px"><i class="ti ti-loader ti-spin"></i><p>Loading tasks...</p></div></div>`;
+
   document.getElementById('detailOv').classList.add('open');
 }
+
+function switchDetailTab(tab, btn){
+  document.querySelectorAll('.detail-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.detail-tab-pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  const pane=document.getElementById('dtab-'+tab);
+  pane.classList.add('active');
+  if(tab==='comms') loadContactComms();
+  if(tab==='tasks') loadContactTasks();
+}
+
+async function loadContactComms(){
+  const id=window._detailContactId;
+  const c=contacts.find(x=>x.id===id);if(!c)return;
+  const pane=document.getElementById('dtab-comms');
+  const db=_db();
+  if(!db){pane.innerHTML='<div class="empty"><p>Supabase not connected.</p></div>';return;}
+  try{
+    const{data}=await db.from('contact_communications')
+      .select('*')
+      .ilike('contact_name','%'+c.name.split(' ')[0]+'%')
+      .order('communicated_at',{ascending:false})
+      .limit(50);
+    const rows=data||[];
+    const chanIcon={email:'ti-mail',linkedin:'ti-brand-linkedin',call:'ti-phone',note:'ti-note',meeting:'ti-calendar-event'};
+    const commsHtml=rows.length?rows.map(r=>`
+      <div class="comm-item">
+        <div class="comm-icon ${r.channel}"><i class="ti ${chanIcon[r.channel]||'ti-message'}"></i></div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:12px;font-weight:700;color:var(--navy)">${esc(r.subject||r.channel)}</span>
+            <span class="comm-dir ${r.direction==='inbound'?'in':'out'}">${r.direction==='inbound'?'Received':'Sent'}</span>
+          </div>
+          <div class="comm-meta">${new Date(r.communicated_at).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+          ${r.summary?`<div class="comm-summary">${esc(r.summary)}</div>`:''}
+        </div>
+      </div>`).join(''):'<div class="empty" style="padding:24px"><i class="ti ti-messages"></i><p>No communications logged yet.</p><p style="font-size:12px;color:var(--muted);margin-top:4px">The daily sync will populate this automatically. You can also log manually below.</p></div>';
+    pane.innerHTML=commsHtml+`
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border-soft)">
+        <button class="btn btn-sm btn-gold" onclick="toggleLogCommForm()"><i class="ti ti-plus"></i> Log interaction manually</button>
+        <div class="log-comm-form" id="log-comm-form" style="display:none;margin-top:12px">
+          <div class="fg2">
+            <div class="fg"><label>Channel</label><select id="lc-channel"><option value="email">Email</option><option value="linkedin">LinkedIn</option><option value="call">Call</option><option value="meeting">Meeting</option><option value="note">Note</option></select></div>
+            <div class="fg"><label>Direction</label><select id="lc-dir"><option value="inbound">Received / Inbound</option><option value="outbound">Sent / Outbound</option></select></div>
+          </div>
+          <div class="fg"><label>Date & time</label><input type="datetime-local" id="lc-date" value="${new Date().toISOString().slice(0,16)}"></div>
+          <div class="fg"><label>Subject / topic</label><input type="text" id="lc-subject" placeholder="e.g. Replied to my outreach"></div>
+          <div class="fg"><label>Summary</label><textarea id="lc-summary" placeholder="What was discussed or agreed?"></textarea></div>
+          <button class="btn btn-gold" onclick="saveManualComm()"><i class="ti ti-check"></i> Save</button>
+          <button class="btn btn-ghost" onclick="toggleLogCommForm()" style="margin-left:6px">Cancel</button>
+        </div>
+      </div>`;
+  }catch(e){pane.innerHTML=`<div class="empty"><p>Error: ${e.message}</p></div>`;}
+}
+
+function toggleLogCommForm(){
+  const f=document.getElementById('log-comm-form');
+  if(f)f.style.display=f.style.display==='none'?'':'none';
+}
+
+async function saveManualComm(){
+  const id=window._detailContactId;
+  const c=contacts.find(x=>x.id===id);if(!c)return;
+  const db=_db();if(!db)return;
+  const channel=document.getElementById('lc-channel')?.value||'note';
+  const direction=document.getElementById('lc-dir')?.value||'inbound';
+  const dateVal=document.getElementById('lc-date')?.value;
+  const subject=document.getElementById('lc-subject')?.value||'';
+  const summary=document.getElementById('lc-summary')?.value||'';
+  if(!summary){showToast('Please add a summary');return;}
+  try{
+    await db.from('contact_communications').insert({
+      contact_name:c.name,
+      company:c.company||null,
+      channel,direction,
+      communicated_at:dateVal?new Date(dateVal).toISOString():new Date().toISOString(),
+      subject:subject||null,
+      summary
+    });
+    // Also update last_contact on the contact record
+    if(channel!=='note'){
+      c.lastContact=today();save();render();
+    }
+    showToast('Communication logged');
+    loadContactComms();
+  }catch(e){showToast('Error: '+e.message);}
+}
+
+async function loadContactTasks(){
+  const id=window._detailContactId;
+  const c=contacts.find(x=>x.id===id);if(!c)return;
+  const pane=document.getElementById('dtab-tasks');
+  // Filter from in-memory tasks array (tasks are in localStorage)
+  const name=c.name.toLowerCase();
+  const company=(c.company||'').toLowerCase();
+  const related=(tasks||[]).filter(t=>{
+    const txt=(t.text||t.title||'').toLowerCase();
+    return txt.includes(name)||txt.includes(company)||(t.contactId&&t.contactId===id);
+  }).sort((a,b)=>(a.done?1:0)-(b.done?1:0)||(a.dueDate||'z').localeCompare(b.dueDate||'z'));
+  if(!related.length){
+    pane.innerHTML=`<div class="empty" style="padding:24px"><i class="ti ti-checkbox"></i><p>No tasks linked to ${esc(c.name)} yet.</p></div>
+      <div style="margin-top:12px">
+        <button class="btn btn-sm btn-gold" onclick="closeDetail();openAddTask();setTimeout(()=>{document.getElementById('t-contact').value='${c.name.replace(/'/g,"\\'")}';},50)"><i class="ti ti-plus"></i> Add task for ${esc(c.name.split(' ')[0])}</button>
+      </div>`;
+    return;
+  }
+  pane.innerHTML=related.map(t=>`
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border-soft)">
+      <input type="checkbox" ${t.done?'checked':''} onchange="toggleTaskFromDetail(${t.id||'null'},this.checked)" style="margin-top:2px;flex-shrink:0">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:${t.done?'var(--muted)':'var(--navy)'};text-decoration:${t.done?'line-through':'none'}">${esc(t.text||t.title||'Task')}</div>
+        ${t.dueDate?`<div style="font-size:11px;color:var(--muted);margin-top:2px"><i class="ti ti-calendar" style="margin-right:3px"></i>${fmt(t.dueDate)}</div>`:''}
+      </div>
+    </div>`).join('')+`
+  <div style="margin-top:12px">
+    <button class="btn btn-sm btn-gold" onclick="closeDetail();openAddTask('${c.name.replace(/'/g,"\\'")}')"><i class="ti ti-plus"></i> Add task</button>
+  </div>`;
+}
+
+function toggleTaskFromDetail(taskId,done){
+  const t=tasks.find(x=>x.id===taskId);
+  if(t){t.done=done;saveTasks();}
+}
+
 function closeDetail(){document.getElementById('detailOv').classList.remove('open');}
 function del(id){if(confirm('Delete this contact?')){contacts=contacts.filter(x=>x.id!==id);save();render();closeDetail();}}
 
@@ -4462,6 +4625,17 @@ Help Michael: refine or rewrite the message, find a different angle, provide com
     if(data.error)throw new Error(data.error);
     chatMessages=chatMessages.filter(m=>!m.typing);
     addChatMessage('assistant',data.content);
+    // Show "Save to CRM" button if this is a contact chat (not action/SEO context)
+    if(!_actionCtx&&currentChatContact&&currentChatContact.name&&!window._seoCtx){
+      const msgEl=document.getElementById('chat-messages');
+      const lastMsg=msgEl?.lastElementChild;
+      if(lastMsg&&!lastMsg.querySelector('.save-crm-btn')){
+        const saveBtn=document.createElement('div');
+        saveBtn.style.cssText='margin:6px 0 0 44px';
+        saveBtn.innerHTML=`<button class="save-crm-btn btn btn-xs btn-ghost" style="font-size:11px;color:var(--muted)" onclick="saveChatToCrm(${JSON.stringify(data.content).replace(/"/g,'&quot;')})"><i class="ti ti-device-floppy"></i> Save to CRM</button>`;
+        lastMsg.appendChild(saveBtn);
+      }
+    }
     try{const db=_db();if(db&&chatContactId){await db.from('chat_history').insert([{contact_id:chatContactId,role:'user',content:text},{contact_id:chatContactId,role:'assistant',content:data.content}]);}}catch(e){console.error('chat save:',e);}
   }catch(err){
     chatMessages=chatMessages.filter(m=>!m.typing);
@@ -4470,6 +4644,30 @@ Help Michael: refine or rewrite the message, find a different angle, provide com
 }
 
 function quickChat(prompt){const input=document.getElementById('chat-input');if(input){input.value=prompt;sendChat();}}
+
+async function saveChatToCrm(content){
+  const db=_db();
+  if(!db||!currentChatContact?.name){showToast('No contact context to save');return;}
+  try{
+    // Truncate Annie's response to a clean summary (first 400 chars)
+    const summary=content.replace(/\*\*/g,'').replace(/\n+/g,' ').trim().slice(0,400);
+    await db.from('contact_communications').insert({
+      contact_name:currentChatContact.name,
+      company:currentChatContact.company||null,
+      channel:'note',
+      direction:'internal',
+      communicated_at:new Date().toISOString(),
+      subject:'Annie analysis',
+      summary
+    });
+    // Update last_contact on the in-memory contact
+    const c=contacts.find(x=>x.name===currentChatContact.name);
+    if(c){c.lastContact=today();save();}
+    showToast('Saved to CRM — visible in Communications tab');
+    // Change button to confirm
+    document.querySelectorAll('.save-crm-btn').forEach(b=>b.innerHTML='<i class="ti ti-check"></i> Saved');
+  }catch(e){showToast('Error saving: '+e.message);}
+}
 
 function copyToClipboard(text){
   const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
