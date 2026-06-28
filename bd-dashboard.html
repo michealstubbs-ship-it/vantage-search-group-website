@@ -4568,11 +4568,11 @@ async function runTodaysActions(){
   const fourteenDaysAgo=new Date(Date.now()-14*864e5).toISOString();
   const sevenDaysAgo=new Date(Date.now()-7*864e5).toISOString().slice(0,10);
 
-  let overdueFollowUps=[], staleContacts=[], liveSignals=[], liLeads=[], activeMandates=[], newConnections=[], pendingSequences=[];
+  let overdueFollowUps=[], staleContacts=[], liveSignals=[], liLeads=[], activeMandates=[], newConnections=[], pendingSequences=[], myConnections=[];
 
   if(db){
     try{
-      const [fuRes,staleRes,sigRes,liRes,jobsRes,connRes,seqRes]=await Promise.all([
+      const [fuRes,staleRes,sigRes,liRes,jobsRes,connRes,seqRes,myConnRes]=await Promise.all([
         db.from('contacts').select('name,title,company,stage,last_contact,follow_up_date,notes,linkedin,email')
           .not('stage','in','("lost","rejected","not_interested","placed")')
           .lt('follow_up_date',todayStr).not('follow_up_date','is',null)
@@ -4592,7 +4592,8 @@ async function runTodaysActions(){
           .eq('status','connected').gte('date_connected',sevenDaysAgo).is('welcome_sent',null).limit(6),
         db.from('company_signals').select('company_name,title,summary,importance,created_at')
           .eq('actioned',false).ilike('title','%review%message%').gte('created_at',fourteenDaysAgo)
-          .order('created_at',{ascending:false}).limit(6)
+          .order('created_at',{ascending:false}).limit(6),
+        db.from('linkedin_outreach').select('full_name,title,company,linkedin_url').eq('status','connected').limit(500),
       ]);
       overdueFollowUps=fuRes.data||[];
       staleContacts=staleRes.data||[];
@@ -4601,6 +4602,7 @@ async function runTodaysActions(){
       activeMandates=jobsRes.data||[];
       newConnections=connRes.data||[];
       pendingSequences=seqRes.data||[];
+      myConnections=myConnRes.data||[];
     }catch(e){console.warn('[Today\'s Actions] Data fetch error:',e);}
   }
 
@@ -4633,6 +4635,18 @@ async function runTodaysActions(){
   const sequencesCtx=pendingSequences.length
     ? pendingSequences.map(s=>`- ${s.title} at ${s.company_name} (${fmt(s.created_at)})`).join('\n')
     : 'None';
+
+  // Group confirmed connections by company for warm routing
+  const connByCompany={};
+  myConnections.forEach(c=>{
+    const co=(c.company||'').trim();
+    if(!co)return;
+    if(!connByCompany[co])connByCompany[co]=[];
+    connByCompany[co].push(`${c.full_name} (${c.title||'?'})${c.linkedin_url?' | '+c.linkedin_url:''}`);
+  });
+  const myConnectionsCtx=Object.keys(connByCompany).length
+    ? Object.entries(connByCompany).map(([co,people])=>`${co}: ${people.join('; ')}`).join('\n')
+    : 'None on record';
 
   const modeDescriptions={
     prospecting:`VSG currently has ${modeData.jobs} live mandate(s). This is PROSPECTING MODE — weight actions 70% opportunity triggers and new BD, 20% relationship maintenance, 10% admin.`,
@@ -4668,6 +4682,9 @@ ${signalsCtx}
 
 PENDING SEQUENCE MESSAGES (drafted, awaiting Michael's review):
 ${sequencesCtx}
+
+YOUR CONFIRMED 1ST-DEGREE LINKEDIN CONNECTIONS (grouped by company — use this for warm routing):
+${myConnectionsCtx}
 
 ━━━ OUTCOME MEMORY — what has worked ━━━
 ${outcomesContext}
@@ -4729,6 +4746,7 @@ Rules:
 - Maximum 9 actions
 - Do not surface OPPORTUNITY_FLAG actions with conviction_level "low"
 - If a data section says "None", skip it entirely — do not fabricate actions
+- WARM ROUTING RULE: Before recommending outreach to any company, check YOUR CONFIRMED 1ST-DEGREE LINKEDIN CONNECTIONS above. If Michael already has a connection at that firm, set that person as contacts_to_reach (with their linkedin URL) and write a warm suggested_message relevant to their role — do not write a cold connect note. Set connect_note to null for these. Only recommend a cold connect invite (with connect_note populated) if no confirmed connection exists at that company.
 - Use the Learning Layer to prefer signal types and approaches that have converted before
 - Add "daily_effort_total" (total minutes) at the root level
 - Wrap everything in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
