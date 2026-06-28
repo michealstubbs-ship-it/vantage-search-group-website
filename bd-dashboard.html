@@ -87,7 +87,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 /* METRIC ROW */
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.m{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);position:relative;overflow:hidden}
+.m{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);position:relative;overflow:hidden;cursor:pointer;transition:box-shadow .15s,transform .1s,border-color .15s}
+.m:hover{box-shadow:var(--sh-lg);transform:translateY(-2px);border-color:var(--gold)}
 .m::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
 .m.gold::after{background:linear-gradient(90deg,var(--gold),var(--gold2))}
 .m.red::after{background:var(--red)}
@@ -697,14 +698,14 @@ textarea{resize:vertical;min-height:80px}
       <div class="metrics" id="metrics-grid"></div>
       <div class="ov-grid">
         <div class="card ov-col-fu">
-          <div class="card-h"><h3><i class="ti ti-bell"></i>Follow-ups</h3><button class="btn btn-xs btn-ghost" onclick="goPage('followups',document.querySelectorAll('.nav-btn')[2])">View all</button></div>
+          <div class="card-h" style="cursor:pointer" onclick="goPage('followups',document.querySelectorAll('.nav-btn')[3])"><h3 style="flex:1"><i class="ti ti-bell"></i>Follow-ups</h3><button class="btn btn-xs btn-ghost" onclick="event.stopPropagation();goPage('followups',document.querySelectorAll('.nav-btn')[3])">View all</button></div>
           <div id="ov-fu" class="card-b p0"></div>
         </div>
         <div class="card ov-col-jobs">
-          <div class="card-h"><h3><i class="ti ti-briefcase"></i>Open jobs</h3><button class="btn btn-xs btn-ghost" onclick="goPage('jobs',document.querySelectorAll('.nav-btn')[6])">View all</button></div>
+          <div class="card-h" style="cursor:pointer" onclick="goPage('jobs',document.querySelector('.nav-btn[onclick*=\'jobs\']'))"><h3 style="flex:1"><i class="ti ti-briefcase"></i>Open jobs</h3><button class="btn btn-xs btn-ghost" onclick="event.stopPropagation();goPage('jobs',document.querySelector('.nav-btn[onclick*=\'jobs\']'))">View all</button></div>
           <div id="ov-jobs" class="card-b p0"></div>
         </div>
-        <div class="card ov-col-rev" id="revenue-card"></div>
+        <div class="card ov-col-rev" id="revenue-card" style="cursor:pointer" onclick="goPage('bd-perf',document.querySelector('.nav-btn[onclick*=\'bd-perf\']'));loadBDPerf()"></div>
       </div>
     </div>
 
@@ -2404,10 +2405,10 @@ function render(){
   const meetings=contacts.filter(c=>c.stage==='meeting').length;
   const pipeline=contacts.filter(c=>!['notinterested'].includes(c.stage)).length;
   document.getElementById('metrics-grid').innerHTML=`
-    <div class="m gold"><div class="m-icon" style="background:var(--gold-bg);color:#92680a"><i class="ti ti-users"></i></div><div class="m-lbl">Pipeline</div><div class="m-val">${pipeline}</div><div class="m-sub">active contacts</div></div>
-    <div class="m red"><div class="m-icon" style="background:var(--red-bg);color:var(--red)"><i class="ti ti-clock-exclamation"></i></div><div class="m-lbl">Overdue</div><div class="m-val" style="color:var(--red)">${overdue.length}</div><div class="m-sub">need chasing now</div></div>
-    <div class="m navy"><div class="m-icon" style="background:#e8ecf4;color:var(--navy)"><i class="ti ti-calendar-event"></i></div><div class="m-lbl">Meetings</div><div class="m-val">${meetings}</div><div class="m-sub">booked</div></div>
-    <div class="m green"><div class="m-icon" style="background:var(--green-bg);color:var(--green)"><i class="ti ti-trophy"></i></div><div class="m-lbl">Placed</div><div class="m-val" style="color:var(--green)">${placed}</div><div class="m-sub">all time</div></div>`;
+    <div class="m gold" title="View pipeline board" onclick="goPage('pipeline',document.querySelectorAll('.nav-btn')[2])"><div class="m-icon" style="background:var(--gold-bg);color:#92680a"><i class="ti ti-users"></i></div><div class="m-lbl">Pipeline</div><div class="m-val">${pipeline}</div><div class="m-sub">active contacts</div></div>
+    <div class="m red" title="View overdue follow-ups" onclick="goPage('followups',document.querySelectorAll('.nav-btn')[3])"><div class="m-icon" style="background:var(--red-bg);color:var(--red)"><i class="ti ti-clock-exclamation"></i></div><div class="m-lbl">Overdue</div><div class="m-val" style="color:var(--red)">${overdue.length}</div><div class="m-sub">need chasing now</div></div>
+    <div class="m navy" title="View contacts with meetings booked" onclick="document.getElementById('f-stage').value='meeting';goPage('contacts',document.querySelectorAll('.nav-btn')[5]);renderContacts()"><div class="m-icon" style="background:#e8ecf4;color:var(--navy)"><i class="ti ti-calendar-event"></i></div><div class="m-lbl">Meetings</div><div class="m-val">${meetings}</div><div class="m-sub">booked</div></div>
+    <div class="m green" title="View placed contacts" onclick="document.getElementById('f-stage').value='placed';goPage('contacts',document.querySelectorAll('.nav-btn')[5]);renderContacts()"><div class="m-icon" style="background:var(--green-bg);color:var(--green)"><i class="ti ti-trophy"></i></div><div class="m-lbl">Placed</div><div class="m-val" style="color:var(--green)">${placed}</div><div class="m-sub">all time</div></div>`;
 
   // overview follow-ups — grouped overdue / today / upcoming
   const ovOd=contacts.filter(c=>c.followupDate&&daysTo(c.followupDate)<0&&!['notinterested'].includes(c.stage)).sort((a,b)=>a.followupDate.localeCompare(b.followupDate));
