@@ -4569,6 +4569,10 @@ async function autoQueueLinkedInContacts(actions){
 
 function renderTodaysActions(data,modeData){
   window._todaysActionsData=data.actions||[];
+  // Pre-load connection status before rendering so Connect vs Send buttons are correct
+  loadLinkedInConnectionStatus(window._todaysActionsData).then(()=>_renderTodaysActionsCards(data,modeData));
+}
+function _renderTodaysActionsCards(data,modeData){
   const modeCard=document.getElementById('actions-mode-card');
   modeCard.className='actions-mode '+data.mode;modeCard.style.display='flex';
   const icons={prospecting:'ti-telescope',mixed:'ti-adjust',delivery:'ti-rocket'};
@@ -4596,7 +4600,7 @@ function renderTodaysActions(data,modeData){
         <div class="action-ft">
           <span class="effort-tag"><i class="ti ti-clock" style="font-size:10px"></i> ${esc(a.effort_label||'5 min')}</span>
           ${a.suggested_message?`<button class="btn btn-xs btn-outline" onclick="copyAction(${i})"><i class="ti ti-copy"></i> Copy</button>`:''}
-          ${a.suggested_message?`<button class="btn btn-xs btn-navy send-li-btn" id="send-li-${i}" onclick="sendOnLinkedIn(${i})"><i class="ti ti-brand-linkedin"></i> Send</button>`:''}
+          ${a.suggested_message?(()=>{const liUrl=(a.contacts_to_reach&&a.contacts_to_reach[0]?.linkedin)||'';const normUrl=liUrl.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase();const isConn=window._liConnected&&window._liConnected[normUrl];return isConn?`<button class="btn btn-xs btn-navy send-li-btn" id="send-li-${i}" onclick="sendOnLinkedIn(${i})"><i class="ti ti-brand-linkedin"></i> Send</button>`:`<button class="btn btn-xs btn-outline send-li-btn" id="send-li-${i}" onclick="sendConnectionInvite(${i})" style="color:#0077b5;border-color:#0077b5"><i class="ti ti-user-plus"></i> Connect</button>`;})():''}
           <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask AI</button>
         </div>
       </div>
@@ -4642,6 +4646,68 @@ async function sendOnLinkedIn(i){
     if(linkedinUrl){const url=linkedinUrl.startsWith('http')?linkedinUrl:'https://'+linkedinUrl;window.open(url,'_blank');}
     if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-brand-linkedin"></i> Send';}
     showToast('Message copied — LinkedIn opened, just paste & send');
+  }
+}
+
+// Load connection status for all contacts in today's actions
+// Checks linkedin_outreach table (status='connected') to pre-determine Connect vs Send button
+async function loadLinkedInConnectionStatus(actions){
+  try{
+    const db=_db();if(!db)return;
+    // Collect all LinkedIn URLs from action contacts
+    const urls=[];
+    (actions||[]).forEach(a=>(a.contacts_to_reach||[]).forEach(c=>{if(c.linkedin)urls.push(c.linkedin.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase());}));
+    if(!urls.length)return;
+    // Query outreach table for connected status
+    const{data}=await db.from('linkedin_outreach').select('linkedin_url,status').eq('status','connected');
+    window._liConnected={};
+    (data||[]).forEach(r=>{if(r.linkedin_url){window._liConnected[r.linkedin_url.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase()]=true;}});
+  }catch(e){window._liConnected={};}
+}
+
+async function sendConnectionInvite(i){
+  const a=(window._todaysActionsData||[])[i];if(!a||!a.suggested_message)return;
+  const contact=a.contacts_to_reach&&a.contacts_to_reach[0];
+  const name=contact?.name||a.contact||'';
+  const linkedinUrl=contact?.linkedin||'';
+  const btn=document.getElementById(`send-li-${i}`);
+
+  if(!linkedinUrl){showToast('No LinkedIn URL for this contact');return;}
+
+  // Truncate message to 290 chars for the invite note
+  const inviteNote=a.suggested_message.slice(0,290);
+
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Sending...';}
+
+  try{
+    const res=await fetch('/.netlify/functions/send-linkedin-invite',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contact_name:name,linkedin_url:linkedinUrl,invite_note:inviteNote})
+    });
+    const data=await res.json().catch(()=>({}));
+
+    if(res.ok&&data.success){
+      if(btn){btn.disabled=true;btn.style.background='#0077b5';btn.style.borderColor='#0077b5';btn.style.color='#fff';btn.innerHTML='<i class="ti ti-check"></i> Invited!';}
+      showToast(`Connection invite sent to ${name} ✓`);
+    }else if(data.already_connected){
+      // They're already connected — switch to Send flow
+      if(btn){btn.disabled=false;btn.className='btn btn-xs btn-navy send-li-btn';btn.innerHTML='<i class="ti ti-brand-linkedin"></i> Send';btn.setAttribute('onclick',`sendOnLinkedIn(${i})`);}
+      showToast(`Already connected — click Send to message ${name}`);
+    }else if(data.fallback){
+      if(linkedinUrl){const url=linkedinUrl.startsWith('http')?linkedinUrl:'https://'+linkedinUrl;window.open(url,'_blank');}
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Connect';}
+      showToast('Could not auto-connect — LinkedIn opened, message copied');
+      navigator.clipboard.writeText(inviteNote).catch(()=>{});
+    }else{
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Connect';}
+      showToast(data.error||'Invite failed — try manually on LinkedIn');
+    }
+  }catch(e){
+    if(linkedinUrl){const url=linkedinUrl.startsWith('http')?linkedinUrl:'https://'+linkedinUrl;window.open(url,'_blank');}
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Connect';}
+    showToast('Message copied — paste as invite note on LinkedIn');
+    navigator.clipboard.writeText(inviteNote).catch(()=>{});
   }
 }
 
