@@ -1072,7 +1072,7 @@ textarea{resize:vertical;min-height:80px}
       <div id="actions-empty" style="text-align:center;padding:64px 20px;color:var(--subtle)">
         <i class="ti ti-bolt" style="font-size:48px;display:block;margin-bottom:16px;opacity:.2"></i>
         <div style="font-size:15px;font-weight:700;margin-bottom:8px">No actions generated yet</div>
-        <div style="font-size:13px;margin-bottom:20px">Click "Generate Actions" to run all 9 BD prompts and get your ranked action list for today.</div>
+        <div style="font-size:13px;margin-bottom:20px">Click "Generate Actions" to run the Partner Intelligence Engine — your EJF-ranked action list for today.</div>
         <button class="btn btn-gold" onclick="runTodaysActions()"><i class="ti ti-bolt"></i> Generate Today's Actions</button>
       </div>
 
@@ -4544,6 +4544,23 @@ async function runTodaysActions(){
     }
   }catch(e){console.warn('outcomes fetch:',e);}
 
+  let learningContext='Stage 1 — calibration building as you act on recommendations.';
+  try{
+    const dbL=_db();
+    if(dbL){
+      const sevenDaysAgo=new Date(Date.now()-7*864e5).toISOString().slice(0,10);
+      const{data:history}=await dbL.from('recommendation_history')
+        .select('action_date,recommendation_rank,contact_name,company,signal_type,ejf_classification,conviction_level,michael_action')
+        .gte('action_date',sevenDaysAgo)
+        .not('michael_action','is',null)
+        .order('action_date',{ascending:false}).limit(20);
+      if(history&&history.length>0){
+        const lines=history.map(h=>`- ${h.action_date} | Rank ${h.recommendation_rank||'?'} | ${h.contact_name||'?'} at ${h.company||'?'}${h.signal_type?' ('+h.signal_type+')':''}${h.ejf_classification?' ['+h.ejf_classification+']':''}${h.conviction_level?' conviction:'+h.conviction_level:''} — Michael: ${h.michael_action}`);
+        learningContext=`${history.length} actions recorded last 7 days:\n${lines.join('\n')}\n\nCalibrate: which signal types and conviction levels Michael acts on vs dismisses. Prefer approaches that have converted before.`;
+      }
+    }
+  }catch(e){console.warn('learning history fetch:',e);}
+
   // ── Fetch real pipeline data from Supabase ────────────────────────────────
   const db=_db();
   const todayStr=new Date().toISOString().slice(0,10);
@@ -4623,7 +4640,7 @@ async function runTodaysActions(){
     delivery:`VSG currently has ${modeData.jobs} live mandates. This is DELIVERY MODE — weight actions 60% delivery, 25% relationship maintenance, 15% new BD.`
   };
 
-  const systemPrompt=`You are Michael Stubbs' AI BD engine at Vantage Search Group, a boutique executive search firm in the GCC.
+  const systemPrompt=`You are Michael Stubbs' Partner Intelligence Engine at Vantage Search Group, a boutique executive search firm in the GCC. You do not produce task lists. You produce commercially-sound judgement: the highest-quality actions Michael should take today, ranked by evidence and conviction, not volume or activity. Every action you surface must pass one final test — if Michael owned VSG and had limited time today, would he spend it on this? If not a clear yes, do not surface it.
 
 ${modeDescriptions[modeData.mode]}
 
@@ -4655,13 +4672,43 @@ ${sequencesCtx}
 ━━━ OUTCOME MEMORY — what has worked ━━━
 ${outcomesContext}
 
+━━━ LEARNING LAYER — Michael's last 7 days of actions ━━━
+${learningContext}
+
+━━━ PARTNER INTELLIGENCE ENGINE — REASONING DISCIPLINE ━━━
+
+For every potential action, work through these questions before surfacing it:
+
+1. What actually happened? Separate fact from interpretation. Most signals are less significant than they appear.
+2. Why does this matter commercially to VSG right now? If you cannot state a clear commercial reason in one sentence, drop it.
+3. Does this strengthen or weaken an existing opportunity? Connect it to what is already in the pipeline above before treating it as new.
+4. Does the timing warrant action today — or should this wait, or be done later this week?
+5. Is this consistent with the full picture? A single positive signal alongside several weak ones carries less weight than an unchallenged signal.
+6. What is missing? Are there combinations of signals that together mean more than either does alone? Is there a contact or company conspicuously absent from the current picture?
+7. Has accumulated evidence crossed a threshold that changes the overall commercial judgement on this contact or company?
+8. Final filter: if Michael owned VSG and had 3 hours today, would he spend time on this? Only surface it if the answer is clearly yes.
+
+CONVICTION LEVELS — assign one per action based on the weight of evidence:
+- low: single weak signal, no established relationship, early prospecting
+- medium: multiple consistent signals, OR an established relationship with a clear trigger event
+- high: direct reply received, overdue commitment, mandate-linked delivery action
+- critical: active LinkedIn reply 3+ days old, or overdue follow-up 5+ days — these lead the list regardless of mode
+
+EJF CLASSIFICATION — assign one per action:
+- TODAY_ACTIONS: a direct commercial action required today (the default for most items)
+- OPPORTUNITY_FLAG: commercially interesting but not yet urgent — only surface if conviction is medium or above
+- STANDING_REVIEW: no new event but the accumulation of existing signals warrants attention today
+- CHALLENGE: evidence suggests current effort may be misaligned — surface sparingly and only when the evidence is compelling
+
 ━━━ INSTRUCTIONS ━━━
 
-Generate Michael's Today's Actions list from the REAL DATA above. Each action must be traceable to a specific row in the data — cite it in the signal field.
+Generate Michael's Today's Actions list from the REAL DATA above. Each action must be traceable to a specific row in the data — cite it in the signal field. Apply the reasoning discipline above before including any action. Quality over quantity — 5 precise, high-conviction actions beat 9 generic ones.
 
 Output a JSON array. Each action object:
 - rank: number (1 = most urgent)
 - priority: "critical" | "high" | "medium" | "low"
+- conviction_level: "low" | "medium" | "high" | "critical"
+- ejf_classification: "TODAY_ACTIONS" | "OPPORTUNITY_FLAG" | "STANDING_REVIEW" | "CHALLENGE"
 - type: "Reply needed" | "Follow-up overdue" | "New connection" | "Opportunity trigger" | "Relationship check-in" | "Sequence review" | "Mandate delivery"
 - title: short action title (max 12 words)
 - contact: name of person (from the data above, or null)
@@ -4673,13 +4720,15 @@ Output a JSON array. Each action object:
 - effort_mins: 2 | 5 | 15 | 30
 - effort_label: "2 min" | "5 min" | "15 min" | "30 min"
 
-Priority order: (1) LinkedIn replies and new connections, (2) overdue follow-ups, (3) high-importance signals, (4) stale warm contacts, (5) medium signals, (6) mandate delivery tasks.
+Priority order: (1) critical conviction — active replies and commitments 5+ days overdue regardless of mode, (2) high conviction — replies received, overdue follow-ups, mandate delivery actions, (3) medium conviction — strong intelligence signals with relationship context, (4) low conviction — early prospecting (only in prospecting mode, maximum 2 items).
 
 Rules:
 - Never criticise the UAE, Saudi Arabia, or any GCC government
 - No em-dashes anywhere
 - Maximum 9 actions
-- If a data section says "None", skip it — do not fabricate actions
+- Do not surface OPPORTUNITY_FLAG actions with conviction_level "low"
+- If a data section says "None", skip it entirely — do not fabricate actions
+- Use the Learning Layer to prefer signal types and approaches that have converted before
 - Add "daily_effort_total" (total minutes) at the root level
 - Wrap everything in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
 - CRITICAL: Return ONLY raw JSON. No markdown. No code fences. No backticks. First character must be { and last must be }.`;
@@ -4723,6 +4772,25 @@ Rules:
           actions:parsed.actions||[],
           source:'manual'
         },{onConflict:'action_date'});
+        // Insert a recommendation_history row per action so Done/Dismiss/Snooze buttons record against real rows
+        try{
+          if(parsed.actions&&parsed.actions.length){
+            const histRows=parsed.actions.map((a,i)=>({
+              action_date:today,
+              recommendation_rank:a.rank||i+1,
+              contact_name:a.contact||null,
+              company:a.company||null,
+              signal_type:a.type||null,
+              ejf_classification:a.ejf_classification||'TODAY_ACTIONS',
+              conviction_level:a.conviction_level||'medium',
+              recommended_action:a.title||null,
+              suggested_message:a.suggested_message||null,
+              source:'manual'
+            }));
+            await db.from('recommendation_history')
+              .upsert(histRows,{onConflict:'action_date,recommendation_rank',ignoreDuplicates:false});
+          }
+        }catch(e2){console.warn('recommendation_history insert:',e2);}
       }
     }catch(e){console.warn('Could not save actions:',e);}
   }catch(e){
@@ -4858,9 +4926,12 @@ async function _recordMichaelAction(rank, actionType){
     const db=_db();if(!db)return;
     const today=new Date().toISOString().slice(0,10);
     await db.from('recommendation_history')
-      .update({michael_action:actionType,michael_action_at:new Date().toISOString()})
-      .eq('action_date',today)
-      .eq('recommendation_rank',rank);
+      .upsert({
+        action_date:today,
+        recommendation_rank:rank,
+        michael_action:actionType,
+        michael_action_at:new Date().toISOString()
+      },{onConflict:'action_date,recommendation_rank'});
   }catch(e){console.warn('recordMichaelAction:',e);}
 }
 
@@ -5402,56 +5473,4 @@ async function generateSegment(seg){
     const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     const text=data.content||data.response||'';
-    const extract=(label,next)=>{const r=new RegExp(label+'\\s*:?\\s*([\\s\\S]*?)(?='+next+':|$)','i');const m=text.match(r);return m?m[1].trim():'';};
-    document.getElementById('digest-'+seg+'-moves').value=extract('MOVES','BUILDING');
-    document.getElementById('digest-'+seg+'-building').value=extract('BUILDING','OBSERVATION');
-    document.getElementById('digest-'+seg+'-obs').value=extract('OBSERVATION','QUESTION');
-    document.getElementById('digest-'+seg+'-q').value=extract('QUESTION','CLOSE');
-    document.getElementById('digest-'+seg+'-close').value=extract('CLOSE','$$$');
-    saveDigestToStorage();showToast('Segment generated');
-  }catch(e){showToast('Error generating — check API key');}
-  btn.disabled=false;btn.innerHTML='<i class="ti ti-sparkles"></i> Generate with AI';
-}
-
-function generateAllSegments(){DIGEST_SEGMENTS.forEach((seg,i)=>setTimeout(()=>generateSegment(seg),i*3000));}
-
-function openSendDigest(){loadDigestRecipientSummary();document.getElementById('digestSendOv').classList.add('open');}
-
-async function loadDigestRecipientSummary(){
-  try{
-    const db=_db();
-    const{data:cts}=await (db?db.from('contacts').select('name,industry,company,email').not('email','is',null):Promise.resolve({data:[]}));
-    const segMap={Banking:['bank','finance'],SWF:['adia','mubadala','adq','pif','qia'],PE:['carlyle','kkr','blackstone','asset management','private equity'],Fintech:['fintech','tech','digital'],Consulting:['mckinsey','bcg','bain','strategy','accenture','deloitte','pwc']};
-    const counts={Banking:0,SWF:0,PE:0,Fintech:0,Consulting:0,General:0};
-    (cts||[]).forEach(c=>{
-      const hay=((c.industry||'')+(c.company||'')).toLowerCase();
-      let hit=false;
-      for(const[seg,keys]of Object.entries(segMap)){if(keys.some(k=>hay.includes(k))){counts[seg]++;hit=true;break;}}
-      if(!hit)counts.General++;
-    });
-    const total=Object.values(counts).reduce((a,b)=>a+b,0);
-    document.getElementById('digest-recipient-summary').innerHTML=
-      Object.entries(counts).filter(([,v])=>v>0).map(([seg,n])=>`<div><strong>${seg}:</strong> ${n} contact${n!==1?'s':''}</div>`).join('')+
-      `<div style="margin-top:8px;font-weight:700;color:var(--navy)">Total: ${total} recipients</div>`;
-  }catch(e){document.getElementById('digest-recipient-summary').innerHTML='<em>Could not load recipients</em>';}
-}
-
-async function sendDigest(){
-  const db=_db();
-  const subject=document.getElementById('digest-subject')?.value||'GCC Leadership Moves Digest';
-  showToast('Digest marked as sent — extracting leadership moves...');
-  document.getElementById('digestSendOv').classList.remove('open');
-  if(db){
-    const movesSignals=[];
-    const now=new Date().toISOString();
-    DIGEST_SEGMENTS.forEach(seg=>{
-      const movesText=document.getElementById('digest-'+seg+'-moves')?.value||'';
-      if(!movesText.trim())return;
-      const lines=movesText.split('\n').filter(l=>l.trim()&&l.includes('—')&&l.length>10);
-      lines.forEach(line=>{
-        const toMatch=line.match(/\bto\s+([^,]+),\s*([^.]+)/i);
-        const company=toMatch?toMatch[2].trim():(line.split(',').pop()||'').trim();
-        const nameMatch=line.match(/^([^—]+)/);
-        const name=nameMatch?nameMatch[1].trim():'';
-        if(name&&company){
-          movesSignals.push({
+    const extract=(label,next)=>{const r=new RegExp(label+'\\s*:?\\s*([\\s\\S]*?)(?='+next+':|$)','i');const m=text.match(r);return m?m[1].tr
