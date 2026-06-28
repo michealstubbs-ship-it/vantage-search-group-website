@@ -4659,7 +4659,7 @@ Rules:
     const resp=await fetch('/.netlify/functions/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt})
+      body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt,maxTokens:4096,model:'claude-haiku-4-5-20251001'})
     });
     const data=await resp.json();
     clearInterval(ticker);bar.style.width='100%';
@@ -4669,7 +4669,8 @@ Rules:
     let parsed;
     try{
       const raw=data.content||data.response||'';
-      let cleaned=raw.replace(/^```(?:json)?\s*\n?/,'').replace(/\n?```\s*$/,'').trim();
+      // Strip markdown code fences (handle all newline styles and trailing content)
+      let cleaned=raw.trim().replace(/^```(?:json|JSON)?\s*/,'').replace(/\s*```[\s\S]*$/,'').trim();
       const jsonMatch=cleaned.match(/\{[\s\S]*\}/);
       let jsonStr=jsonMatch?jsonMatch[0]:cleaned;
       jsonStr=jsonStr.replace(/,(\s*[}\]])/g,'$1');
