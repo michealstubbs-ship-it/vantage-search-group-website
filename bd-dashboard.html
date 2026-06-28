@@ -4581,7 +4581,7 @@ async function runTodaysActions(){
           .in('stage',['engaged','meeting','active','followup','contacted'])
           .lt('last_contact',thirtyDaysAgo).is('follow_up_date',null)
           .order('last_contact',{ascending:true}).limit(8),
-        db.from('company_signals').select('company_name,signal_type,title,summary,importance,created_at')
+        db.from('company_signals').select('company_name,signal_type,title,summary,importance,created_at,named_contact,named_contact_title,named_contact_linkedin')
           .eq('actioned',false).gte('created_at',fourteenDaysAgo)
           .order('importance',{ascending:false}).order('created_at',{ascending:false}).limit(12),
         db.from('linkedin_leads').select('full_name,title,company,reply_summary,follow_up_date,days_since_reply,linkedin_url')
@@ -4617,7 +4617,7 @@ async function runTodaysActions(){
     : 'None';
 
   const signalsCtx=liveSignals.length
-    ? liveSignals.map(s=>`- [${s.importance?.toUpperCase()||'MED'}] ${s.company_name} | ${s.signal_type} | ${s.title} (${fmt(s.created_at)})${s.summary?' — '+s.summary.substring(0,150):''}`).join('\n')
+    ? liveSignals.map(s=>`- [${s.importance?.toUpperCase()||'MED'}] ${s.company_name} | ${s.signal_type} | ${s.title} (${fmt(s.created_at)})${s.summary?' — '+s.summary.substring(0,150):''}${s.named_contact?' | Role-matched contact: '+s.named_contact+(s.named_contact_title?' ('+s.named_contact_title+')':'')+(s.named_contact_linkedin?' '+s.named_contact_linkedin:''):''}`).join('\n')
     : 'None';
 
   const liLeadsCtx=liLeads.length
@@ -4746,7 +4746,7 @@ Rules:
 - Maximum 9 actions
 - Do not surface OPPORTUNITY_FLAG actions with conviction_level "low"
 - If a data section says "None", skip it entirely — do not fabricate actions
-- WARM ROUTING RULE: Before recommending outreach to any company, check YOUR CONFIRMED 1ST-DEGREE LINKEDIN CONNECTIONS above. If Michael already has a connection at that firm, set that person as contacts_to_reach (with their linkedin URL) and write a warm suggested_message relevant to their role — do not write a cold connect note. Set connect_note to null for these. Only recommend a cold connect invite (with connect_note populated) if no confirmed connection exists at that company.
+- WARM ROUTING RULE: Before recommending outreach to any company, follow this priority order for contacts_to_reach: (1) If the signal has a "Role-matched contact" listed, include them as a contact — they are the most commercially relevant person for this specific signal; write a message tailored to their role and the signal. (2) If Michael has a confirmed 1st-degree connection at that firm (see CONFIRMED CONNECTIONS above), include them with a warm message. (3) If neither exists, recommend the best cold connect target with a connect_note. You may include multiple contacts_to_reach if both a role-matched contact AND an existing connection exist at the same firm — give each a distinct message.
 - Use the Learning Layer to prefer signal types and approaches that have converted before
 - Add "daily_effort_total" (total minutes) at the root level
 - Wrap everything in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
