@@ -4521,7 +4521,7 @@ Each action:
 - source_url: if the signal has a SOURCE: URL, copy it here exactly. Otherwise null.
 - why: one sentence commercial reason
 - contacts_to_reach: CRITICAL — extract from "CONTACT:" lines in the signal FULL CONTEXT. Each signal summary ends with "CONTACT: Name, Title — context. LinkedIn: url". Extract these into [{name, title, company, linkedin, email, approach}]. If no CONTACT line, use the known person from overdue/LinkedIn data. Never leave this empty if a contact is mentioned anywhere in the data row.
-- suggested_message: max 60 words, no em-dashes. 3 parts: (1) specific thing you observed, (2) natural consequence, (3) easy open question. No "let's discuss/explore/connect". Null if not messaging.
+- suggested_message: max 70 words, no em-dashes, no corporate language, no "I'd love to", no "let's explore/discuss/connect". Write as a sharp, human peer — not a sales bot. ROUTING LOGIC: (A) If the contact's title contains HR/People/Talent/CHRO/Chief People/Head of People → they cover ALL functions, so reference the company name specifically, identify what stage the company is at (growth, scale, expansion) and what hiring pressures that creates across engineering/commercial/operations, then ask a specific open question about where they're finding it hardest to fill right now — do NOT pitch a specific role type; (B) For all other contacts → identify their function (tech, finance, ops, commercial, legal, etc.) and reference that we are currently working multiple senior mandates in that space across the GCC — keep it specific to their world. Both cases must: (1) name the company or reference something specific about their context, (2) establish VSG's relevance with "multiple mandates" framing, (3) end with one easy open question. Null if not messaging.
 - effort_mins: 2|5|15|30, effort_label: "2 min"|"5 min"|"15 min"|"30 min"
 
 Priority: (1) LinkedIn replies & new connections, (2) overdue follow-ups, (3) high signals, (4) stale warm contacts, (5) medium signals.
@@ -4596,6 +4596,7 @@ function renderTodaysActions(data,modeData){
         <div class="action-ft">
           <span class="effort-tag"><i class="ti ti-clock" style="font-size:10px"></i> ${esc(a.effort_label||'5 min')}</span>
           ${a.suggested_message?`<button class="btn btn-xs btn-outline" onclick="copyAction(${i})"><i class="ti ti-copy"></i> Copy</button>`:''}
+          ${a.suggested_message?`<button class="btn btn-xs btn-navy send-li-btn" id="send-li-${i}" onclick="sendOnLinkedIn(${i})"><i class="ti ti-brand-linkedin"></i> Send</button>`:''}
           <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask AI</button>
         </div>
       </div>
@@ -4604,6 +4605,45 @@ function renderTodaysActions(data,modeData){
 }
 
 function copyAction(i){const msg=document.querySelector(`#action-${i} .action-msg`);if(msg){navigator.clipboard.writeText(msg.textContent.replace(/^"|"$/g,'').trim());showToast('Message copied to clipboard');}}
+
+async function sendOnLinkedIn(i){
+  const a=(window._todaysActionsData||[])[i];if(!a||!a.suggested_message)return;
+  const contact=a.contacts_to_reach&&a.contacts_to_reach[0];
+  const name=contact?.name||a.contact||'';
+  const linkedinUrl=contact?.linkedin||'';
+  const btn=document.getElementById(`send-li-${i}`);
+
+  // Copy message to clipboard as backup
+  navigator.clipboard.writeText(a.suggested_message).catch(()=>{});
+
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Sending...';}
+
+  try{
+    const res=await fetch('/.netlify/functions/send-linkedin',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contact_name:name,linkedin_url:linkedinUrl,message:a.suggested_message})
+    });
+    const data=await res.json().catch(()=>({}));
+
+    if(res.ok&&data.success){
+      if(btn){btn.disabled=true;btn.style.background='var(--green)';btn.style.borderColor='var(--green)';btn.innerHTML='<i class="ti ti-check"></i> Sent!';}
+      showToast(`Message sent to ${name} on LinkedIn ✓`);
+    }else if(data.fallback){
+      // Chat not found or error — open LinkedIn profile + message is already copied
+      if(linkedinUrl){const url=linkedinUrl.startsWith('http')?linkedinUrl:'https://'+linkedinUrl;window.open(url,'_blank');}
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-brand-linkedin"></i> Send';}
+      showToast('Message copied — LinkedIn opened, just paste & send');
+    }else{
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-brand-linkedin"></i> Send';}
+      showToast(data.error||'Send failed — message copied to clipboard');
+    }
+  }catch(e){
+    if(linkedinUrl){const url=linkedinUrl.startsWith('http')?linkedinUrl:'https://'+linkedinUrl;window.open(url,'_blank');}
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-brand-linkedin"></i> Send';}
+    showToast('Message copied — LinkedIn opened, just paste & send');
+  }
+}
 
 function openChatFromAction(idx){
   const a=(window._todaysActionsData||[])[idx];if(!a)return;
