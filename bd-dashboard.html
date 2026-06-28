@@ -31,45 +31,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .bar-name{color:#fff;font-size:14px;font-weight:700;white-space:nowrap}
 .bar-tag{font-size:9px;color:var(--gold);font-weight:600;letter-spacing:1px;text-transform:uppercase}
 .bar-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:nowrap}
-/* ── CONTACT DETAIL TABS ── */
-.detail-tabs{display:flex;gap:2px;border-bottom:2px solid var(--border-soft);margin:-2px -2px 16px;padding:0 2px}
-.detail-tab{background:none;border:none;padding:10px 16px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s}
-.detail-tab.active{color:var(--navy);border-bottom-color:var(--gold)}
-.detail-tab:hover:not(.active){color:var(--navy)}
-.detail-tab-pane{display:none}
-.detail-tab-pane.active{display:block}
-.comm-item{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--border-soft)}
-.comm-item:last-child{border-bottom:none}
-.comm-icon{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:13px;flex-shrink:0}
-.comm-icon.email{background:#eff6ff;color:#2563eb}
-.comm-icon.linkedin{background:#e0f2fe;color:#0369a1}
-.comm-icon.note{background:var(--gold-bg);color:#92680a}
-.comm-icon.call{background:var(--green-bg);color:var(--green)}
-.comm-icon.meeting{background:#f5f3ff;color:#7c3aed}
-.comm-meta{font-size:11px;color:var(--muted);margin-top:2px}
-.comm-summary{font-size:13px;color:var(--navy);margin-top:4px;line-height:1.5}
-.comm-dir{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px}
-.comm-dir.in{background:var(--green-bg);color:var(--green)}
-.comm-dir.out{background:rgba(13,27,62,.08);color:var(--navy)}
-.log-comm-form{background:var(--bg);border-radius:10px;padding:14px;margin-top:12px;border:1px solid var(--border-soft)}
-.log-comm-form .fg{margin-bottom:10px}
-.log-comm-form label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
-.log-comm-form input,.log-comm-form select,.log-comm-form textarea{width:100%;font-size:13px}
-.log-comm-form textarea{height:60px;resize:vertical}
-.bar-search{flex:1;max-width:420px;position:relative}
-.bar-search input{width:100%;height:34px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:0 36px 0 14px;color:#fff;font-size:13px;outline:none;transition:background .15s,border-color .15s}
-.bar-search input::placeholder{color:rgba(255,255,255,.45)}
-.bar-search input:focus{background:rgba(255,255,255,.18);border-color:var(--gold)}
-.bar-search-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.45);pointer-events:none;font-size:14px}
-.bar-search-results{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);max-height:360px;overflow-y:auto;z-index:200;display:none}
-.bar-search-results.open{display:block}
-.bsr-group{padding:8px 12px 4px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
-.bsr-item{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-radius:6px;margin:2px 6px;transition:background .1s}
-.bsr-item:hover{background:var(--bg)}
-.bsr-item-icon{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;flex-shrink:0}
-.bsr-item-name{font-size:13px;font-weight:600;color:var(--navy)}
-.bsr-item-sub{font-size:11px;color:var(--muted)}
-.bsr-empty{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 .bar-utils{display:flex;gap:4px;align-items:center;padding-right:8px;border-right:1px solid rgba(255,255,255,.15)}
 
 /* BUTTONS */
@@ -126,8 +87,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 /* METRIC ROW */
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.m{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);position:relative;overflow:hidden;cursor:pointer;transition:box-shadow .15s,transform .1s,border-color .15s}
-.m:hover{box-shadow:var(--sh-lg);transform:translateY(-2px);border-color:var(--gold)}
+.m{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);position:relative;overflow:hidden}
 .m::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
 .m.gold::after{background:linear-gradient(90deg,var(--gold),var(--gold2))}
 .m.red::after{background:var(--red)}
@@ -567,6 +527,8 @@ textarea{resize:vertical;min-height:80px}
 .action-msg{background:var(--bg);border:1px solid var(--border-soft);border-radius:var(--rs);padding:10px 13px;font-size:12px;color:var(--text);line-height:1.6;margin-bottom:8px;white-space:pre-wrap;font-style:italic}
 .action-ft{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .effort-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0}
+.action-item.action-done{opacity:.5}
+.action-item.action-done .action-title{text-decoration:line-through}
 .effort-est{background:var(--navy);color:#fff;border-radius:var(--rs);padding:10px 16px;font-size:13px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
 
 /* ── DIGEST ── */
@@ -676,11 +638,6 @@ textarea{resize:vertical;min-height:80px}
       <div class="bar-tag">BD Dashboard</div>
     </div>
   </div>
-  <div class="bar-search">
-    <input id="global-search-input" type="text" placeholder="Search contacts, companies, candidates, jobs…" oninput="runGlobalSearch(this.value)" onkeydown="globalSearchKeyNav(event)" autocomplete="off">
-    <i class="ti ti-search bar-search-icon"></i>
-    <div class="bar-search-results" id="global-search-results"></div>
-  </div>
   <div class="bar-actions">
     <button class="btn btn-sm btn-green" onclick="saveBackup()" title="Save backup"><i class="ti ti-device-floppy"></i></button>
     <label class="btn btn-sm btn-ghost-inv" style="cursor:pointer;margin-right:8px" title="Restore backup"><i class="ti ti-upload"></i><input type="file" accept=".json" style="display:none" onchange="restoreBackup(event)"></label>
@@ -742,14 +699,14 @@ textarea{resize:vertical;min-height:80px}
       <div class="metrics" id="metrics-grid"></div>
       <div class="ov-grid">
         <div class="card ov-col-fu">
-          <div class="card-h" style="cursor:pointer" onclick="goPage('followups',document.querySelectorAll('.nav-btn')[3])"><h3 style="flex:1"><i class="ti ti-bell"></i>Follow-ups</h3><button class="btn btn-xs btn-ghost" onclick="event.stopPropagation();goPage('followups',document.querySelectorAll('.nav-btn')[3])">View all</button></div>
+          <div class="card-h"><h3><i class="ti ti-bell"></i>Follow-ups</h3><button class="btn btn-xs btn-ghost" onclick="goPage('followups',document.querySelectorAll('.nav-btn')[2])">View all</button></div>
           <div id="ov-fu" class="card-b p0"></div>
         </div>
         <div class="card ov-col-jobs">
-          <div class="card-h" style="cursor:pointer" onclick="goPage('jobs',document.querySelector('.nav-btn[onclick*=\'jobs\']'))"><h3 style="flex:1"><i class="ti ti-briefcase"></i>Open jobs</h3><button class="btn btn-xs btn-ghost" onclick="event.stopPropagation();goPage('jobs',document.querySelector('.nav-btn[onclick*=\'jobs\']'))">View all</button></div>
+          <div class="card-h"><h3><i class="ti ti-briefcase"></i>Open jobs</h3><button class="btn btn-xs btn-ghost" onclick="goPage('jobs',document.querySelectorAll('.nav-btn')[6])">View all</button></div>
           <div id="ov-jobs" class="card-b p0"></div>
         </div>
-        <div class="card ov-col-rev" id="revenue-card" style="cursor:pointer" onclick="goPage('bd-perf',document.querySelector('.nav-btn[onclick*=\'bd-perf\']'));loadBDPerf()"></div>
+        <div class="card ov-col-rev" id="revenue-card"></div>
       </div>
     </div>
 
@@ -1343,7 +1300,7 @@ textarea{resize:vertical;min-height:80px}
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span id="seo-period" style="font-size:11px;color:var(--muted)"></span>
           <button class="btn btn-outline" onclick="loadSEO()"><i class="ti ti-refresh"></i> Refresh</button>
-          <button class="btn btn-gold" onclick="openSEOChat()"><i class="ti ti-message-circle"></i> Ask Annie about traffic</button>
+          <button class="btn btn-gold" onclick="openSEOChat()"><i class="ti ti-message-circle"></i> Ask AI about traffic</button>
         </div>
       </div>
 
@@ -1365,7 +1322,7 @@ textarea{resize:vertical;min-height:80px}
           </div>
         </div>
         <div style="margin-top:24px">
-          <button class="btn btn-gold" onclick="openSEOChat()"><i class="ti ti-message-circle"></i> Ask Annie SEO questions anyway</button>
+          <button class="btn btn-gold" onclick="openSEOChat()"><i class="ti ti-message-circle"></i> Ask AI SEO questions anyway</button>
         </div>
       </div>
 
@@ -2315,14 +2272,11 @@ async function loadBDPerf(){
 /* ── DETAIL ── */
 function openDetail(id){
   const c=contacts.find(x=>x.id===id);if(!c)return;
-  window._detailContactId=id;
   document.getElementById('detail-name').textContent=c.name;
   const d=daysTo(c.followupDate);
   const fuB=d===null?'':d<0?`<span class="b b-overdue">${Math.abs(d)}d overdue</span>`:d===0?`<span class="b b-today">Due today</span>`:`<span class="b b-soon">In ${d}d</span>`;
   const since=daysSince(c.lastContact);
-
-  // Overview tab content
-  const overviewHtml=`
+  document.getElementById('detail-body').innerHTML=`
     <div class="dp-hero">
       <div class="av" style="width:52px;height:52px;font-size:18px;background:${avColor(c.name)}18;color:${avColor(c.name)}">${ini(c.name)}</div>
       <div style="flex:1;min-width:0">
@@ -2342,150 +2296,15 @@ function openDetail(id){
     ${c.notes?`<div class="df"><div class="df-label">Notes</div><div class="dp-notes">${esc(c.notes)}</div></div>`:''}
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--border-soft)">
       ${c.email?`<a href="mailto:${esc(c.email)}" class="btn btn-sm btn-navy"><i class="ti ti-mail"></i> Email</a>`:''}
-      ${c.followupDate?`<button class="btn btn-sm" onclick="makeIcs('Follow up: ${c.name.replace(/'/g,"\\'")}','${c.followupDate}','${esc(c.company)}')"><i class="ti ti-calendar"></i> Calendar</button>`:''}
+      ${c.followupDate?`<button class="btn btn-sm" onclick="makeIcs('Follow up: ${c.name.replace(/'/g,"\\'")}','${c.followupDate}','${esc(c.company)}')"><i class="ti ti-calendar"></i> Add to calendar</button>`:''}
       ${c.linkedin?`<a href="https://${c.linkedin.replace(/^https?:\/\//,'')}" target="_blank" class="btn btn-sm"><i class="ti ti-brand-linkedin"></i> LinkedIn</a>`:''}
       <button class="btn btn-sm btn-gold" onclick="closeDetail();openAdd(${c.id})"><i class="ti ti-edit"></i> Edit</button>
       <button class="btn btn-sm btn-ghost" onclick="markDone(${c.id})"><i class="ti ti-check"></i> Mark followed up</button>
       ${daysSince(c.lastContact)>=30?`<button class="btn btn-sm btn-purple" onclick="openReEngage(${c.id})"><i class="ti ti-refresh-alert"></i> Re-engage</button>`:''}
       <button class="btn btn-sm btn-red" onclick="del(${c.id})"><i class="ti ti-trash"></i></button>
     </div>`;
-
-  document.getElementById('detail-body').innerHTML=`
-    <div class="detail-tabs">
-      <button class="detail-tab active" onclick="switchDetailTab('overview',this)"><i class="ti ti-user" style="margin-right:4px"></i>Overview</button>
-      <button class="detail-tab" onclick="switchDetailTab('comms',this)"><i class="ti ti-messages" style="margin-right:4px"></i>Communications</button>
-      <button class="detail-tab" onclick="switchDetailTab('tasks',this)"><i class="ti ti-checkbox" style="margin-right:4px"></i>Tasks</button>
-    </div>
-    <div class="detail-tab-pane active" id="dtab-overview">${overviewHtml}</div>
-    <div class="detail-tab-pane" id="dtab-comms"><div class="empty" style="padding:20px"><i class="ti ti-loader ti-spin"></i><p>Loading communications...</p></div></div>
-    <div class="detail-tab-pane" id="dtab-tasks"><div class="empty" style="padding:20px"><i class="ti ti-loader ti-spin"></i><p>Loading tasks...</p></div></div>`;
-
   document.getElementById('detailOv').classList.add('open');
 }
-
-function switchDetailTab(tab, btn){
-  document.querySelectorAll('.detail-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.detail-tab-pane').forEach(p=>p.classList.remove('active'));
-  btn.classList.add('active');
-  const pane=document.getElementById('dtab-'+tab);
-  pane.classList.add('active');
-  if(tab==='comms') loadContactComms();
-  if(tab==='tasks') loadContactTasks();
-}
-
-async function loadContactComms(){
-  const id=window._detailContactId;
-  const c=contacts.find(x=>x.id===id);if(!c)return;
-  const pane=document.getElementById('dtab-comms');
-  const db=_db();
-  if(!db){pane.innerHTML='<div class="empty"><p>Supabase not connected.</p></div>';return;}
-  try{
-    const{data}=await db.from('contact_communications')
-      .select('*')
-      .ilike('contact_name','%'+c.name.split(' ')[0]+'%')
-      .order('communicated_at',{ascending:false})
-      .limit(50);
-    const rows=data||[];
-    const chanIcon={email:'ti-mail',linkedin:'ti-brand-linkedin',call:'ti-phone',note:'ti-note',meeting:'ti-calendar-event'};
-    const commsHtml=rows.length?rows.map(r=>`
-      <div class="comm-item">
-        <div class="comm-icon ${r.channel}"><i class="ti ${chanIcon[r.channel]||'ti-message'}"></i></div>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span style="font-size:12px;font-weight:700;color:var(--navy)">${esc(r.subject||r.channel)}</span>
-            <span class="comm-dir ${r.direction==='inbound'?'in':'out'}">${r.direction==='inbound'?'Received':'Sent'}</span>
-          </div>
-          <div class="comm-meta">${new Date(r.communicated_at).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
-          ${r.summary?`<div class="comm-summary">${esc(r.summary)}</div>`:''}
-        </div>
-      </div>`).join(''):'<div class="empty" style="padding:24px"><i class="ti ti-messages"></i><p>No communications logged yet.</p><p style="font-size:12px;color:var(--muted);margin-top:4px">The daily sync will populate this automatically. You can also log manually below.</p></div>';
-    pane.innerHTML=commsHtml+`
-      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border-soft)">
-        <button class="btn btn-sm btn-gold" onclick="toggleLogCommForm()"><i class="ti ti-plus"></i> Log interaction manually</button>
-        <div class="log-comm-form" id="log-comm-form" style="display:none;margin-top:12px">
-          <div class="fg2">
-            <div class="fg"><label>Channel</label><select id="lc-channel"><option value="email">Email</option><option value="linkedin">LinkedIn</option><option value="call">Call</option><option value="meeting">Meeting</option><option value="note">Note</option></select></div>
-            <div class="fg"><label>Direction</label><select id="lc-dir"><option value="inbound">Received / Inbound</option><option value="outbound">Sent / Outbound</option></select></div>
-          </div>
-          <div class="fg"><label>Date & time</label><input type="datetime-local" id="lc-date" value="${new Date().toISOString().slice(0,16)}"></div>
-          <div class="fg"><label>Subject / topic</label><input type="text" id="lc-subject" placeholder="e.g. Replied to my outreach"></div>
-          <div class="fg"><label>Summary</label><textarea id="lc-summary" placeholder="What was discussed or agreed?"></textarea></div>
-          <button class="btn btn-gold" onclick="saveManualComm()"><i class="ti ti-check"></i> Save</button>
-          <button class="btn btn-ghost" onclick="toggleLogCommForm()" style="margin-left:6px">Cancel</button>
-        </div>
-      </div>`;
-  }catch(e){pane.innerHTML=`<div class="empty"><p>Error: ${e.message}</p></div>`;}
-}
-
-function toggleLogCommForm(){
-  const f=document.getElementById('log-comm-form');
-  if(f)f.style.display=f.style.display==='none'?'':'none';
-}
-
-async function saveManualComm(){
-  const id=window._detailContactId;
-  const c=contacts.find(x=>x.id===id);if(!c)return;
-  const db=_db();if(!db)return;
-  const channel=document.getElementById('lc-channel')?.value||'note';
-  const direction=document.getElementById('lc-dir')?.value||'inbound';
-  const dateVal=document.getElementById('lc-date')?.value;
-  const subject=document.getElementById('lc-subject')?.value||'';
-  const summary=document.getElementById('lc-summary')?.value||'';
-  if(!summary){showToast('Please add a summary');return;}
-  try{
-    await db.from('contact_communications').insert({
-      contact_name:c.name,
-      company:c.company||null,
-      channel,direction,
-      communicated_at:dateVal?new Date(dateVal).toISOString():new Date().toISOString(),
-      subject:subject||null,
-      summary
-    });
-    // Also update last_contact on the contact record
-    if(channel!=='note'){
-      c.lastContact=today();save();render();
-    }
-    showToast('Communication logged');
-    loadContactComms();
-  }catch(e){showToast('Error: '+e.message);}
-}
-
-async function loadContactTasks(){
-  const id=window._detailContactId;
-  const c=contacts.find(x=>x.id===id);if(!c)return;
-  const pane=document.getElementById('dtab-tasks');
-  // Filter from in-memory tasks array (tasks are in localStorage)
-  const name=c.name.toLowerCase();
-  const company=(c.company||'').toLowerCase();
-  const related=(tasks||[]).filter(t=>{
-    const txt=(t.text||t.title||'').toLowerCase();
-    return txt.includes(name)||txt.includes(company)||(t.contactId&&t.contactId===id);
-  }).sort((a,b)=>(a.done?1:0)-(b.done?1:0)||(a.dueDate||'z').localeCompare(b.dueDate||'z'));
-  if(!related.length){
-    pane.innerHTML=`<div class="empty" style="padding:24px"><i class="ti ti-checkbox"></i><p>No tasks linked to ${esc(c.name)} yet.</p></div>
-      <div style="margin-top:12px">
-        <button class="btn btn-sm btn-gold" onclick="closeDetail();openAddTask();setTimeout(()=>{document.getElementById('t-contact').value='${c.name.replace(/'/g,"\\'")}';},50)"><i class="ti ti-plus"></i> Add task for ${esc(c.name.split(' ')[0])}</button>
-      </div>`;
-    return;
-  }
-  pane.innerHTML=related.map(t=>`
-    <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border-soft)">
-      <input type="checkbox" ${t.done?'checked':''} onchange="toggleTaskFromDetail(${t.id||'null'},this.checked)" style="margin-top:2px;flex-shrink:0">
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600;color:${t.done?'var(--muted)':'var(--navy)'};text-decoration:${t.done?'line-through':'none'}">${esc(t.text||t.title||'Task')}</div>
-        ${t.dueDate?`<div style="font-size:11px;color:var(--muted);margin-top:2px"><i class="ti ti-calendar" style="margin-right:3px"></i>${fmt(t.dueDate)}</div>`:''}
-      </div>
-    </div>`).join('')+`
-  <div style="margin-top:12px">
-    <button class="btn btn-sm btn-gold" onclick="closeDetail();openAddTask('${c.name.replace(/'/g,"\\'")}')"><i class="ti ti-plus"></i> Add task</button>
-  </div>`;
-}
-
-function toggleTaskFromDetail(taskId,done){
-  const t=tasks.find(x=>x.id===taskId);
-  if(t){t.done=done;saveTasks();}
-}
-
 function closeDetail(){document.getElementById('detailOv').classList.remove('open');}
 function del(id){if(confirm('Delete this contact?')){contacts=contacts.filter(x=>x.id!==id);save();render();closeDetail();}}
 
@@ -2540,90 +2359,6 @@ function copyTpl(){
   });
 }
 
-/* ── GLOBAL SEARCH ── */
-let _gsTimer=null;
-function runGlobalSearch(q){
-  const box=document.getElementById('global-search-results');
-  q=q.trim();
-  if(!q){box.classList.remove('open');box.innerHTML='';return;}
-  clearTimeout(_gsTimer);
-  _gsTimer=setTimeout(()=>{
-    const ql=q.toLowerCase();
-    const results=[];
-
-    // Search contacts
-    (contacts||[]).forEach(c=>{
-      const score=[c.name,c.company,c.title,c.industry].filter(Boolean).join(' ').toLowerCase();
-      if(score.includes(ql)) results.push({type:'contact',icon:'ti-user',color:'#2563eb',bg:'#eff6ff',label:c.name,sub:(c.title||'')+(c.company?` · ${c.company}`:''),id:c.id});
-    });
-
-    // Search jobs
-    (jobs||[]).forEach(j=>{
-      const score=[j.title,j.company,j.location,j.status].filter(Boolean).join(' ').toLowerCase();
-      if(score.includes(ql)) results.push({type:'job',icon:'ti-briefcase',color:'#7c3aed',bg:'#f5f3ff',label:j.title||j.company,sub:(j.company||'')+(j.status?` · ${j.status}`:''),id:j.id});
-    });
-
-    // Search candidates (from DOM data if loaded)
-    if(window._candidatesCache){
-      window._candidatesCache.forEach(c=>{
-        const score=[c.name,c.current_title,c.current_company,c.location,c.function].filter(Boolean).join(' ').toLowerCase();
-        if(score.includes(ql)) results.push({type:'candidate',icon:'ti-id-badge',color:'#059669',bg:'#ecfdf5',label:c.name,sub:(c.current_title||'')+(c.current_company?` · ${c.current_company}`:''),id:c.id});
-      });
-    }
-
-    if(!results.length){box.innerHTML='<div class="bsr-empty">No results for "'+q.replace(/</g,'&lt;')+'\"</div>';box.classList.add('open');return;}
-
-    // Group by type
-    const groups={contact:'Contacts',job:'Jobs & Mandates',candidate:'Candidates'};
-    let html='';
-    Object.keys(groups).forEach(type=>{
-      const items=results.filter(r=>r.type===type).slice(0,5);
-      if(!items.length) return;
-      html+=`<div class="bsr-group">${groups[type]}</div>`;
-      items.forEach((r,idx)=>{
-        html+=`<div class="bsr-item" data-type="${r.type}" data-id="${r.id}" onclick="_gsSelect('${r.type}','${r.id}')">
-          <div class="bsr-item-icon" style="background:${r.bg};color:${r.color}"><i class="ti ${r.icon}"></i></div>
-          <div><div class="bsr-item-name">${r.label||''}</div><div class="bsr-item-sub">${r.sub||''}</div></div>
-        </div>`;
-      });
-    });
-    box.innerHTML=html;
-    box.classList.add('open');
-  },180);
-}
-
-function _gsSelect(type,id){
-  document.getElementById('global-search-input').value='';
-  document.getElementById('global-search-results').classList.remove('open');
-  // Coerce id back to number if it looks numeric (Supabase uses integer PKs)
-  const rid = isNaN(id) ? id : Number(id);
-  if(type==='contact'){
-    // Open detail overlay directly — it's a modal, works on any page
-    openDetail(rid);
-  } else if(type==='job'){
-    goPage('jobs',document.querySelector('.nav-btn[onclick*="jobs"]'));
-    setTimeout(()=>openEditJob(rid),100);
-  } else if(type==='candidate'){
-    goPage('candidates',document.querySelector('.nav-btn[onclick*="candidates"]'));
-    setTimeout(()=>loadCandidates(),200);
-  }
-}
-
-function globalSearchKeyNav(e){
-  if(e.key==='Escape'){
-    document.getElementById('global-search-input').value='';
-    document.getElementById('global-search-results').classList.remove('open');
-  }
-}
-
-// Close search results when clicking outside
-document.addEventListener('click',function(e){
-  if(!e.target.closest('.bar-search')){
-    const r=document.getElementById('global-search-results');
-    if(r) r.classList.remove('open');
-  }
-});
-
 /* ── BACKUP / RESTORE ── */
 function saveBackup(){
   const a=document.createElement('a');
@@ -2671,10 +2406,10 @@ function render(){
   const meetings=contacts.filter(c=>c.stage==='meeting').length;
   const pipeline=contacts.filter(c=>!['notinterested'].includes(c.stage)).length;
   document.getElementById('metrics-grid').innerHTML=`
-    <div class="m gold" title="View pipeline board" onclick="goPage('pipeline',document.querySelectorAll('.nav-btn')[2])"><div class="m-icon" style="background:var(--gold-bg);color:#92680a"><i class="ti ti-users"></i></div><div class="m-lbl">Pipeline</div><div class="m-val">${pipeline}</div><div class="m-sub">active contacts</div></div>
-    <div class="m red" title="View overdue follow-ups" onclick="goPage('followups',document.querySelectorAll('.nav-btn')[3])"><div class="m-icon" style="background:var(--red-bg);color:var(--red)"><i class="ti ti-clock-exclamation"></i></div><div class="m-lbl">Overdue</div><div class="m-val" style="color:var(--red)">${overdue.length}</div><div class="m-sub">need chasing now</div></div>
-    <div class="m navy" title="View contacts with meetings booked" onclick="document.getElementById('f-stage').value='meeting';goPage('contacts',document.querySelectorAll('.nav-btn')[5]);renderContacts()"><div class="m-icon" style="background:#e8ecf4;color:var(--navy)"><i class="ti ti-calendar-event"></i></div><div class="m-lbl">Meetings</div><div class="m-val">${meetings}</div><div class="m-sub">booked</div></div>
-    <div class="m green" title="View placed contacts" onclick="document.getElementById('f-stage').value='placed';goPage('contacts',document.querySelectorAll('.nav-btn')[5]);renderContacts()"><div class="m-icon" style="background:var(--green-bg);color:var(--green)"><i class="ti ti-trophy"></i></div><div class="m-lbl">Placed</div><div class="m-val" style="color:var(--green)">${placed}</div><div class="m-sub">all time</div></div>`;
+    <div class="m gold"><div class="m-icon" style="background:var(--gold-bg);color:#92680a"><i class="ti ti-users"></i></div><div class="m-lbl">Pipeline</div><div class="m-val">${pipeline}</div><div class="m-sub">active contacts</div></div>
+    <div class="m red"><div class="m-icon" style="background:var(--red-bg);color:var(--red)"><i class="ti ti-clock-exclamation"></i></div><div class="m-lbl">Overdue</div><div class="m-val" style="color:var(--red)">${overdue.length}</div><div class="m-sub">need chasing now</div></div>
+    <div class="m navy"><div class="m-icon" style="background:#e8ecf4;color:var(--navy)"><i class="ti ti-calendar-event"></i></div><div class="m-lbl">Meetings</div><div class="m-val">${meetings}</div><div class="m-sub">booked</div></div>
+    <div class="m green"><div class="m-icon" style="background:var(--green-bg);color:var(--green)"><i class="ti ti-trophy"></i></div><div class="m-lbl">Placed</div><div class="m-val" style="color:var(--green)">${placed}</div><div class="m-sub">all time</div></div>`;
 
   // overview follow-ups — grouped overdue / today / upcoming
   const ovOd=contacts.filter(c=>c.followupDate&&daysTo(c.followupDate)<0&&!['notinterested'].includes(c.stage)).sort((a,b)=>a.followupDate.localeCompare(b.followupDate));
@@ -2888,7 +2623,6 @@ async function loadCandidates(){
   try{
     const{data}=await db.from('candidates').select('*').order('created_at',{ascending:false});
     _allCandidates=data||[];
-    window._candidatesCache=_allCandidates; // make available to global search
     // Metrics
     const active=_allCandidates.filter(c=>!['placed','rejected','withdrawn'].includes(c.status));
     const placed=_allCandidates.filter(c=>c.status==='placed');
@@ -2933,7 +2667,7 @@ function filterCandidates(f,btn){
           ${liUrl?`<a href="${liUrl}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px;background:#0077b5;color:#fff;border-color:#0077b5" onclick="event.stopPropagation()"><i class="ti ti-brand-linkedin"></i> LinkedIn</a>`:''}
           ${c.email?`<a href="mailto:${esc(c.email)}" class="btn btn-xs btn-ghost" onclick="event.stopPropagation()"><i class="ti ti-mail"></i></a>`:''}
           <button class="btn btn-xs btn-outline" onclick="event.stopPropagation();openEditCandidate(${c.id})"><i class="ti ti-edit"></i></button>
-          <button class="btn btn-xs btn-gold" onclick="event.stopPropagation();openChatFromCandidateCtx(${c.id})"><i class="ti ti-message-circle"></i> Ask Annie</button>
+          <button class="btn btn-xs btn-gold" onclick="event.stopPropagation();openChatFromCandidateCtx(${c.id})"><i class="ti ti-message-circle"></i> Ask AI</button>
         </div>
       </div>
     </div>`;
@@ -3113,7 +2847,7 @@ async function loadNetworkMap(){
         </div>
         <div style="width:220px;font-size:11px;color:var(--muted)">${hottest?esc(hottest.name)+' · ':''}<span style="color:${barColor}">${hottest?hottest.stage:'?'}</span></div>
         <div style="width:180px">${tags}</div>
-        <button class="btn btn-xs btn-ghost" onclick="openChatFromNetworkCtx('${esc(d.company).replace(/'/g,"\\'")}',${d.total},${d.warmContacts.length})" title="Ask Annie about this company"><i class="ti ti-message-circle"></i></button>
+        <button class="btn btn-xs btn-ghost" onclick="openChatFromNetworkCtx('${esc(d.company).replace(/'/g,"\\'")}',${d.total},${d.warmContacts.length})" title="Ask AI about this company"><i class="ti ti-message-circle"></i></button>
       </div>`;
     }).join('');
 
@@ -4016,29 +3750,29 @@ renderFinance();
 
   // Contacts
   const _save=window.save;
-  window.save=()=>{_save();db.from('contacts').upsert(contacts.map(cToDb)).then(r=>{if(r.error)console.error('contacts sync:',r.error);});};
+  window.save=()=>{_save();db.from('contacts').upsert(contacts.map(cToDb)).catch(e=>console.error('contacts sync:',e));};
 
   const _del=window.del;
   window.del=(id)=>{
     const prevLen=contacts.length;
     _del(id);
-    if(contacts.length<prevLen)db.from('contacts').delete().eq('id',id).then(r=>{if(r.error)console.error('contact del:',r.error);});
+    if(contacts.length<prevLen)db.from('contacts').delete().eq('id',id).catch(e=>console.error('contact del:',e));
   };
 
   // Jobs
   const _saveJobs=window.saveJobs;
   window.saveJobs=()=>{
     _saveJobs();
-    db.from('jobs').upsert(jobs.map(jToDb)).then(r=>{if(r.error)console.error('jobs sync:',r.error);});
+    db.from('jobs').upsert(jobs.map(jToDb)).catch(e=>console.error('jobs sync:',e));
     const allCands=jobs.flatMap(j=>(j.candidates||[]).map(c=>candToDb(c,j.id)));
-    if(allCands.length)db.from('candidates').upsert(allCands).then(r=>{if(r.error)console.error('cands sync:',r.error);});
+    if(allCands.length)db.from('candidates').upsert(allCands).catch(e=>console.error('cands sync:',e));
   };
 
   const _deleteJob=window.deleteJob;
   window.deleteJob=(id)=>{
     const prevLen=jobs.length;
     _deleteJob(id);
-    if(jobs.length<prevLen)db.from('jobs').delete().eq('id',id).then(r=>{if(r.error)console.error('job del:',r.error);});
+    if(jobs.length<prevLen)db.from('jobs').delete().eq('id',id).catch(e=>console.error('job del:',e));
   };
 
   // Candidates
@@ -4048,29 +3782,29 @@ renderFinance();
     const prevLen=j?.candidates?.length||0;
     _deleteCand(jobId,candId);
     const j2=jobs.find(x=>x.id===jobId);
-    if((j2?.candidates?.length||0)<prevLen)db.from('candidates').delete().eq('id',candId).then(r=>{if(r.error)console.error('cand del:',r.error);});
+    if((j2?.candidates?.length||0)<prevLen)db.from('candidates').delete().eq('id',candId).catch(e=>console.error('cand del:',e));
   };
 
   // Tasks
   const _saveTasks=window.saveTasks;
-  window.saveTasks=()=>{_saveTasks();db.from('tasks').upsert(tasks.map(tToDb)).then(r=>{if(r.error)console.error('tasks sync:',r.error);});};
+  window.saveTasks=()=>{_saveTasks();db.from('tasks').upsert(tasks.map(tToDb)).catch(e=>console.error('tasks sync:',e));};
 
   const _deleteTask=window.deleteTask;
   window.deleteTask=(id)=>{
     const prevLen=tasks.length;
     _deleteTask(id);
-    if(tasks.length<prevLen)db.from('tasks').delete().eq('id',id).then(r=>{if(r.error)console.error('task del:',r.error);});
+    if(tasks.length<prevLen)db.from('tasks').delete().eq('id',id).catch(e=>console.error('task del:',e));
   };
 
   // Invoices
   const _saveInv=window.saveInv;
-  window.saveInv=()=>{_saveInv();db.from('invoices').upsert(invoices.map(invToDb)).then(r=>{if(r.error)console.error('invoices sync:',r.error);});};
+  window.saveInv=()=>{_saveInv();db.from('invoices').upsert(invoices.map(invToDb)).catch(e=>console.error('invoices sync:',e));};
 
   const _deleteInvoice=window.deleteInvoice;
   window.deleteInvoice=(id)=>{
     const prevLen=invoices.length;
     _deleteInvoice(id);
-    if(invoices.length<prevLen)db.from('invoices').delete().eq('id',id).then(r=>{if(r.error)console.error('invoice del:',r.error);});
+    if(invoices.length<prevLen)db.from('invoices').delete().eq('id',id).catch(e=>console.error('invoice del:',e));
   };
 
   // ── Load from Supabase on startup ────────────────────────────
@@ -4087,7 +3821,7 @@ renderFinance();
     // Contacts: if local has more data than Supabase, migrate local UP first
     const sbContacts=cr.data||[];
     if(contacts.length>sbContacts.length&&contacts.length>0){
-      try{await db.from('contacts').upsert(contacts.map(cToDb));}catch(e){console.error('contacts migrate:',e);}
+      await db.from('contacts').upsert(contacts.map(cToDb)).catch(e=>console.error('contacts migrate:',e));
     } else if(sbContacts.length>0){
       contacts=sbContacts.map(cFromDb);localStorage.setItem('vsg_c',JSON.stringify(contacts));changed=true;
     }
@@ -4096,9 +3830,9 @@ renderFinance();
     const sbJobs=jr.data||[];const sbCands=candr.data||[];
     const localJobCount=jobs.length;
     if(localJobCount>sbJobs.length&&localJobCount>0){
-      try{await db.from('jobs').upsert(jobs.map(jToDb));}catch(e){console.error('jobs migrate:',e);}
+      await db.from('jobs').upsert(jobs.map(jToDb)).catch(e=>console.error('jobs migrate:',e));
       const allCands=jobs.flatMap(j=>(j.candidates||[]).map(c=>candToDb(c,j.id)));
-      if(allCands.length){try{await db.from('candidates').upsert(allCands);}catch(e){console.error('cands migrate:',e);}}
+      if(allCands.length)await db.from('candidates').upsert(allCands).catch(e=>console.error('cands migrate:',e));
     } else if(sbJobs.length>0){
       jobs=sbJobs.map(j=>{const o=jFromDb(j);o.candidates=sbCands.filter(c=>c.job_id===j.id).map(candFromDb);return o;});
       localStorage.setItem('vsg_j',JSON.stringify(jobs));changed=true;
@@ -4107,7 +3841,7 @@ renderFinance();
     // Tasks
     const sbTasks=tr.data||[];
     if(tasks.length>sbTasks.length&&tasks.length>0){
-      try{await db.from('tasks').upsert(tasks.map(tToDb));}catch(e){console.error('tasks migrate:',e);}
+      await db.from('tasks').upsert(tasks.map(tToDb)).catch(e=>console.error('tasks migrate:',e));
     } else if(sbTasks.length>0){
       tasks=sbTasks.map(tFromDb);localStorage.setItem('vsg_t',JSON.stringify(tasks));changed=true;
     }
@@ -4115,7 +3849,7 @@ renderFinance();
     // Invoices
     const sbInv=ir.data||[];
     if(invoices.length>sbInv.length&&invoices.length>0){
-      try{await db.from('invoices').upsert(invoices.map(invToDb));}catch(e){console.error('invoices migrate:',e);}
+      await db.from('invoices').upsert(invoices.map(invToDb)).catch(e=>console.error('invoices migrate:',e));
     } else if(sbInv.length>0){
       invoices=sbInv.map(invFromDb);localStorage.setItem('vsg_inv',JSON.stringify(invoices));changed=true;
     }
@@ -4154,17 +3888,6 @@ renderFinance();
 
 <!-- ── AI COMMAND CENTRE FEATURES ─────────────────────────────── -->
 <script>
-/* Bootstrap: inject AI command centre as a dynamic script so it always executes */
-document.addEventListener('DOMContentLoaded',function(){
-  var src=document.getElementById('_aiCentre');
-  if(!src)return;
-  var el=document.createElement('script');
-  el.textContent=src.textContent;
-  document.head.appendChild(el);
-});
-</script>
-<script id="_aiCentre" type="text/plain">
-window.SCRIPT3_RAN=true;
 // ── Globals ──
 let agentOutputs=[];
 let companySignals=[];
@@ -4613,87 +4336,116 @@ DRAFTED MESSAGE: ${_actionCtx.suggested_message||'None'}
 CONTACTS TO REACH: ${(_actionCtx.contacts_to_reach&&_actionCtx.contacts_to_reach.length)?_actionCtx.contacts_to_reach.map(c=>`${c.name} (${c.title||''}${c.company?' at '+c.company:''})${c.linkedin?' LinkedIn: '+c.linkedin:''}${c.email?' Email: '+c.email:''}`).join('; '):'Not specified'}
 
 Help Michael: refine or rewrite the message, find a different angle, provide company or person intel, answer any question about this outreach. Be concise and direct. No em-dashes. No corporate language.`;
-      fetchBody={messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),systemOverride:sys,maxTokens:1024};
+      fetchBody={
+        messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
+        systemOverride:sys,
+        maxTokens:1024
+      };
     } else if(window._seoCtx&&currentChatContact&&currentChatContact.name==='SEO Assistant'){
-      const seaSys=`You are an SEO advisor for Vantage Search Group, a boutique executive search firm headquartered in Dubai serving the GCC. The website is vantagesearchgroup.com.\nCURRENT TRAFFIC DATA:\n${window._seoCtx}\nGive Michael specific, actionable SEO advice. Be direct and concise. No em-dashes.`;
-      fetchBody={messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),systemOverride:seaSys,maxTokens:1024};
+      const seaSys=`You are an SEO advisor for Vantage Search Group, a boutique executive search firm headquartered in Dubai serving the GCC. The website is vantagesearchgroup.com.
+VSG publishes SEO articles targeting: executive search Dubai, C-suite recruitment GCC, executive headhunter Saudi Arabia, CFO recruitment UAE, sovereign wealth fund talent, and similar.
+CURRENT TRAFFIC DATA:
+${window._seoCtx}
+Give Michael specific, actionable SEO advice. Suggest keywords, content ideas, technical quick wins, or help draft content. Be direct and concise. No em-dashes.`;
+      fetchBody={
+        messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
+        systemOverride:seaSys,
+        maxTokens:1024
+      };
     } else {
-      fetchBody={messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),contactContext:{name:currentChatContact.name,title:currentChatContact.title,company:currentChatContact.company,industry:currentChatContact.industry,stage:currentChatContact.stage,lastContact:currentChatContact.lastContact,followupDate:currentChatContact.followupDate,linkedin:currentChatContact.linkedin,notes:currentChatContact.notes}};
+      fetchBody={
+        messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
+        contactContext:{
+          name:currentChatContact.name,title:currentChatContact.title,
+          company:currentChatContact.company,industry:currentChatContact.industry,
+          stage:currentChatContact.stage,lastContact:currentChatContact.lastContact,
+          followupDate:currentChatContact.followupDate,linkedin:currentChatContact.linkedin,
+          notes:currentChatContact.notes
+        }
+      };
     }
-    const res=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(fetchBody)});
+    const res=await fetch('/.netlify/functions/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(fetchBody)
+    });
     const data=await res.json();
     if(data.error)throw new Error(data.error);
     chatMessages=chatMessages.filter(m=>!m.typing);
     addChatMessage('assistant',data.content);
-    // Show "Save to CRM" button if this is a contact chat (not action/SEO context)
-    if(!_actionCtx&&currentChatContact&&currentChatContact.name&&!window._seoCtx){
-      const msgEl=document.getElementById('chat-messages');
-      const lastMsg=msgEl?.lastElementChild;
-      if(lastMsg&&!lastMsg.querySelector('.save-crm-btn')){
-        const saveBtn=document.createElement('div');
-        saveBtn.style.cssText='margin:6px 0 0 44px';
-        saveBtn.innerHTML=`<button class="save-crm-btn btn btn-xs btn-ghost" style="font-size:11px;color:var(--muted)" onclick="saveChatToCrm(${JSON.stringify(data.content).replace(/"/g,'&quot;')})"><i class="ti ti-device-floppy"></i> Save to CRM</button>`;
-        lastMsg.appendChild(saveBtn);
+    try{
+      const db=_db();
+      if(db&&chatContactId){
+        await db.from('chat_history').insert([
+          {contact_id:chatContactId,role:'user',content:text},
+          {contact_id:chatContactId,role:'assistant',content:data.content}
+        ]);
       }
-    }
-    try{const db=_db();if(db&&chatContactId){await db.from('chat_history').insert([{contact_id:chatContactId,role:'user',content:text},{contact_id:chatContactId,role:'assistant',content:data.content}]);}}catch(e){console.error('chat save:',e);}
+    }catch(e){console.error('chat save:',e);}
   }catch(err){
     chatMessages=chatMessages.filter(m=>!m.typing);
-    addChatMessage('assistant',err.message.includes('CLAUDE_API_KEY')?'The AI chat needs the CLAUDE_API_KEY configured in Netlify.':'Could not reach the AI right now.');
+    addChatMessage('assistant',err.message.includes('CLAUDE_API_KEY')?
+      'The AI chat needs the CLAUDE_API_KEY configured in Netlify. Go to Netlify Dashboard, Site Settings, Environment Variables, and add your Claude API key as CLAUDE_API_KEY.':
+      'Could not reach the AI right now. Make sure the Netlify function is deployed and your API key is configured.');
   }
 }
 
-function quickChat(prompt){const input=document.getElementById('chat-input');if(input){input.value=prompt;sendChat();}}
-
-async function saveChatToCrm(content){
-  const db=_db();
-  if(!db||!currentChatContact?.name){showToast('No contact context to save');return;}
-  try{
-    // Truncate Annie's response to a clean summary (first 400 chars)
-    const summary=content.replace(/\*\*/g,'').replace(/\n+/g,' ').trim().slice(0,400);
-    await db.from('contact_communications').insert({
-      contact_name:currentChatContact.name,
-      company:currentChatContact.company||null,
-      channel:'note',
-      direction:'internal',
-      communicated_at:new Date().toISOString(),
-      subject:'Annie analysis',
-      summary
-    });
-    // Update last_contact on the in-memory contact
-    const c=contacts.find(x=>x.name===currentChatContact.name);
-    if(c){c.lastContact=today();save();}
-    showToast('Saved to CRM — visible in Communications tab');
-    // Change button to confirm
-    document.querySelectorAll('.save-crm-btn').forEach(b=>b.innerHTML='<i class="ti ti-check"></i> Saved');
-  }catch(e){showToast('Error saving: '+e.message);}
+function quickChat(prompt){
+  const input=document.getElementById('chat-input');
+  if(input){input.value=prompt;sendChat();}
 }
 
 function copyToClipboard(text){
   const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
-  document.body.appendChild(ta);ta.focus();ta.select();document.execCommand('copy');document.body.removeChild(ta);
+  document.body.appendChild(ta);ta.focus();ta.select();document.execCommand('copy');
+  document.body.removeChild(ta);
   const t=document.createElement('div');
-  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999';
-  t.textContent='Copied to clipboard';document.body.appendChild(t);setTimeout(()=>t.remove(),2000);
+  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2)';
+  t.textContent='Copied to clipboard';document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2000);
 }
 
 const _origOpenDetail=window.openDetail;
 window.openDetail=function(id){
   _origOpenDetail(id);
-  setTimeout(()=>{const body=document.getElementById('detail-body');if(!body)return;const footer=body.querySelector('[style*="border-top"]');if(footer&&!footer.querySelector('.ai-chat-btn')){const btn=document.createElement('button');btn.className='btn btn-sm btn-purple ai-chat-btn';btn.innerHTML='<i class="ti ti-message-circle-2"></i> Ask Annie';btn.onclick=()=>{document.getElementById('detailOv').classList.remove('open');openChatPanel(id);};footer.insertBefore(btn,footer.firstChild);}},50);
+  setTimeout(()=>{
+    const body=document.getElementById('detail-body');
+    if(!body)return;
+    const footer=body.querySelector('[style*="border-top"]');
+    if(footer&&!footer.querySelector('.ai-chat-btn')){
+      const btn=document.createElement('button');
+      btn.className='btn btn-sm btn-purple ai-chat-btn';
+      btn.innerHTML='<i class="ti ti-message-circle-2"></i> Ask AI';
+      btn.onclick=()=>{document.getElementById('detailOv').classList.remove('open');openChatPanel(id);};
+      footer.insertBefore(btn,footer.firstChild);
+    }
+  },50);
 };
 
 (function waitForDb(){
   const interval=setInterval(()=>{
     if(window.supabase){
-      window._vsgDb=window.supabase.createClient('https://mkqbegnqrgveiygrycyg.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcWJlZ25xcmd2ZWl5Z3J5Y3lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjE3NjAsImV4cCI6MjA5Nzc5Nzc2MH0.0Qprp9wRW8iPhmqPbmXEkp0toz3z8TGXoVEESkP6Tp4');
-      clearInterval(interval);setTimeout(()=>{loadIntelligence();loadProspects();},1500);
+      const SUPA_URL='https://mkqbegnqrgveiygrycyg.supabase.co';
+      const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcWJlZ25xcmd2ZWl5Z3J5Y3lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjE3NjAsImV4cCI6MjA5Nzc5Nzc2MH0.0Qprp9wRW8iPhmqPbmXEkp0toz3z8TGXoVEESkP6Tp4';
+      window._vsgDb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+      clearInterval(interval);
+      setTimeout(()=>{loadIntelligence();loadProspects();},1500);
     }
   },200);
 })();
 
 (function enhanceOverview(){
-  const obs=new MutationObserver(()=>{const ov=document.getElementById('p-overview');if(ov&&!document.getElementById('ov-intel-section')){const section=document.createElement('div');section.id='ov-intel-section';section.style.marginTop='20px';section.innerHTML=`<div class="card"><div class="card-h"><h3><i class="ti ti-cpu"></i> Latest intelligence</h3><button class="btn btn-xs btn-ghost" onclick="goPage('intelligence',document.querySelectorAll('.nav-btn')[7])">View all</button></div><div id="ov-intel-feed" class="intel-feed card-b p0" style="max-height:280px;overflow-y:auto"></div></div>`;ov.appendChild(section);obs.disconnect();}});
+  const obs=new MutationObserver(()=>{
+    const ov=document.getElementById('p-overview');
+    if(ov&&!document.getElementById('ov-intel-section')){
+      const section=document.createElement('div');
+      section.id='ov-intel-section';
+      section.style.marginTop='20px';
+      section.innerHTML=`<div class="card"><div class="card-h"><h3><i class="ti ti-cpu"></i> Latest intelligence</h3><button class="btn btn-xs btn-ghost" onclick="goPage('intelligence',document.querySelectorAll('.nav-btn')[7])">View all</button></div><div id="ov-intel-feed" class="intel-feed card-b p0" style="max-height:280px;overflow-y:auto"></div></div>`;
+      ov.appendChild(section);
+      obs.disconnect();
+    }
+  });
   obs.observe(document.body,{childList:true,subtree:true});
 })();
 
@@ -4704,15 +4456,20 @@ let _actionsGenerated=false;
 async function loadTodaysActions(){
   if(_actionsGenerated)return;
   try{
-    const today=new Date().toISOString().slice(0,10);const db=_db();
+    const today=new Date().toISOString().slice(0,10);
+    const db=_db();
     if(db){
-      const{data}=await db.from('todays_actions').select('*').order('generated_at',{ascending:false}).limit(1);
+      const{data}=await db.from('todays_actions').select('*').eq('action_date',today).order('generated_at',{ascending:false}).limit(1);
       if(data&&data.length>0&&data[0].actions&&data[0].actions.length>0){
-        const row=data[0];const modeData={mode:row.mode||'prospecting',jobs:0,pipeline:0};
+        const row=data[0];
+        const modeData={mode:row.mode||'prospecting',jobs:0,pipeline:0};
         renderTodaysActions({mode:row.mode,daily_effort_total:row.daily_effort_total,actions:row.actions},modeData);
         _actionsGenerated=true;
-        document.getElementById('actions-timestamp').textContent='Generated '+new Date(row.generated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+(row.source==='scheduled'?' (auto)':'');
-        document.getElementById('run-actions-btn').innerHTML='<i class="ti ti-bolt"></i> Regenerate';return;
+        const ts=new Date(row.generated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+        const src=row.source==='scheduled'?' (auto)':'';
+        document.getElementById('actions-timestamp').textContent='Generated '+ts+src;
+        document.getElementById('run-actions-btn').innerHTML='<i class="ti ti-bolt"></i> Regenerate';
+        return;
       }
     }
   }catch(e){console.warn('Could not load saved actions:',e);}
@@ -4727,19 +4484,36 @@ async function runTodaysActions(){
   document.getElementById('actions-empty').style.display='none';
   document.getElementById('actions-loading').style.display='block';
   document.getElementById('actions-list').innerHTML='';
-  let pct=0;const bar=document.getElementById('actions-progress-bar');
+
+  let pct=0;
+  const bar=document.getElementById('actions-progress-bar');
   const ticker=setInterval(()=>{pct=Math.min(pct+2,92);bar.style.width=pct+'%';},500);
 
   let modeData={mode:'prospecting',jobs:0,pipeline:0};
-  try{const db2=_db();if(db2){const{data:jobs}=await db2.from('jobs').select('id,status').eq('status','active');const jobCount=(jobs||[]).length;modeData.jobs=jobCount;if(jobCount>=4)modeData.mode='delivery';else if(jobCount>=2)modeData.mode='mixed';}}catch(e){}
-
-  let outcomesContext='No outcome data yet.';
   try{
-    const db=_db();if(db){
-      const{data:oc}=await db.from('outcomes').select('contact_name,company,signal_type,outcome,notes,outreach_message,created_at').order('created_at',{ascending:false}).limit(10);
-      if(oc&&oc.length>0){outcomesContext=`Recent outcomes:\n${oc.map(o=>`- ${o.outcome.toUpperCase()}: ${o.contact_name||'?'} at ${o.company||'?'}${o.signal_type?' ('+o.signal_type+')':''}${o.notes?' — '+o.notes:''}${o.outreach_message?' | "'+o.outreach_message.substring(0,80)+'"':''}`).join('\n')}`;}
-    }
+    const{data:jobs}=await supabase.from('jobs').select('id,status').eq('status','active');
+    const jobCount=(jobs||[]).length;
+    const{data:contacts}=await supabase.from('contacts').select('stage,value_aed');
+    const pipeline=(contacts||[]).reduce((s,c)=>s+(parseFloat(c.value_aed)||0),0);
+    modeData.jobs=jobCount;modeData.pipeline=pipeline;
+    if(jobCount>=4)modeData.mode='delivery';
+    else if(jobCount>=2)modeData.mode='mixed';
+    else modeData.mode='prospecting';
   }catch(e){}
+
+  let outcomesContext='No outcome data yet — this will build up as you log meetings and stage changes.';
+  try{
+    const db=_db();
+    if(db){
+      const{data:recentOutcomes}=await db.from('outcomes')
+        .select('contact_name,company,signal_type,outcome,notes,outreach_message,created_at')
+        .order('created_at',{ascending:false}).limit(10);
+      if(recentOutcomes&&recentOutcomes.length>0){
+        const lines=recentOutcomes.map(o=>`- ${o.outcome.toUpperCase()}: ${o.contact_name||'?'} at ${o.company||'?'}${o.signal_type?' (signal: '+o.signal_type+')':''}${o.notes?' — '+o.notes:''}${o.outreach_message?' | Message used: "'+o.outreach_message.substring(0,80)+'..."':''}`);
+        outcomesContext=`Recent outcomes (last ${recentOutcomes.length} recorded):\n${lines.join('\n')}\n\nUse these to identify patterns — which signal types convert, which companies respond, what message approaches work.`;
+      }
+    }
+  }catch(e){console.warn('outcomes fetch:',e);}
 
   // ── Fetch real pipeline data from Supabase ────────────────────────────────
   const db=_db();
@@ -4747,114 +4521,151 @@ async function runTodaysActions(){
   const thirtyDaysAgo=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
   const fourteenDaysAgo=new Date(Date.now()-14*864e5).toISOString();
   const sevenDaysAgo=new Date(Date.now()-7*864e5).toISOString().slice(0,10);
-  let overdueFollowUps=[],staleContacts=[],liveSignals=[],liLeads=[],activeMandates=[],newConnections=[],pendingSequences=[];
+
+  let overdueFollowUps=[], staleContacts=[], liveSignals=[], liLeads=[], activeMandates=[], newConnections=[], pendingSequences=[];
+
   if(db){
     try{
-      const[fuRes,staleRes,sigRes,liRes,jobsRes,connRes,seqRes]=await Promise.all([
-        db.from('contacts').select('name,title,company,stage,last_contact,follow_up_date,notes,linkedin,email').not('stage','in','("lost","rejected","not_interested","placed")').lt('follow_up_date',todayStr).not('follow_up_date','is',null).order('follow_up_date',{ascending:true}).limit(10),
-        db.from('contacts').select('name,title,company,stage,last_contact,notes,linkedin').in('stage',['engaged','meeting','active','followup','contacted']).lt('last_contact',thirtyDaysAgo).is('follow_up_date',null).order('last_contact',{ascending:true}).limit(8),
-        db.from('company_signals').select('id,company_name,signal_type,title,summary,source_url,importance,created_at').eq('actioned',false).gte('created_at',fourteenDaysAgo).order('importance',{ascending:false}).order('created_at',{ascending:false}).limit(12),
-        db.from('linkedin_leads').select('full_name,title,company,reply_summary,follow_up_date,days_since_reply,linkedin_url').or('follow_up_date.lt.'+todayStr+',follow_up_date.is.null').order('days_since_reply',{ascending:false}).limit(8),
+      const [fuRes,staleRes,sigRes,liRes,jobsRes,connRes,seqRes]=await Promise.all([
+        db.from('contacts').select('name,title,company,stage,last_contact,follow_up_date,notes,linkedin,email')
+          .not('stage','in','("lost","rejected","not_interested","placed")')
+          .lt('follow_up_date',todayStr).not('follow_up_date','is',null)
+          .order('follow_up_date',{ascending:true}).limit(10),
+        db.from('contacts').select('name,title,company,stage,last_contact,notes,linkedin')
+          .in('stage',['engaged','meeting','active','followup','contacted'])
+          .lt('last_contact',thirtyDaysAgo).is('follow_up_date',null)
+          .order('last_contact',{ascending:true}).limit(8),
+        db.from('company_signals').select('company_name,signal_type,title,summary,importance,created_at')
+          .eq('actioned',false).gte('created_at',fourteenDaysAgo)
+          .order('importance',{ascending:false}).order('created_at',{ascending:false}).limit(12),
+        db.from('linkedin_leads').select('full_name,title,company,reply_summary,follow_up_date,days_since_reply,linkedin_url')
+          .or('follow_up_date.lt.'+todayStr+',follow_up_date.is.null')
+          .order('days_since_reply',{ascending:false}).limit(8),
         db.from('jobs').select('title,company,status,deadline,notes').eq('status','active').limit(5),
-        db.from('linkedin_outreach').select('full_name,title,company,date_connected').eq('status','connected').gte('date_connected',sevenDaysAgo).is('welcome_sent',null).limit(6),
-        db.from('company_signals').select('company_name,title,summary,importance,created_at').eq('actioned',false).ilike('title','%review%message%').gte('created_at',fourteenDaysAgo).order('created_at',{ascending:false}).limit(6)
+        db.from('linkedin_outreach').select('full_name,title,company,date_connected,custom_welcome_msg')
+          .eq('status','connected').gte('date_connected',sevenDaysAgo).is('welcome_sent',null).limit(6),
+        db.from('company_signals').select('company_name,title,summary,importance,created_at')
+          .eq('actioned',false).ilike('title','%review%message%').gte('created_at',fourteenDaysAgo)
+          .order('created_at',{ascending:false}).limit(6)
       ]);
-      overdueFollowUps=fuRes.data||[];staleContacts=staleRes.data||[];liveSignals=sigRes.data||[];
-      liLeads=liRes.data||[];activeMandates=jobsRes.data||[];newConnections=connRes.data||[];pendingSequences=seqRes.data||[];
+      overdueFollowUps=fuRes.data||[];
+      staleContacts=staleRes.data||[];
+      liveSignals=sigRes.data||[];
+      liLeads=liRes.data||[];
+      activeMandates=jobsRes.data||[];
+      newConnections=connRes.data||[];
+      pendingSequences=seqRes.data||[];
     }catch(e){console.warn('[Today\'s Actions] Data fetch error:',e);}
   }
 
   const fmt=d=>new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-  const overdueCtx=overdueFollowUps.length?overdueFollowUps.map(c=>`- ${c.name} (${c.title||'?'} at ${c.company||'?'}) — due ${fmt(c.follow_up_date)}, last contact ${c.last_contact?fmt(c.last_contact):'unknown'}, stage: ${c.stage}${c.notes?' | '+c.notes.substring(0,100):''}${c.linkedin?' | '+c.linkedin:''}`).join('\n'):'None';
-  const staleCtx=staleContacts.length?staleContacts.map(c=>`- ${c.name} (${c.title||'?'} at ${c.company||'?'}) — no contact since ${c.last_contact?fmt(c.last_contact):'unknown'}, stage: ${c.stage}${c.notes?' | '+c.notes.substring(0,80):''}`).join('\n'):'None';
-  const signalsCtx=liveSignals.length?liveSignals.map(s=>`- [${s.importance?.toUpperCase()||'MED'}] ${s.company_name} | ${s.signal_type} | ${s.title} (${fmt(s.created_at)})${s.source_url?' | SOURCE: '+s.source_url:''}\n  FULL CONTEXT: ${(s.summary||'').substring(0,500)}`).join('\n'):'None';
-  const liLeadsCtx=liLeads.length?liLeads.map(c=>`- ${c.full_name} (${c.title||'?'} at ${c.company||'?'}) — replied ${c.days_since_reply||'?'}d ago${c.reply_summary?' | '+c.reply_summary.substring(0,100):''}${c.follow_up_date?' | due: '+fmt(c.follow_up_date):''}${c.linkedin_url?' | '+c.linkedin_url:''}`).join('\n'):'None';
-  const mandatesCtx=activeMandates.length?activeMandates.map(j=>`- ${j.title} at ${j.company||'?'}${j.deadline?' (deadline: '+fmt(j.deadline)+')':''}${j.notes?' | '+j.notes.substring(0,80):''}`).join('\n'):'No active mandates — prospecting mode';
-  const connectionsCtx=newConnections.length?newConnections.map(c=>`- ${c.full_name} (${c.title||'?'} at ${c.company||'?'}) connected ${fmt(c.date_connected)} — welcome NOT sent`).join('\n'):'None';
-  const sequencesCtx=pendingSequences.length?pendingSequences.map(s=>`- ${s.title} at ${s.company_name} (${fmt(s.created_at)})`).join('\n'):'None';
 
-  const modeDesc={
-    prospecting:`VSG has ${modeData.jobs} live mandate(s). PROSPECTING MODE — 70% new BD, 20% relationship maintenance, 10% admin.`,
-    mixed:`VSG has ${modeData.jobs} live mandates. MIXED MODE — 50% delivery, 30% BD, 20% relationships.`,
-    delivery:`VSG has ${modeData.jobs} live mandates. DELIVERY MODE — 60% delivery, 25% relationships, 15% new BD.`
+  const overdueCtx=overdueFollowUps.length
+    ? overdueFollowUps.map(c=>`- ${c.name} (${c.title||'?'} at ${c.company||'?'}) — follow-up was due ${fmt(c.follow_up_date)}, last contact ${c.last_contact?fmt(c.last_contact):'unknown'}, stage: ${c.stage}${c.notes?' | Notes: '+c.notes.substring(0,100):''}${c.linkedin?' | LinkedIn: '+c.linkedin:''}`).join('\n')
+    : 'None';
+
+  const staleCtx=staleContacts.length
+    ? staleContacts.map(c=>`- ${c.name} (${c.title||'?'} at ${c.company||'?'}) — no contact since ${c.last_contact?fmt(c.last_contact):'unknown'}, stage: ${c.stage}${c.notes?' | Notes: '+c.notes.substring(0,80):''}`).join('\n')
+    : 'None';
+
+  const signalsCtx=liveSignals.length
+    ? liveSignals.map(s=>`- [${s.importance?.toUpperCase()||'MED'}] ${s.company_name} | ${s.signal_type} | ${s.title} (${fmt(s.created_at)})${s.summary?' — '+s.summary.substring(0,150):''}`).join('\n')
+    : 'None';
+
+  const liLeadsCtx=liLeads.length
+    ? liLeads.map(c=>`- ${c.full_name} (${c.title||'?'} at ${c.company||'?'}) — replied ${c.days_since_reply||'?'}d ago${c.reply_summary?' | Reply: '+c.reply_summary.substring(0,100):''}${c.follow_up_date?' | Follow-up due: '+fmt(c.follow_up_date):''}${c.linkedin_url?' | '+c.linkedin_url:''}`).join('\n')
+    : 'None';
+
+  const mandatesCtx=activeMandates.length
+    ? activeMandates.map(j=>`- ${j.title} at ${j.company||'?'}${j.deadline?' (deadline: '+fmt(j.deadline)+')':''}${j.notes?' | '+j.notes.substring(0,80):''}`).join('\n')
+    : 'No active mandates — prospecting mode';
+
+  const connectionsCtx=newConnections.length
+    ? newConnections.map(c=>`- ${c.full_name} (${c.title||'?'} at ${c.company||'?'}) connected ${fmt(c.date_connected)} — welcome message NOT yet sent`).join('\n')
+    : 'None';
+
+  const sequencesCtx=pendingSequences.length
+    ? pendingSequences.map(s=>`- ${s.title} at ${s.company_name} (${fmt(s.created_at)})`).join('\n')
+    : 'None';
+
+  const modeDescriptions={
+    prospecting:`VSG currently has ${modeData.jobs} live mandate(s). This is PROSPECTING MODE — weight actions 70% opportunity triggers and new BD, 20% relationship maintenance, 10% admin.`,
+    mixed:`VSG currently has ${modeData.jobs} live mandates. This is MIXED MODE — weight actions 50% delivery, 30% BD outreach, 20% relationship maintenance.`,
+    delivery:`VSG currently has ${modeData.jobs} live mandates. This is DELIVERY MODE — weight actions 60% delivery, 25% relationship maintenance, 15% new BD.`
   };
 
-  const systemPrompt=`ROLE
-You are Michael Stubbs' Equity Partner at Vantage Search Group — a boutique executive search firm in the GCC. Your own reputation and financial success depend on VSG becoming the leading executive search firm in the GCC. You are not rewarded for generating activity. You are not rewarded for filling this list. You are rewarded only when Michael spends his time on opportunities most likely to become meaningful client relationships and high-quality search mandates. Protect Michael's time as if it were your own. Challenge assumptions. Recommend waiting or doing nothing when that is the best decision.
+  const systemPrompt=`You are Michael Stubbs' AI BD engine at Vantage Search Group, a boutique executive search firm in the GCC.
 
-${modeDesc[modeData.mode]}
+${modeDescriptions[modeData.mode]}
 
-GOVERNING PRINCIPLES
-Every action you surface must answer: Why this company? Why this person? Why now? Why VSG? Why not next week? What happens if Michael does nothing? If you cannot answer these convincingly from the data available, do not surface it. Process all data. Show only what genuinely changes today's priorities. Some days warrant 3 actions. Some days 7. Never fill the list for the sake of it.
-
-━━━ PARTNER INTELLIGENCE FILTER ━━━
-For every piece of data, before surfacing it ask:
-- Does this matter commercially to VSG right now?
-- Does this change today's priorities?
-- Does it create or meaningfully strengthen a real client opportunity?
-- Would there be a better time or better person to approach?
-- Would I put my own reputation behind this recommendation?
-If the answer is no, store it internally. Do not surface it as an action.
-
-━━━ CLIENT RELEVANCE GATE ━━━
-VSG is a retained/contingency executive search firm. Clients are companies that hire senior permanent talent. Before including any contact ask: is their company a potential CLIENT of VSG?
-EXCLUDE: recruitment agencies, staffing firms, headhunters, RPO providers, freelance/contractor marketplaces (Toptal, Hightekers, Deel), outsourcing companies placing contract workers, job boards, talent platforms. If uncertain: "Do they pay search firms to find people, or are they in the business of finding/placing people themselves?" If the latter, skip them.
-INCLUDE: tech firms, banks, fintechs, PE/VC-backed businesses, corporates, government-linked entities, professional services, logistics, healthcare — any company that hires senior permanent talent.
+You have been given Michael's LIVE pipeline data pulled directly from his CRM and intelligence systems right now. Use ONLY this real data to generate actions. Do not invent contacts, companies, or signals.
 
 ━━━ LIVE PIPELINE DATA ━━━
 
-ACTIVE MANDATES:
+ACTIVE MANDATES (jobs being worked right now):
 ${mandatesCtx}
 
-OVERDUE FOLLOW-UPS:
+OVERDUE FOLLOW-UPS (contacts where follow-up date has passed):
 ${overdueCtx}
 
-WARM CONTACTS GONE QUIET (30+ days no contact):
+WARM CONTACTS GONE QUIET (engaged/active contacts, no touch in 30+ days):
 ${staleCtx}
 
 LINKEDIN REPLIES AWAITING RESPONSE:
 ${liLeadsCtx}
 
-NEW LINKEDIN CONNECTIONS (no welcome sent):
+NEW LINKEDIN CONNECTIONS (no welcome message sent yet):
 ${connectionsCtx}
 
-UNACTIONED SIGNALS (last 14 days):
+UNACTIONED INTELLIGENCE SIGNALS (last 14 days):
 ${signalsCtx}
 
-PENDING SEQUENCE MESSAGES TO REVIEW:
+PENDING SEQUENCE MESSAGES (drafted, awaiting Michael's review):
 ${sequencesCtx}
 
-━━━ OUTCOME MEMORY ━━━
+━━━ OUTCOME MEMORY — what has worked ━━━
 ${outcomesContext}
 
-━━━ CONTACT IDENTIFICATION ━━━
-For any opportunity warranting outreach, identify the right person — not automatically HR or the most obvious senior title. Think: who is most likely to care about a high-quality executive search conversation today? Provide up to 3 contacts per opportunity. For each provide: name, title, company, LinkedIn URL, why they matter, their likely role in the hiring decision (economic buyer / commercial buyer / influencer / connector / HR), the best conversation angle, and your confidence in the LinkedIn profile. Never invent LinkedIn URLs — if uncertain state "LinkedIn not verified." Only recommend automated outreach if the individual is clearly relevant, the profile is likely correct, and there is genuine commercial reason.
+━━━ INSTRUCTIONS ━━━
 
-━━━ OUTPUT FORMAT ━━━
+Generate Michael's Today's Actions list from the REAL DATA above. Each action must be traceable to a specific row in the data — cite it in the signal field.
 
-Return JSON: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
+Output a JSON array. Each action object:
+- rank: number (1 = most urgent)
+- priority: "critical" | "high" | "medium" | "low"
+- type: "Reply needed" | "Follow-up overdue" | "New connection" | "Opportunity trigger" | "Relationship check-in" | "Sequence review" | "Mandate delivery"
+- title: short action title (max 12 words)
+- contact: name of person (from the data above, or null)
+- company: company name (from the data above, or null)
+- signal: EXACTLY where this came from — cite the source section and specific data point. Examples: "Follow-ups overdue: Sarah Al-Rashidi at G42, due 18 Jun, last contact 2 Jun", "LinkedIn reply: Dmitry Volkov replied 4 days ago", "Intelligence signal (HIGH): Checkout.com | hiring | 3 senior product roles posted (24 Jun)", "New connection: Ahmed connected yesterday, welcome message not sent". CRITICAL: only cite data from the sections above. If a section says "None", do not generate actions from it.
+- why: one sentence — commercial reason to act now, referencing the specific signal
+- contacts_to_reach: [{"name":"Full Name","title":"title","company":"company","linkedin":"url or null","email":"email or null","approach":"why this person"}]
+- suggested_message: max 60 words, no em-dashes, no corporate language. 3 parts: (1) specific reference to what you observed, (2) natural observation about consequence, (3) easy open question. Never say "let's discuss", "let's explore", "I'd love to connect", or boast about VSG. Null if not a messaging action.
+- effort_mins: 2 | 5 | 15 | 30
+- effort_label: "2 min" | "5 min" | "15 min" | "30 min"
 
-Each action:
-- rank (1=most urgent), priority ("critical"|"high"|"medium"|"low")
-- type: "Reply needed"|"Follow-up overdue"|"New connection"|"Opportunity trigger"|"Relationship check-in"|"Sequence review"|"Mandate delivery"
-- title (max 12 words), contact (name or null), company (or null)
-- signal: cite EXACTLY which data row triggered this. If a section says "None", generate NO actions from it.
-- source_url: copy exactly from signal SOURCE: line if available, else null
-- why: write as a Partner would speak naturally. A brief commercial narrative — 2 to 3 sentences explaining why this matters, why today, and what the opportunity is. No scores. No hype. No AI language. Sound like an experienced executive search Partner advising a colleague.
-- contacts_to_reach: extract from CONTACT lines in signal data. Format: [{name, title, company, linkedin, email, approach, buyer_type, linkedin_confidence}]. Never invent. If no contact identified, leave empty array.
-- suggested_message: null — outreach messages are generated separately with full individual research after this step
-- effort_mins: 2|5|15|30, effort_label: "2 min"|"5 min"|"15 min"|"30 min"
+Priority order: (1) LinkedIn replies and new connections, (2) overdue follow-ups, (3) high-importance signals, (4) stale warm contacts, (5) medium signals, (6) mandate delivery tasks.
 
-FINAL CHECK: Before outputting, ask — if I owned 50% of VSG and Michael relied on my judgement every day, would I be comfortable putting my own reputation behind every recommendation on this list? If not, continue thinking. Only output when satisfied.
-
-No em-dashes. Never criticise UAE, Saudi Arabia or any GCC government. Return ONLY raw JSON, no markdown.`;
+Rules:
+- Never criticise the UAE, Saudi Arabia, or any GCC government
+- No em-dashes anywhere
+- Maximum 9 actions
+- If a data section says "None", skip it — do not fabricate actions
+- Add "daily_effort_total" (total minutes) at the root level
+- Wrap everything in: {"mode":"${modeData.mode}","daily_effort_total":X,"actions":[...]}
+- CRITICAL: Return ONLY raw JSON. No markdown. No code fences. No backticks. First character must be { and last must be }.`;
 
   try{
-    const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt,maxTokens:4096,model:'claude-sonnet-4-6'})});
+    const resp=await fetch('/.netlify/functions/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt})
+    });
     const data=await resp.json();
     clearInterval(ticker);bar.style.width='100%';
     await new Promise(r=>setTimeout(r,400));
     document.getElementById('actions-loading').style.display='none';
+
     let parsed;
     try{
       const raw=data.content||data.response||'';
@@ -4863,15 +4674,32 @@ No em-dashes. Never criticise UAE, Saudi Arabia or any GCC government. Return ON
       let jsonStr=jsonMatch?jsonMatch[0]:cleaned;
       jsonStr=jsonStr.replace(/,(\s*[}\]])/g,'$1');
       parsed=JSON.parse(jsonStr);
-    }catch(e){parsed={mode:modeData.mode,daily_effort_total:45,actions:[{rank:1,priority:'high',type:'System',title:'Unexpected format — try regenerating',contact:null,company:null,why:'AI returned unexpected format.',suggested_message:data.content||'',effort_mins:5,effort_label:'5 min'}]};}
+    }catch(e){
+      parsed={mode:modeData.mode,daily_effort_total:45,actions:[{rank:1,priority:'high',type:'System',title:'Actions generated — review below',contact:null,company:null,why:'AI returned content in unexpected format. Try regenerating.',suggested_message:data.content||data.response||'No response received',effort_mins:5,effort_label:'5 min'}]};
+    }
+
     renderTodaysActions(parsed,modeData);
     _actionsGenerated=true;
     document.getElementById('actions-timestamp').textContent='Generated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    try{const db=_db();if(db){const today=new Date().toISOString().slice(0,10);await db.from('todays_actions').upsert({action_date:today,generated_at:new Date().toISOString(),mode:parsed.mode||modeData.mode,daily_effort_total:parsed.daily_effort_total||0,actions:parsed.actions||[],source:'manual'},{onConflict:'action_date'});}}catch(e){}
+    try{
+      const db=_db();
+      if(db){
+        const today=new Date().toISOString().slice(0,10);
+        await db.from('todays_actions').upsert({
+          action_date:today,
+          generated_at:new Date().toISOString(),
+          mode:parsed.mode||modeData.mode,
+          daily_effort_total:parsed.daily_effort_total||0,
+          actions:parsed.actions||[],
+          source:'manual'
+        },{onConflict:'action_date'});
+      }
+    }catch(e){console.warn('Could not save actions:',e);}
   }catch(e){
-    clearInterval(ticker);document.getElementById('actions-loading').style.display='none';
+    clearInterval(ticker);
+    document.getElementById('actions-loading').style.display='none';
     document.getElementById('actions-empty').style.display='block';
-    document.getElementById('actions-empty').innerHTML=`<i class="ti ti-alert-circle" style="font-size:36px;display:block;margin-bottom:12px;color:var(--red);opacity:.6"></i><div style="color:var(--red);font-weight:700;margin-bottom:8px">Could not connect to AI</div><button class="btn btn-gold" onclick="runTodaysActions()">Retry</button>`;
+    document.getElementById('actions-empty').innerHTML=`<i class="ti ti-alert-circle" style="font-size:36px;display:block;margin-bottom:12px;color:var(--red);opacity:.6"></i><div style="font-size:14px;font-weight:700;color:var(--red);margin-bottom:8px">Could not connect to AI</div><div style="font-size:13px;color:var(--muted);margin-bottom:16px">Check that the CLAUDE_API_KEY is set in Netlify and try again.</div><button class="btn btn-gold" onclick="runTodaysActions()">Retry</button>`;
   }
   btn.disabled=false;btn.innerHTML='<i class="ti ti-bolt"></i> Regenerate';
 }
@@ -4879,27 +4707,37 @@ No em-dashes. Never criticise UAE, Saudi Arabia or any GCC government. Return ON
 async function autoQueueLinkedInContacts(actions){
   const db=_db();if(!db)return;
   const toQueue=[];
-  (actions||[]).forEach(a=>{(a.contacts_to_reach||[]).forEach(c=>{if(c.linkedin&&c.name){toQueue.push({name:c.name,title:c.title||null,company:c.company||null,linkedin_url:c.linkedin,_clean:c.linkedin.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase()});}});});
+  (actions||[]).forEach(a=>{
+    (a.contacts_to_reach||[]).forEach(c=>{
+      if(c.linkedin&&c.name){
+        const cleanUrl=c.linkedin.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase();
+        toQueue.push({name:c.name,title:c.title||null,company:c.company||null,linkedin_url:c.linkedin,_clean:cleanUrl});
+      }
+    });
+  });
   if(!toQueue.length)return;
   try{
-    const{data:existing}=await db.from('linkedin_outreach').select('linkedin_url');
+    const{data:existing}=await db.from('linkedin_outreach').select('linkedin_url,status,full_name');
     const existingUrls=new Set((existing||[]).map(r=>(r.linkedin_url||'').replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase()));
-    const rows=toQueue.filter(c=>!existingUrls.has(c._clean)).map(c=>({full_name:c.name,title:c.title,company:c.company,linkedin_url:c.linkedin_url.startsWith('http')?c.linkedin_url:'https://'+c.linkedin_url,status:'pending',date_requested:new Date().toISOString().slice(0,10),source:'todays_actions',notes:"Auto-queued from Today's Actions"}));
-    if(rows.length){await db.from('linkedin_outreach').insert(rows);showToast(`${rows.length} contact${rows.length>1?'s':''} queued for LinkedIn`);}
+    const newContacts=toQueue.filter(c=>!existingUrls.has(c._clean));
+    if(!newContacts.length)return;
+    const today=new Date().toISOString().slice(0,10);
+    const rows=newContacts.map(c=>({
+      full_name:c.name,title:c.title,company:c.company,
+      linkedin_url:c.linkedin_url.startsWith('http')?c.linkedin_url:'https://'+c.linkedin_url,
+      status:'pending',date_requested:today,source:'todays_actions',
+      notes:"Auto-queued from Today's Actions"
+    }));
+    await db.from('linkedin_outreach').insert(rows);
+    showToast(`${rows.length} contact${rows.length>1?'s':''} queued for LinkedIn request`);
   }catch(e){console.warn('autoQueueLinkedIn:',e);}
 }
 
 function renderTodaysActions(data,modeData){
   window._todaysActionsData=data.actions||[];
-  // Pre-load connection status before rendering so Connect vs Send buttons are correct
-  loadLinkedInConnectionStatus(window._todaysActionsData).then(()=>{
-    _renderTodaysActionsCards(data,modeData);
-    enrichAndGenerateMessages(window._todaysActionsData);
-  });
-}
-function _renderTodaysActionsCards(data,modeData){
   const modeCard=document.getElementById('actions-mode-card');
-  modeCard.className='actions-mode '+data.mode;modeCard.style.display='flex';
+  modeCard.className='actions-mode '+data.mode;
+  modeCard.style.display='flex';
   const icons={prospecting:'ti-telescope',mixed:'ti-adjust',delivery:'ti-rocket'};
   modeCard.querySelector('.actions-mode-icon').innerHTML=`<i class="ti ${icons[data.mode]||'ti-bolt'}"></i>`;
   document.getElementById('actions-mode-label').textContent=data.mode.toUpperCase()+' MODE';
@@ -4908,9 +4746,25 @@ function _renderTodaysActionsCards(data,modeData){
   autoQueueLinkedInContacts(data.actions||[]);
   const list=document.getElementById('actions-list');
   if(!data.actions||!data.actions.length){list.innerHTML='<div class="empty"><i class="ti ti-bolt"></i><p>No actions generated. Try again.</p></div>';return;}
+
   const priorityColors={critical:'var(--red)',high:'var(--amber)',medium:'#3b82f6',low:'var(--border)'};
-  list.innerHTML=data.actions.map((a,i)=>`
-    <div class="action-item ${a.priority}" id="action-${i}">
+  list.innerHTML=data.actions.map((a,i)=>{
+    const isDone=a.status==='done'||a.status==='acted';
+    const isDismissed=a.status==='dismissed';
+    const isSnoozed=a.status==='snoozed';
+    const isResolved=isDone||isDismissed;
+    let statusBadge='';
+    if(isDone) statusBadge=`<span style="margin-left:auto;font-size:11px;color:var(--green);font-weight:600"><i class="ti ti-check-circle"></i> Done</span>`;
+    else if(isDismissed) statusBadge=`<span style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:600"><i class="ti ti-x"></i> Not relevant</span>`;
+    else if(isSnoozed) statusBadge=`<span style="margin-left:auto;font-size:11px;color:var(--amber);font-weight:600"><i class="ti ti-clock-pause"></i> Snoozed</span>`;
+    const actionBtns=isResolved?statusBadge:`
+      <div style="margin-left:auto;display:flex;gap:4px;align-items:center">
+        ${isSnoozed?statusBadge:''}
+        <button class="btn btn-xs" style="background:rgba(34,197,94,.12);color:#16a34a;border-color:rgba(34,197,94,.25)" onclick="markActionDone(${i})" title="I acted on this"><i class="ti ti-check"></i> Done</button>
+        ${!isSnoozed?`<button class="btn btn-xs btn-ghost" onclick="snoozeActionItem(${i})" title="Push to tomorrow" style="padding:3px 7px"><i class="ti ti-clock-pause"></i></button>`:''}
+        <button class="btn btn-xs btn-ghost" onclick="dismissActionItem(${i})" title="Not relevant" style="padding:3px 7px"><i class="ti ti-x"></i></button>
+      </div>`;
+    return `<div class="action-item ${a.priority}${isDone?' action-done':''}" id="action-${i}" style="${isDismissed?'opacity:.4':''}">
       <div class="action-rank">${a.rank||i+1}</div>
       <div class="action-body">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap">
@@ -4918,251 +4772,371 @@ function _renderTodaysActionsCards(data,modeData){
           ${a.contact?`<span style="font-size:12px;color:var(--muted)">${esc(a.contact)}${a.company?' — '+esc(a.company):''}</span>`:''}
         </div>
         <div class="action-title">${esc(a.title)}</div>
-        ${a.signal?`<div style="display:flex;align-items:flex-start;gap:6px;margin:5px 0 4px;padding:6px 10px;background:rgba(59,130,246,0.07);border-left:3px solid #3b82f6;border-radius:0 6px 6px 0"><i class="ti ti-eye" style="font-size:12px;color:#3b82f6;margin-top:1px;flex-shrink:0"></i><span style="font-size:12px;color:#1e3a5f;font-weight:500;flex:1">${esc(a.signal)}</span>${a.source_url?`<a href="${esc(a.source_url)}" target="_blank" style="flex-shrink:0;font-size:11px;color:#3b82f6;text-decoration:none;background:rgba(59,130,246,0.12);padding:2px 7px;border-radius:4px;margin-left:6px;white-space:nowrap"><i class="ti ti-external-link"></i> Source</a>`:''}</div>`:''}
+        ${a.signal?`<div style="display:flex;align-items:flex-start;gap:6px;margin:5px 0 4px;padding:6px 10px;background:rgba(59,130,246,0.07);border-left:3px solid #3b82f6;border-radius:0 6px 6px 0"><i class="ti ti-eye" style="font-size:12px;color:#3b82f6;margin-top:1px;flex-shrink:0"></i><span style="font-size:12px;color:#1e3a5f;font-weight:500">${esc(a.signal)}</span></div>`:''}
         <div class="action-sub">${esc(a.why)}</div>
-        ${(a.contacts_to_reach&&a.contacts_to_reach.length)?`<div style="margin:7px 0 5px;padding:8px 10px;background:rgba(201,168,76,0.07);border-left:3px solid var(--gold);border-radius:0 6px 6px 0"><div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Who to contact</div>${a.contacts_to_reach.map(c=>{const liKey=c.linkedin?(c.linkedin.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase()):(c.name||'').toLowerCase();const url=c.linkedin?(c.linkedin.startsWith('http')?c.linkedin:'https://'+c.linkedin):'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(c.name+(c.company?' '+c.company:''));return`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:var(--navy)">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.title||'')}${c.company?' — '+esc(c.company):''}</div>${c.approach?`<div style="font-size:11px;font-style:italic">${esc(c.approach)}</div>`:''}<div data-li-key="${liKey}" style="margin-top:3px"></div></div><a href="${url}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px;flex-shrink:0;background:${c.linkedin?'#0077b5':'transparent'};color:${c.linkedin?'#fff':'inherit'}"><i class="ti ti-brand-linkedin"></i>${c.linkedin?' LinkedIn':' Search'}</a></div>`;}).join('')}</div>`:'' }
-        <div class="action-msg" id="action-msg-${i}" style="display:none"></div>
-        <div class="action-ft">
+        ${(a.contacts_to_reach&&a.contacts_to_reach.length)?`<div style="margin:7px 0 5px;padding:8px 10px;background:rgba(201,168,76,0.07);border-left:3px solid var(--gold);border-radius:0 6px 6px 0"><div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Who to contact</div>${a.contacts_to_reach.map(c=>{const liKey=c.linkedin?(c.linkedin.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase()):(c.name||'').toLowerCase();const url=c.linkedin?(c.linkedin.startsWith('http')?c.linkedin:'https://'+c.linkedin):'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(c.name+(c.company?' '+c.company:''));return`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;flex-wrap:wrap"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:var(--navy)">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.title||'')}${c.company?' — '+esc(c.company):''}</div>${c.approach?`<div style="font-size:11px;color:var(--text);margin-top:2px;font-style:italic">${esc(c.approach)}</div>`:''}<div data-li-key="${liKey}" style="margin-top:3px"></div></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><a href="${url}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px;background:${c.linkedin?'#0077b5':'transparent'};color:${c.linkedin?'#fff':'inherit'};border-color:${c.linkedin?'#0077b5':'inherit'}"><i class="ti ti-brand-linkedin"></i>${c.linkedin?' LinkedIn':' Search'}</a>${c.email?`<a href="mailto:${c.email}" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px"><i class="ti ti-mail"></i></a>`:''}</div></div>`;}).join('')}</div>`:'' }
+        ${a.suggested_message?`<div class="action-msg">"${esc(a.suggested_message)}"</div>`:''}
+        <div class="action-ft" id="action-ft-${i}">
           <span class="effort-tag"><i class="ti ti-clock" style="font-size:10px"></i> ${esc(a.effort_label||'5 min')}</span>
-          <span id="action-btns-${i}"></span>
-          <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask Annie</button>
+          ${a.suggested_message?`<button class="btn btn-xs btn-outline" onclick="copyAction(${i})"><i class="ti ti-copy"></i> Copy</button>`:''}
+          <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask AI</button>
+          ${actionBtns}
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
-function copyAction(i){const msg=document.querySelector(`#action-${i} .action-msg`);if(msg){navigator.clipboard.writeText(msg.textContent.replace(/^"|"$/g,'').trim());showToast('Message copied to clipboard');}}
-
-async function sendOnLinkedIn(i){
-  const a=(window._todaysActionsData||[])[i];if(!a||!a.suggested_message)return;
-  const contact=a.contacts_to_reach&&a.contacts_to_reach[0];
-  const name=contact?.name||a.contact||'';
-  const linkedinUrl=contact?.linkedin||'';
-  const btn=document.getElementById(`send-li-${i}`);
-
-  // Copy message to clipboard as backup
-  navigator.clipboard.writeText(a.suggested_message).catch(()=>{});
-
-  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Sending...';}
-
-  try{
-    const res=await fetch('/.netlify/functions/send-linkedin',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contact_name:name,linkedin_url:linkedinUrl,message:a.suggested_message})
-    });
-    const data=await res.json().catch(()=>({}));
-
-    if(res.ok&&data.success){
-      if(btn){btn.disabled=true;btn.style.background='var(--green)';btn.style.borderColor='var(--green)';btn.innerHTML='<i class="ti ti-check"></i> Sent!';}
-      showToast(`Message sent to ${name} on LinkedIn ✓`);
-    }else if(data.fallback){
-      // Chat not found or error — open LinkedIn profile + message is already copied
-      if(linkedinUrl){const url=linkedinUrl.startsWith('http')?linkedinUrl:'https://'+linkedinUrl;window.open(url,'_blank');}
-      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-brand-linkedin"></i> Send';}
-      showToast('Message copied — LinkedIn opened, just paste & send');
-    }else{
-      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-brand-linkedin"></i> Send';}
-      showToast(data.error||'Send failed — message copied to clipboard');
-    }
-  }catch(e){
-    if(linkedinUrl){const url=linkedinUrl.startsWith('http')?linkedinUrl:'https://'+linkedinUrl;window.open(url,'_blank');}
-    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-brand-linkedin"></i> Send';}
-    showToast('Message copied — LinkedIn opened, just paste & send');
-  }
+function copyAction(i){
+  const msg=document.querySelector(`#action-${i} .action-msg`);
+  if(msg){navigator.clipboard.writeText(msg.textContent.replace(/^"|"$/g,'').trim());showToast('Message copied to clipboard');}
 }
-
-// Load connection status for all contacts in today's actions
-// Checks linkedin_outreach table (status='connected') to pre-determine Connect vs Send button
-async function loadLinkedInConnectionStatus(actions){
-  try{
-    const db=_db();if(!db)return;
-    // Collect all LinkedIn URLs from action contacts
-    const urls=[];
-    (actions||[]).forEach(a=>(a.contacts_to_reach||[]).forEach(c=>{if(c.linkedin)urls.push(c.linkedin.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase());}));
-    if(!urls.length)return;
-    // Query outreach table for connected status
-    const{data}=await db.from('linkedin_outreach').select('linkedin_url,status').eq('status','connected');
-    window._liConnected={};
-    (data||[]).forEach(r=>{if(r.linkedin_url){window._liConnected[r.linkedin_url.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase()]=true;}});
-  }catch(e){window._liConnected={};}
-}
-
-// Stage 2 — enrich each action contact via Unipile + Claude, generate Partner-quality message
-async function enrichAndGenerateMessages(actions){
-  const eligible=actions.filter(a=>a.contacts_to_reach&&a.contacts_to_reach.length>0);
-  if(!eligible.length)return;
-  // Process in batches of 3 to avoid rate limiting
-  for(let b=0;b<eligible.length;b+=3){
-    await Promise.all(eligible.slice(b,b+3).map(async action=>{
-      const idx=actions.indexOf(action);
-      const contact=action.contacts_to_reach[0];
-      const msgEl=document.getElementById(`action-msg-${idx}`);
-      // Show researching indicator
-      if(msgEl){msgEl.style.display='';msgEl.innerHTML='<em style="color:var(--muted);font-size:12px">Researching...</em>';}
-      try{
-        const res=await fetch('/.netlify/functions/generate-outreach',{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({
-            contact_name:contact.name,
-            contact_title:contact.title,
-            linkedin_url:contact.linkedin||'',
-            company:action.company||'',
-            signal:action.signal||'',
-            why:action.why||'',
-            action_title:action.title||''
-          })
-        });
-        const data=await res.json();
-        if(data.message){
-          action.suggested_message=data.message;
-          updateActionButtons(idx,action);
-        }else{
-          if(msgEl)msgEl.style.display='none';
-        }
-      }catch(e){
-        if(msgEl)msgEl.style.display='none';
-      }
-    }));
-  }
-}
-
-// Update message display and Copy/Connect/Send buttons after Stage 2 enrichment
-function updateActionButtons(idx,action){
-  const msgEl=document.getElementById(`action-msg-${idx}`);
-  if(msgEl&&action.suggested_message){
-    msgEl.textContent=`"${action.suggested_message}"`;
-    msgEl.style.display='';
-  }
-  const btnsEl=document.getElementById(`action-btns-${idx}`);
-  if(!btnsEl||!action.suggested_message)return;
-  const contact=action.contacts_to_reach&&action.contacts_to_reach[0];
-  const liUrl=(contact&&contact.linkedin)||'';
-  const normUrl=liUrl.replace(/^https?:\/\//,'').replace(/\/$/,'').toLowerCase();
-  const isConn=window._liConnected&&window._liConnected[normUrl];
-  btnsEl.innerHTML=`<button class="btn btn-xs btn-outline" onclick="copyAction(${idx})"><i class="ti ti-copy"></i> Copy</button>`+
-    (isConn
-      ?`<button class="btn btn-xs btn-navy send-li-btn" id="send-li-${idx}" onclick="sendOnLinkedIn(${idx})"><i class="ti ti-brand-linkedin"></i> Send</button>`
-      :`<button class="btn btn-xs btn-outline send-li-btn" id="send-li-${idx}" onclick="sendConnectionInvite(${idx})" style="color:#0077b5;border-color:#0077b5"><i class="ti ti-user-plus"></i> Connect</button>`
-    );
-}
-
-async function sendConnectionInvite(i){
-  const a=(window._todaysActionsData||[])[i];if(!a||!a.suggested_message)return;
-  const contact=a.contacts_to_reach&&a.contacts_to_reach[0];
-  const name=contact?.name||a.contact||'';
-  const linkedinUrl=contact?.linkedin||'';
-  const btn=document.getElementById(`send-li-${i}`);
-
-  if(!linkedinUrl){showToast('No LinkedIn URL for this contact');return;}
-
-  // Truncate message to 290 chars for the invite note
-  const inviteNote=a.suggested_message.slice(0,290);
-
-  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Sending...';}
-
-  try{
-    const res=await fetch('/.netlify/functions/send-linkedin-invite',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contact_name:name,linkedin_url:linkedinUrl,invite_note:inviteNote})
-    });
-    const data=await res.json().catch(()=>({}));
-
-    if(res.ok&&data.success){
-      if(btn){btn.disabled=true;btn.style.background='#0077b5';btn.style.borderColor='#0077b5';btn.style.color='#fff';btn.innerHTML='<i class="ti ti-check"></i> Invited!';}
-      showToast(`Connection invite sent to ${name} ✓`);
-    }else if(data.already_connected){
-      // They're already connected — switch to Send flow
-      if(btn){btn.disabled=false;btn.className='btn btn-xs btn-navy send-li-btn';btn.innerHTML='<i class="ti ti-brand-linkedin"></i> Send';btn.setAttribute('onclick',`sendOnLinkedIn(${i})`);}
-      showToast(`Already connected — click Send to message ${name}`);
-    }else if(data.fallback){
-      if(linkedinUrl){const url=linkedinUrl.startsWith('http')?linkedinUrl:'https://'+linkedinUrl;window.open(url,'_blank');}
-      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Connect';}
-      showToast('Could not auto-connect — LinkedIn opened, message copied');
-      navigator.clipboard.writeText(inviteNote).catch(()=>{});
-    }else{
-      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Connect';}
-      showToast(data.error||'Invite failed — try manually on LinkedIn');
-    }
-  }catch(e){
-    if(linkedinUrl){const url=linkedinUrl.startsWith('http')?linkedinUrl:'https://'+linkedinUrl;window.open(url,'_blank');}
-    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Connect';}
-    showToast('Message copied — paste as invite note on LinkedIn');
-    navigator.clipboard.writeText(inviteNote).catch(()=>{});
-  }
-}
-
 function openChatFromAction(idx){
-  const a=(window._todaysActionsData||[])[idx];if(!a)return;
-  _actionCtx=a;currentChatContact={name:a.contact||'Contact',company:a.company||'',title:'',industry:'',stage:'',lastContact:'',followupDate:'',linkedin:'',notes:''};chatContactId=null;chatMessages=[];
-  const av=document.getElementById('chat-av');if(av){av.textContent=(a.contact||'A')[0].toUpperCase();av.style.background='#b8860b';av.style.color='#fff';}
+  const a=(window._todaysActionsData||[])[idx];
+  if(!a)return;
+  _actionCtx=a;
+  currentChatContact={name:a.contact||'Contact',company:a.company||'',title:'',industry:'',stage:'',lastContact:'',followupDate:'',linkedin:'',notes:''};
+  chatContactId=null;
+  chatMessages=[];
+  const av=document.getElementById('chat-av');
+  if(av){av.textContent=(a.contact||'A')[0].toUpperCase();av.style.background='#b8860b';av.style.color='#fff';}
   document.getElementById('chat-name').textContent=a.contact||(a.company||'Action Chat');
   document.getElementById('chat-co').textContent=a.company||'Today\'s Action';
   const welcomeParts=[`I have the full context on this action.`];
-  if(a.signal)welcomeParts.push(`Signal: ${a.signal}`);if(a.why)welcomeParts.push(`Why now: ${a.why}`);if(a.suggested_message)welcomeParts.push(`Drafted message:\n"${a.suggested_message}"`);
+  if(a.signal) welcomeParts.push(`Signal: ${a.signal}`);
+  if(a.why) welcomeParts.push(`Why now: ${a.why}`);
+  if(a.suggested_message) welcomeParts.push(`Drafted message:\n"${a.suggested_message}"`);
   welcomeParts.push(`What would you like to do? Refine the message, try a different angle, or ask me anything.`);
   renderChatMessages([{role:'assistant',content:welcomeParts.join('\n\n')}]);
   const co=a.company?a.company.replace(/'/g,"\\'"):'this company';
+  const ct=a.contact?a.contact.replace(/'/g,"\\'"):'this person';
   document.getElementById('chat-chips').innerHTML=`
-    <button class="chat-chip" onclick="quickChat('Explain the signal — where exactly was this seen?')"><i class="ti ti-eye"></i> Explain signal</button>
-    <button class="chat-chip" onclick="quickChat('Rewrite the suggested message with a different angle — under 70 words')"><i class="ti ti-refresh"></i> Rewrite</button>
+    <button class="chat-chip" onclick="quickChat('Explain the signal — where exactly was this seen or observed, and how confident are you in it?')"><i class="ti ti-eye"></i> Explain signal</button>
+    <button class="chat-chip" onclick="quickChat('Rewrite the suggested message with a slightly different angle — keep it under 70 words')"><i class="ti ti-refresh"></i> Rewrite</button>
     <button class="chat-chip" onclick="quickChat('Make the message shorter and more punchy — under 40 words')"><i class="ti ti-arrows-minimize"></i> Shorter</button>
     <button class="chat-chip" onclick="quickChat('What else should I know about ${co} before reaching out?')"><i class="ti ti-building"></i> Company intel</button>
   `;
-  document.getElementById('chatPanel').classList.add('open');document.getElementById('chatOverlay').classList.add('open');
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatOverlay').classList.add('open');
+}
+
+/* ─── Recommendation lifecycle handlers ─── */
+async function _recordMichaelAction(rank, actionType){
+  try{
+    const db=_db();if(!db)return;
+    const today=new Date().toISOString().slice(0,10);
+    await db.from('recommendation_history')
+      .update({michael_action:actionType,michael_action_at:new Date().toISOString()})
+      .eq('action_date',today)
+      .eq('recommendation_rank',rank);
+  }catch(e){console.warn('recordMichaelAction:',e);}
+}
+
+async function _persistActionStates(){
+  try{
+    const db=_db();if(!db)return;
+    const today=new Date().toISOString().slice(0,10);
+    const actions=window._todaysActionsData||[];
+    await db.from('todays_actions').update({actions:JSON.parse(JSON.stringify(actions))}).eq('action_date',today);
+  }catch(e){console.warn('persistActionStates:',e);}
+}
+
+function _updateActionsNavBadge(){
+  const remaining=(window._todaysActionsData||[]).filter(a=>!a.status||a.status==='pending').length;
+  const nb=document.getElementById('nb-actions');
+  if(nb){nb.textContent=remaining;nb.style.display=remaining?'inline-flex':'none';}
+}
+
+async function markActionDone(i){
+  const a=(window._todaysActionsData||[])[i];if(!a)return;
+  a.status='done';
+  const el=document.getElementById(`action-${i}`);
+  if(el)el.classList.add('action-done');
+  const ft=document.getElementById(`action-ft-${i}`);
+  if(ft){
+    // replace action buttons with done badge, keep copy/ask-ai
+    const btns=ft.querySelectorAll('.btn-xs:not(.btn-outline):not(.btn-gold)');
+    btns.forEach(b=>b.closest('div[style*="margin-left:auto"]')?.remove());
+    ft.insertAdjacentHTML('beforeend',`<span style="margin-left:auto;font-size:11px;color:var(--green);font-weight:600"><i class="ti ti-check-circle"></i> Done — recorded</span>`);
+  }
+  _updateActionsNavBadge();
+  showToast('Marked done — learning trail updated');
+  await Promise.all([_persistActionStates(), _recordMichaelAction(a.rank||i+1,'acted')]);
+}
+
+async function dismissActionItem(i){
+  const a=(window._todaysActionsData||[])[i];if(!a)return;
+  a.status='dismissed';
+  const el=document.getElementById(`action-${i}`);
+  if(el)el.style.opacity='0.4';
+  const ft=document.getElementById(`action-ft-${i}`);
+  if(ft){
+    const wrap=ft.querySelector('div[style*="margin-left:auto"]');
+    if(wrap)wrap.outerHTML=`<span style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:600"><i class="ti ti-x"></i> Not relevant</span>`;
+    else ft.insertAdjacentHTML('beforeend',`<span style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:600"><i class="ti ti-x"></i> Not relevant</span>`);
+  }
+  _updateActionsNavBadge();
+  showToast('Dismissed — noted for calibration');
+  await Promise.all([_persistActionStates(), _recordMichaelAction(a.rank||i+1,'dismissed')]);
+}
+
+async function snoozeActionItem(i){
+  const a=(window._todaysActionsData||[])[i];if(!a)return;
+  a.status='snoozed';
+  const ft=document.getElementById(`action-ft-${i}`);
+  if(ft){
+    const snoozeBtn=ft.querySelector('button[title="Push to tomorrow"]');
+    if(snoozeBtn)snoozeBtn.remove();
+    const existing=ft.querySelector('div[style*="margin-left:auto"]');
+    const badge=`<span style="font-size:11px;color:var(--amber);font-weight:600"><i class="ti ti-clock-pause"></i> Snoozed</span>`;
+    if(existing)existing.insertAdjacentHTML('afterbegin',badge);
+    else ft.insertAdjacentHTML('beforeend',`<div style="margin-left:auto;display:flex;gap:4px;align-items:center">${badge}</div>`);
+  }
+  showToast('Snoozed — will reappear tomorrow');
+  await Promise.all([_persistActionStates(), _recordMichaelAction(a.rank||i+1,'snoozed')]);
 }
 
 function showToast(msg){
   let t=document.getElementById('vsg-toast');
   if(!t){t=document.createElement('div');t.id='vsg-toast';t.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 18px;border-radius:var(--rs);font-size:13px;font-weight:600;z-index:9999;box-shadow:var(--sh-lg);transition:opacity .3s';document.body.appendChild(t);}
-  t.textContent=msg;t.style.opacity='1';setTimeout(()=>{t.style.opacity='0';},2500);
+  t.textContent=msg;t.style.opacity='1';
+  setTimeout(()=>{t.style.opacity='0';},2500);
 }
 
 /* ═══════════════════════════════════════════════════
    LINKEDIN LEADS
 ════════════════════════════════════════════════════ */
 async function loadLeads(){
-  const db=_db();const todayStr=new Date().toISOString().slice(0,10);const nextMonthStr=new Date(Date.now()+31*864e5).toISOString().slice(0,10);
-  const [leadsRes,outreachRes,engagedRes]=await Promise.all([db?db.from('linkedin_leads').select('*').order('follow_up_date',{ascending:true}):Promise.resolve({data:[]}),db?db.from('linkedin_outreach').select('status'):Promise.resolve({data:[]}),db?db.from('contacts').select('name,title,company,linkedin,stage,notes,last_contact,follow_up_date').in('stage',['engaged','meeting']).not('linkedin','is',null):Promise.resolve({data:[]})]);
-  const leadsRaw=leadsRes.data||[];const outreach=outreachRes.data||[];const engagedContacts=engagedRes.data||[];
+  const db=_db();
+  const todayStr=new Date().toISOString().slice(0,10);
+  const nextMonthStr=new Date(Date.now()+31*864e5).toISOString().slice(0,10);
+
+  const [leadsRes,outreachRes,engagedRes]=await Promise.all([
+    db?db.from('linkedin_leads').select('*').order('follow_up_date',{ascending:true}):Promise.resolve({data:[]}),
+    db?db.from('linkedin_outreach').select('status'):Promise.resolve({data:[]}),
+    db?db.from('contacts').select('name,title,company,linkedin,stage,notes,last_contact,follow_up_date').in('stage',['engaged','meeting']).not('linkedin','is',null):Promise.resolve({data:[]})
+  ]);
+  const leadsRaw=leadsRes.data||[];
+  const outreach=outreachRes.data||[];
+  const engagedContacts=engagedRes.data||[];
+
   const seenUrls=new Set(leadsRaw.map(l=>(l.linkedin_url||'').split('?')[0].toLowerCase()));
-  const engagedAsLeads=engagedContacts.filter(c=>{const url=(c.linkedin||'').split('?')[0].toLowerCase();return url&&!seenUrls.has(url);}).map(c=>({full_name:c.name,title:c.title,company:c.company,linkedin_url:c.linkedin,status:c.stage==='meeting'?'meeting':'engaged',notes:c.notes,follow_up_date:c.follow_up_date||null,_source:'contacts'}));
-  const leads=[...leadsRaw,...engagedAsLeads].sort((a,b)=>{if(!a.follow_up_date&&!b.follow_up_date)return 0;if(!a.follow_up_date)return 1;if(!b.follow_up_date)return -1;return a.follow_up_date.localeCompare(b.follow_up_date);});
-  const replied=leadsRaw.filter(l=>l.status==='replied').length;const outPending=outreach.filter(o=>o.status==='pending').length;const outConnected=outreach.filter(o=>o.status==='connected').length;const outReplied=outreach.filter(o=>o.status==='replied').length;
-  document.getElementById('leads-metrics').innerHTML=`<div class="m gold"><div class="m-icon" style="background:var(--gold-bg);color:#92680a"><i class="ti ti-user-star" style="font-size:20px"></i></div><div class="m-val">${leads.length}</div><div class="m-lbl">Warm leads</div><div class="m-sub">${replied} replied · ${engagedAsLeads.length} engaged</div></div><div class="m navy"><div class="m-icon" style="background:rgba(13,27,62,.08);color:var(--navy)"><i class="ti ti-send" style="font-size:20px"></i></div><div class="m-val">${outPending}</div><div class="m-lbl">Outreach pending</div><div class="m-sub">${outConnected} connected · ${outReplied} replied</div></div><div class="m amber"><div class="m-icon" style="background:var(--amber-bg);color:var(--amber)"><i class="ti ti-calendar-event" style="font-size:20px"></i></div><div class="m-val">${leads.filter(l=>l.follow_up_date).length}</div><div class="m-lbl">With follow-up date</div><div class="m-sub">Set for nurturing</div></div>`;
-  const warmStatuses=new Set(['pending','replied','engaged','meeting']);const overdue=leads.filter(l=>l.follow_up_date&&l.follow_up_date<todayStr&&warmStatuses.has(l.status));const soon=leads.filter(l=>l.follow_up_date&&l.follow_up_date>=todayStr&&l.follow_up_date<=nextMonthStr&&warmStatuses.has(l.status));
-  const urgentCount=overdue.length+soon.length;const nb=document.getElementById('nb-leads');if(urgentCount>0){nb.textContent=urgentCount;nb.style.display='';}else nb.style.display='none';
-  const renderLeadCard=(l)=>{const fu=l.follow_up_date;const isOverdue=fu&&fu<todayStr&&warmStatuses.has(l.status);const isSoon=fu&&fu>=todayStr&&fu<=nextMonthStr&&warmStatuses.has(l.status);const fuLabel=fu?(isOverdue?`<span class="b b-overdue">Overdue — ${fu}</span>`:isSoon?`<span class="b b-today">Follow up by ${fu}</span>`:`<span class="b b-cold">Follow up ${fu}</span>`):'';const borderClass=isOverdue?'border-left:4px solid var(--red)':isSoon?'border-left:4px solid var(--amber)':'';const statusBadge=l.status==='contacted'?'<span class="b b-active">Contacted</span>':l.status==='converted'?'<span class="b b-placed">Converted</span>':l.status==='replied'?'<span class="b b-active" style="background:rgba(16,185,129,.12);color:#065f46">Replied</span>':l.status==='meeting'?'<span class="b b-active" style="background:rgba(99,102,241,.12);color:#3730a3">Meeting booked</span>':l.status==='engaged'?'<span class="b b-active" style="background:rgba(245,158,11,.12);color:#92400e">Engaged</span>':'<span class="b b-cold">Pending</span>';const sourceTag=l._source==='contacts'?'<span class="b b-cold" style="font-size:9px;opacity:.6">All Contacts</span>':'<span class="b b-cold" style="font-size:9px;opacity:.6">LinkedIn reply</span>';const actionBtns=l.id?`<button class="btn btn-sm btn-green" onclick="markLeadContacted('${l.id}')"><i class="ti ti-check"></i> Mark contacted</button><button class="btn btn-sm btn-ghost" onclick="markLeadConverted('${l.id}')"><i class="ti ti-star"></i> Converted</button>`:`<span style="font-size:11px;color:var(--muted)">Edit in All Contacts</span>`;return `<div class="fu ${isOverdue?'overdue':isSoon?'today':''}" style="${borderClass}"><div class="fu-top"><div class="fu-meta"><div class="av" style="width:40px;height:40px;background:var(--navy);color:#fff;font-size:14px;flex-shrink:0">${(l.full_name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div><div style="flex:1;min-width:0"><div class="fu-name">${esc(l.full_name||'—')}</div><div class="fu-detail">${esc((l.title||'').split('|')[0].trim())}${l.company?' at '+esc(l.company):''}${l.location?' · '+esc(l.location):''}</div><div class="fu-badges">${fuLabel} ${statusBadge} ${sourceTag}</div></div></div></div>${l.notes?`<div class="fu-note">${esc(l.notes.substring(0,200))}</div>`:''}<div class="fu-actions"><a href="${l.linkedin_url||'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(l.full_name||'')}" target="_blank" class="btn btn-sm" style="background:#0077b5;color:#fff;border:none"><i class="ti ti-brand-linkedin"></i> View on LinkedIn</a>${actionBtns}</div></div>`;};
-  if(overdue.length>0){document.getElementById('leads-overdue-section').style.display='';document.getElementById('leads-overdue').innerHTML=overdue.map(renderLeadCard).join('');}else document.getElementById('leads-overdue-section').style.display='none';
-  if(soon.length>0){document.getElementById('leads-soon-section').style.display='';document.getElementById('leads-soon').innerHTML=soon.map(renderLeadCard).join('');}else document.getElementById('leads-soon-section').style.display='none';
-  document.getElementById('leads-all').innerHTML=leads.length>0?leads.map(renderLeadCard).join(''):'<div class="empty"><i class="ti ti-user-star"></i><p>No leads yet.</p></div>';
+  const engagedAsLeads=engagedContacts.filter(c=>{
+    const url=(c.linkedin||'').split('?')[0].toLowerCase();
+    return url&&!seenUrls.has(url);
+  }).map(c=>({
+    full_name:c.name,title:c.title,company:c.company,
+    linkedin_url:c.linkedin,
+    status:c.stage==='meeting'?'meeting':'engaged',
+    notes:c.notes,
+    follow_up_date:c.follow_up_date||null,
+    _source:'contacts'
+  }));
+
+  const leads=[...leadsRaw,...engagedAsLeads].sort((a,b)=>{
+    if(!a.follow_up_date&&!b.follow_up_date)return 0;
+    if(!a.follow_up_date)return 1;if(!b.follow_up_date)return -1;
+    return a.follow_up_date.localeCompare(b.follow_up_date);
+  });
+
+  const replied=leadsRaw.filter(l=>l.status==='replied').length;
+  const outPending=outreach.filter(o=>o.status==='pending').length;
+  const outConnected=outreach.filter(o=>o.status==='connected').length;
+  const outReplied=outreach.filter(o=>o.status==='replied').length;
+
+  document.getElementById('leads-metrics').innerHTML=`
+    <div class="m gold"><div class="m-icon" style="background:var(--gold-bg);color:#92680a"><i class="ti ti-user-star" style="font-size:20px"></i></div>
+      <div class="m-val">${leads.length}</div><div class="m-lbl">Warm leads</div><div class="m-sub">${replied} replied · ${engagedAsLeads.length} engaged</div></div>
+    <div class="m navy"><div class="m-icon" style="background:rgba(13,27,62,.08);color:var(--navy)"><i class="ti ti-send" style="font-size:20px"></i></div>
+      <div class="m-val">${outPending}</div><div class="m-lbl">Outreach pending</div><div class="m-sub">${outConnected} connected · ${outReplied} replied</div></div>
+    <div class="m amber"><div class="m-icon" style="background:var(--amber-bg);color:var(--amber)"><i class="ti ti-calendar-event" style="font-size:20px"></i></div>
+      <div class="m-val">${leads.filter(l=>l.follow_up_date).length}</div><div class="m-lbl">With follow-up date</div><div class="m-sub">Set for nurturing</div></div>`;
+
+  const warmStatuses=new Set(['pending','replied','engaged','meeting']);
+  const overdue=leads.filter(l=>l.follow_up_date&&l.follow_up_date<todayStr&&warmStatuses.has(l.status));
+  const soon=leads.filter(l=>l.follow_up_date&&l.follow_up_date>=todayStr&&l.follow_up_date<=nextMonthStr&&warmStatuses.has(l.status));
+
+  const urgentCount=overdue.length+soon.length;
+  const nb=document.getElementById('nb-leads');
+  if(urgentCount>0){nb.textContent=urgentCount;nb.style.display='';}else nb.style.display='none';
+
+  const renderLeadCard=(l)=>{
+    const fu=l.follow_up_date;
+    const isOverdue=fu&&fu<todayStr&&warmStatuses.has(l.status);
+    const isSoon=fu&&fu>=todayStr&&fu<=nextMonthStr&&warmStatuses.has(l.status);
+    const fuLabel=fu?(isOverdue?`<span class="b b-overdue">Overdue — ${fu}</span>`:isSoon?`<span class="b b-today">Follow up by ${fu}</span>`:`<span class="b b-cold">Follow up ${fu}</span>`):'';
+    const borderClass=isOverdue?'border-left:4px solid var(--red)':isSoon?'border-left:4px solid var(--amber)':'';
+    const statusBadge=l.status==='contacted'?'<span class="b b-active">Contacted</span>'
+      :l.status==='converted'?'<span class="b b-placed">Converted</span>'
+      :l.status==='replied'?'<span class="b b-active" style="background:rgba(16,185,129,.12);color:#065f46">Replied</span>'
+      :l.status==='meeting'?'<span class="b b-active" style="background:rgba(99,102,241,.12);color:#3730a3">Meeting booked</span>'
+      :l.status==='engaged'?'<span class="b b-active" style="background:rgba(245,158,11,.12);color:#92400e">Engaged</span>'
+      :'<span class="b b-cold">Pending</span>';
+    const sourceTag=l._source==='contacts'?'<span class="b b-cold" style="font-size:9px;opacity:.6">All Contacts</span>':'<span class="b b-cold" style="font-size:9px;opacity:.6">LinkedIn reply</span>';
+    const actionBtns=l.id
+      ?`<button class="btn btn-sm btn-green" onclick="markLeadContacted('${l.id}')"><i class="ti ti-check"></i> Mark contacted</button>
+         <button class="btn btn-sm btn-ghost" onclick="markLeadConverted('${l.id}')"><i class="ti ti-star"></i> Converted</button>`
+      :`<span style="font-size:11px;color:var(--muted)">Edit in All Contacts</span>`;
+    return `<div class="fu ${isOverdue?'overdue':isSoon?'today':''}" style="${borderClass}">
+      <div class="fu-top">
+        <div class="fu-meta">
+          <div class="av" style="width:40px;height:40px;background:var(--navy);color:#fff;font-size:14px;flex-shrink:0">${(l.full_name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+          <div style="flex:1;min-width:0">
+            <div class="fu-name">${esc(l.full_name||'—')}</div>
+            <div class="fu-detail">${esc((l.title||'').split('|')[0].trim())}${l.company?' at '+esc(l.company):''}${l.location?' · '+esc(l.location):''}</div>
+            <div class="fu-badges">${fuLabel} ${statusBadge} ${sourceTag}</div>
+          </div>
+        </div>
+      </div>
+      ${l.notes?`<div class="fu-note">${esc(l.notes.substring(0,200))}</div>`:''}
+      <div class="fu-actions">
+        <a href="${l.linkedin_url||'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(l.full_name||'')}" target="_blank" class="btn btn-sm" style="background:#0077b5;color:#fff;border:none"><i class="ti ti-brand-linkedin"></i> View on LinkedIn</a>
+        ${actionBtns}
+      </div>
+    </div>`;
+  };
+
+  if(overdue.length>0){document.getElementById('leads-overdue-section').style.display='';document.getElementById('leads-overdue').innerHTML=overdue.map(renderLeadCard).join('');}
+  else document.getElementById('leads-overdue-section').style.display='none';
+  if(soon.length>0){document.getElementById('leads-soon-section').style.display='';document.getElementById('leads-soon').innerHTML=soon.map(renderLeadCard).join('');}
+  else document.getElementById('leads-soon-section').style.display='none';
+  document.getElementById('leads-all').innerHTML=leads.length>0
+    ?leads.map(renderLeadCard).join('')
+    :'<div class="empty"><i class="ti ti-user-star"></i><p>No leads yet. Replied LinkedIn contacts and engaged prospects will appear here automatically.</p></div>';
 }
-window.markLeadContacted=async function(id){const db=_db();if(!db)return;await db.from('linkedin_leads').update({status:'contacted'}).eq('id',id);loadLeads();};
-window.markLeadConverted=async function(id){const db=_db();if(!db)return;await db.from('linkedin_leads').update({status:'converted'}).eq('id',id);loadLeads();};
+
+window.markLeadContacted=async function(id){
+  const db=_db();if(!db)return;
+  await db.from('linkedin_leads').update({status:'contacted'}).eq('id',id);
+  loadLeads();
+};
+window.markLeadConverted=async function(id){
+  const db=_db();if(!db)return;
+  await db.from('linkedin_leads').update({status:'converted'}).eq('id',id);
+  loadLeads();
+};
 
 /* ═══════════════════════════════════════════════════
    HIRING SIGNALS
 ════════════════════════════════════════════════════ */
 let hiringSignals=JSON.parse(localStorage.getItem('vsg_signals')||'[]');
 function saveSignals(){localStorage.setItem('vsg_signals',JSON.stringify(hiringSignals));}
+
 async function loadSignals(){
-  const list=document.getElementById('signals-list');const today=new Date();const db=_db();
-  let sbSignals=[];if(db){try{const{data}=await db.from('company_signals').select('*').in('signal_type',['hiring','funding','expansion','news']).eq('actioned',false).order('created_at',{ascending:false}).limit(50);sbSignals=data||[];}catch(e){}}
-  const allSignals=[...sbSignals.map(s=>({_id:s.id,_source:'supabase',company:s.company_name,title:s.title,summary:s.summary,signal_type:s.signal_type,importance:s.importance,source_url:s.source_url,date:s.created_at})),...hiringSignals.map((s,i)=>({_idx:i,_source:'local',company:s.company,title:s.company+' — '+(s.roles_posted||'?')+' senior roles posted',summary:(s.connection?'Contact: '+s.connection+'. ':'')+(s.notes||''),signal_type:'hiring',importance:'medium',date:s.date}))];
-  let hot=0,warm=0;allSignals.forEach(s=>{const d=Math.floor((today-new Date(s.date))/(1000*60*60*24));if(d<=30)hot++;else if(d<=60)warm++;});
-  document.getElementById('signals-hot-count').textContent=hot;document.getElementById('signals-warm-count').textContent=warm;
-  if(!allSignals.length){list.innerHTML='<div class="empty"><i class="ti ti-trending-up"></i><p>No hiring signals yet.</p></div>';return;}
-  const typeIcon={hiring:'ti-trending-up',funding:'ti-coin',expansion:'ti-world',news:'ti-news',leadership_change:'ti-user-star'};const typeColor={hiring:'var(--red)',funding:'var(--green)',expansion:'#2563eb',news:'var(--muted)',leadership_change:'var(--gold)'};
-  list.innerHTML=allSignals.map((s,i)=>{const days=Math.floor((today-new Date(s.date))/(1000*60*60*24));const heat=days<=30?'hot':days<=60?'warm':'cool';const heatLabel=s.importance==='high'?'🔥 High priority':'🟡 Medium';const icon=typeIcon[s.signal_type]||'ti-trending-up';const color=typeColor[s.signal_type]||'var(--muted)';const contactMatch=(s.summary||'').match(/CONTACT:\s*([^|.]+)/i);const contactLine=contactMatch?`<div style="margin-top:6px;padding:6px 10px;background:var(--gold-bg);border-radius:6px;font-size:12px"><i class="ti ti-user" style="color:var(--gold);margin-right:4px"></i><strong>${contactMatch[1].trim()}</strong></div>`:'';const summaryClean=(s.summary||'').replace(/CONTACT:[^|]*/i,'').replace(/\|.*$/,'').trim();const actionButtons=s._source==='supabase'?`<button class="btn btn-xs btn-outline" onclick="markSignalActioned('${s._id}')"><i class="ti ti-check"></i> Mark done</button>`:`<button class="btn btn-xs btn-ghost" onclick="deleteSignal(${s._idx})"><i class="ti ti-trash"></i></button>`;return `<div class="signal-card ${heat}" style="border-left:3px solid ${color}"><div class="signal-icon" style="background:${heat==='hot'?'var(--red-bg)':heat==='warm'?'var(--amber-bg)':'#eff6ff'};color:${color}"><i class="ti ${icon}"></i></div><div class="signal-body"><div class="signal-title">${esc(s.company||'')} <span class="b b-${s.importance==='high'?'high':'cold'}" style="font-size:10px">${s.signal_type}</span></div><div style="font-size:13px;font-weight:600;color:var(--navy);margin:4px 0">${esc(s.title||'')}</div><div class="signal-sub">${esc(summaryClean.substring(0,200))}</div>${contactLine}<div class="signal-ft" style="margin-top:8px"><span class="b b-${heat==='hot'?'high':'followup'}">${heatLabel} · ${days}d ago</span>${s.source_url?`<a href="${esc(s.source_url)}" target="_blank" class="btn btn-xs btn-ghost"><i class="ti ti-external-link"></i> Source</a>`:''}<button class="btn btn-xs btn-outline" onclick="openChatFromSignal(${JSON.stringify({company:s.company,contact:contactMatch?contactMatch[1].trim():'',title:s.title}).replace(/"/g,'&quot;')})"><i class="ti ti-message"></i> Draft outreach</button>${actionButtons}</div></div></div>`;}).join('');
+  const list=document.getElementById('signals-list');
+  const today=new Date();
+  const db=_db();
+
+  let sbSignals=[];
+  if(db){
+    try{
+      const{data}=await db.from('company_signals')
+        .select('*')
+        .in('signal_type',['hiring','funding','expansion','news'])
+        .eq('actioned',false)
+        .order('created_at',{ascending:false})
+        .limit(50);
+      sbSignals=data||[];
+    }catch(e){console.warn('signals load:',e);}
+  }
+
+  const sbMapped=sbSignals.map(s=>({
+    _id:s.id,_source:'supabase',company:s.company_name,title:s.title,summary:s.summary,
+    signal_type:s.signal_type,importance:s.importance,source_url:s.source_url,date:s.created_at,actioned:s.actioned
+  }));
+
+  const manualMapped=hiringSignals.map((s,i)=>({
+    _idx:i,_source:'local',company:s.company,
+    title:s.company+' — '+(s.roles_posted||'?')+' senior roles posted',
+    summary:(s.connection?'Contact: '+s.connection+'. ')+(s.notes||''),
+    signal_type:'hiring',importance:'medium',date:s.date,actioned:false
+  }));
+
+  const allSignals=[...sbMapped,...manualMapped];
+
+  let hot=0,warm=0;
+  allSignals.forEach(s=>{
+    const days=Math.floor((today-new Date(s.date))/(1000*60*60*24));
+    if(days<=30)hot++;else if(days<=60)warm++;
+  });
+  document.getElementById('signals-hot-count').textContent=hot;
+  document.getElementById('signals-warm-count').textContent=warm;
+
+  if(!allSignals.length){
+    list.innerHTML='<div class="empty"><i class="ti ti-trending-up"></i><p>No hiring signals yet. The signal monitor runs at 8am, 12pm and 4pm and populates this automatically.</p></div>';
+    return;
+  }
+
+  const typeIcon={hiring:'ti-trending-up',funding:'ti-coin',expansion:'ti-world',news:'ti-news',leadership_change:'ti-user-star'};
+  const typeColor={hiring:'var(--red)',funding:'var(--green)',expansion:'#2563eb',news:'var(--muted)',leadership_change:'var(--gold)'};
+
+  list.innerHTML=allSignals.map((s,i)=>{
+    const days=Math.floor((today-new Date(s.date))/(1000*60*60*24));
+    const heat=days<=30?'hot':days<=60?'warm':'cool';
+    const heatLabel=s.importance==='high'?'🔥 High priority':'🟡 Medium';
+    const icon=typeIcon[s.signal_type]||'ti-trending-up';
+    const color=typeColor[s.signal_type]||'var(--muted)';
+
+    const contactMatch=(s.summary||'').match(/CONTACT:\s*([^|.]+)/i);
+    const contactLine=contactMatch?`<div style="margin-top:6px;padding:6px 10px;background:var(--gold-bg);border-radius:6px;font-size:12px"><i class="ti ti-user" style="color:var(--gold);margin-right:4px"></i><strong>${contactMatch[1].trim()}</strong></div>`:'';
+    const summaryClean=(s.summary||'').replace(/CONTACT:[^|]*/i,'').replace(/\|.*$/,'').trim();
+
+    const actionButtons=s._source==='supabase'
+      ? `<button class="btn btn-xs btn-outline" onclick="markSignalActioned('${s._id}')"><i class="ti ti-check"></i> Mark done</button>`
+      : `<button class="btn btn-xs btn-ghost" onclick="deleteSignal(${s._idx})"><i class="ti ti-trash"></i></button>`;
+
+    return `<div class="signal-card ${heat}" style="border-left:3px solid ${color}">
+      <div class="signal-icon" style="background:${heat==='hot'?'var(--red-bg)':heat==='warm'?'var(--amber-bg)':'#eff6ff'};color:${color}"><i class="ti ${icon}"></i></div>
+      <div class="signal-body">
+        <div class="signal-title">${esc(s.company||'')} <span class="b b-${s.importance==='high'?'high':'cold'}" style="font-size:10px">${s.signal_type}</span></div>
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin:4px 0">${esc(s.title||'')}</div>
+        <div class="signal-sub">${esc(summaryClean.substring(0,200))}${summaryClean.length>200?'...':''}</div>
+        ${contactLine}
+        <div class="signal-ft" style="margin-top:8px">
+          <span class="b b-${heat==='hot'?'high':'followup'}">${heatLabel} · ${days}d ago</span>
+          ${s.source_url?`<a href="${esc(s.source_url)}" target="_blank" class="btn btn-xs btn-ghost"><i class="ti ti-external-link"></i> Source</a>`:''}
+          <button class="btn btn-xs btn-outline" onclick="openChatFromSignal(${JSON.stringify({company:s.company,contact:contactMatch?contactMatch[1].trim():'',title:s.title}).replace(/"/g,'&quot;')})"><i class="ti ti-message"></i> Draft outreach</button>
+          ${actionButtons}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
-async function markSignalActioned(id){const db=_db();if(!db)return;await db.from('company_signals').update({actioned:true}).eq('id',id);showToast('Signal marked done');loadSignals();}
-function openChatFromSignal(s){document.getElementById('chat-contact-name').textContent=s.contact||s.company;document.getElementById('chat-company-name').textContent=s.company;document.getElementById('chat-messages').innerHTML='';document.getElementById('chatPanel').classList.add('open');document.getElementById('chatOverlay').classList.add('open');}
+
+async function markSignalActioned(id){
+  const db=_db();
+  if(!db)return;
+  await db.from('company_signals').update({actioned:true}).eq('id',id);
+  showToast('Signal marked done');
+  loadSignals();
+}
+
+function openChatFromSignal(s){
+  document.getElementById('chat-contact-name').textContent=s.contact||s.company;
+  document.getElementById('chat-company-name').textContent=s.company;
+  document.getElementById('chat-messages').innerHTML='';
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatOverlay').classList.add('open');
+}
+
 function openAddSignal(){document.getElementById('sig-date').value=new Date().toISOString().split('T')[0];document.getElementById('addSignalOv').classList.add('open');}
-function saveSignal(){const company=document.getElementById('sig-company').value.trim();if(!company){alert('Company name required');return;}hiringSignals.push({id:Date.now(),company,roles_posted:parseInt(document.getElementById('sig-roles').value)||0,date:document.getElementById('sig-date').value||new Date().toISOString().split('T')[0],connection:document.getElementById('sig-connection').value.trim(),notes:document.getElementById('sig-notes').value.trim()});saveSignals();document.getElementById('addSignalOv').classList.remove('open');['sig-company','sig-roles','sig-connection','sig-notes'].forEach(id=>document.getElementById(id).value='');loadSignals();showToast('Signal saved');}
+function saveSignal(){
+  const company=document.getElementById('sig-company').value.trim();
+  if(!company){alert('Company name required');return;}
+  hiringSignals.push({id:Date.now(),company,roles_posted:parseInt(document.getElementById('sig-roles').value)||0,date:document.getElementById('sig-date').value||new Date().toISOString().split('T')[0],connection:document.getElementById('sig-connection').value.trim(),notes:document.getElementById('sig-notes').value.trim()});
+  saveSignals();document.getElementById('addSignalOv').classList.remove('open');
+  ['sig-company','sig-roles','sig-connection','sig-notes'].forEach(id=>document.getElementById(id).value='');
+  loadSignals();showToast('Signal saved');
+}
 function deleteSignal(i){if(confirm('Delete this signal?')){hiringSignals.splice(i,1);saveSignals();loadSignals();}}
+function reachOutFromSignal(i){
+  const s=hiringSignals[i];
+  document.getElementById('chat-contact-name').textContent=s.connection||s.company;
+  document.getElementById('chat-company-name').textContent=s.company;
+  document.getElementById('chat-messages').innerHTML='';
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatOverlay').classList.add('open');
+}
 
 /* ═══════════════════════════════════════════════════
    APPOINTMENT TRIGGERS
@@ -5173,33 +5147,144 @@ function saveTriggers(){localStorage.setItem('vsg_triggers',JSON.stringify(appoi
 let _triggerFilter='all';
 
 async function loadTriggers(){
-  const db=_db();if(db){try{const{data}=await db.from('company_signals').select('*').eq('signal_type','leadership_change').eq('actioned',false).order('created_at',{ascending:false}).limit(50);_sbTriggers=(data||[]).map(s=>{const nameMatch=s.title.match(/^([^:—–]+?)\s+(?:joins?|appointed|named|promoted|hired)/i);const name=nameMatch?nameMatch[1].trim():s.company_name;const contactMatch=(s.summary||'').match(/CONTACT:\s*([^,|]+),\s*([^|—]+)/i);return{_id:s.id,_source:'supabase',name:contactMatch?contactMatch[1].trim():name,new_role:contactMatch?contactMatch[2].trim():'',new_co:s.company_name,title:s.title,summary:s.summary,source_url:s.source_url,date:s.created_at,network:'unknown',notes:''};});}catch(e){}}
+  const db=_db();
+  if(db){
+    try{
+      const{data}=await db.from('company_signals')
+        .select('*')
+        .eq('signal_type','leadership_change')
+        .eq('actioned',false)
+        .order('created_at',{ascending:false})
+        .limit(50);
+      _sbTriggers=(data||[]).map(s=>{
+        const nameMatch=s.title.match(/^([^:—–]+?)\s+(?:joins?|appointed|named|promoted|hired)/i);
+        const name=nameMatch?nameMatch[1].trim():s.company_name;
+        const contactMatch=(s.summary||'').match(/CONTACT:\s*([^,|]+),\s*([^|—]+)/i);
+        return {
+          _id:s.id,_source:'supabase',
+          name:contactMatch?contactMatch[1].trim():name,
+          new_role:contactMatch?contactMatch[2].trim():'',
+          new_co:s.company_name,title:s.title,summary:s.summary,
+          source_url:s.source_url,date:s.created_at,network:'unknown',notes:''
+        };
+      });
+    }catch(e){console.warn('triggers load:',e);}
+  }
   filterTriggers(_triggerFilter,null);
-  const allTriggers=[..._sbTriggers,...appointmentTriggers];const nb=document.getElementById('nb-triggers');const hot=allTriggers.filter(t=>{const d=Math.floor((new Date()-new Date(t.date))/(864e5));return d<=60;}).length;if(hot>0){nb.style.display='';nb.textContent=hot;}else nb.style.display='none';
+  const allTriggers=[..._sbTriggers,...appointmentTriggers];
+  const nb=document.getElementById('nb-triggers');
+  const hot=allTriggers.filter(t=>{const d=Math.floor((new Date()-new Date(t.date))/(864e5));return d<=60;}).length;
+  if(hot>0){nb.style.display='';nb.textContent=hot;}else nb.style.display='none';
 }
+
 function filterTriggers(f,btn){
-  _triggerFilter=f;document.querySelectorAll('#p-triggers .intel-filter').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');
-  const list=document.getElementById('triggers-list');const today=new Date();const allTriggers=[..._sbTriggers,...appointmentTriggers];let filtered=[...allTriggers].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  if(f==='hot')filtered=filtered.filter(t=>Math.floor((today-new Date(t.date))/864e5)<=60);else if(f==='warm')filtered=filtered.filter(t=>{const d=Math.floor((today-new Date(t.date))/864e5);return d>60&&d<=90;});else if(f==='mine')filtered=filtered.filter(t=>t.network==='yes');
-  if(!filtered.length){list.innerHTML='<div class="empty"><i class="ti ti-user-star"></i><p>No triggers match this filter.</p></div>';return;}
-  list.innerHTML=filtered.map((t)=>{const localIdx=appointmentTriggers.indexOf(t);const days=Math.floor((today-new Date(t.date))/864e5);const heat=days<=60?'hot':'warm';const windowLabel=days<=60?`${60-days}d left in hot window`:`In warm window`;const contactMatch=t._source==='supabase'&&t.summary?t.summary.match(/CONTACT:\s*([^|.]+)/i):null;const contactLine=contactMatch?`<div style="margin-top:6px;padding:5px 10px;background:var(--gold-bg);border-radius:5px;font-size:12px"><i class="ti ti-user" style="color:var(--gold);margin-right:4px"></i>${esc(contactMatch[1].trim())}</div>`:'';const trigCtx=JSON.stringify({name:t.name,new_role:t.new_role||'',new_co:t.new_co||'',title:t.title||'',summary:(t.summary||'').replace(/CONTACT:[^|]*/i,'').trim().substring(0,300),source_url:t.source_url||'',days}).replace(/"/g,'&quot;');const actionBtns=t._source==='supabase'?`<button class="btn btn-xs btn-gold" onclick="openChatFromTrigger(JSON.parse(this.dataset.ctx))" data-ctx="${trigCtx}"><i class="ti ti-message-circle"></i> Ask Annie</button><button class="btn btn-xs btn-ghost" onclick="markTriggerActioned('${t._id}')"><i class="ti ti-check"></i> Done</button>`:`<button class="btn btn-xs btn-gold" onclick="openChatFromTrigger(JSON.parse(this.dataset.ctx))" data-ctx="${trigCtx}"><i class="ti ti-message-circle"></i> Ask Annie</button><button class="btn btn-xs btn-ghost" onclick="deleteTrigger(${localIdx})"><i class="ti ti-trash"></i></button>`;return `<div class="signal-card ${heat}"><div class="signal-icon" style="background:${heat==='hot'?'var(--red-bg)':'var(--amber-bg)'};color:${heat==='hot'?'var(--red)':'var(--amber)'}"><i class="ti ti-user-check"></i></div><div class="signal-body"><div class="signal-title">${esc(t.name)}</div>${t._source==='supabase'?`<div style="font-size:12px;color:var(--navy);margin:3px 0">${esc((t.title||'').substring(0,120))}</div>`:`<div class="signal-sub">Day ${days} in role${t.notes?'. '+esc(t.notes):''}</div>`}${contactLine}<div class="signal-ft" style="margin-top:8px"><span class="b ${heat==='hot'?'b-high':'b-followup'}">${windowLabel} · ${days}d ago</span>${actionBtns}</div></div></div>`;}).join('');
+  _triggerFilter=f;
+  document.querySelectorAll('#p-triggers .intel-filter').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  const list=document.getElementById('triggers-list');
+  const today=new Date();
+  const allTriggers=[..._sbTriggers,...appointmentTriggers];
+  let filtered=[...allTriggers].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(f==='hot')filtered=filtered.filter(t=>Math.floor((today-new Date(t.date))/864e5)<=60);
+  else if(f==='warm')filtered=filtered.filter(t=>{const d=Math.floor((today-new Date(t.date))/864e5);return d>60&&d<=90;});
+  else if(f==='mine')filtered=filtered.filter(t=>t.network==='yes');
+  if(!filtered.length){list.innerHTML='<div class="empty"><i class="ti ti-user-star"></i><p>No triggers match this filter. The signal monitor surfaces these automatically 3x daily, or add manually above.</p></div>';return;}
+  list.innerHTML=filtered.map((t)=>{
+    const localIdx=appointmentTriggers.indexOf(t);
+    const days=Math.floor((today-new Date(t.date))/864e5);
+    const heat=days<=60?'hot':'warm';
+    const windowLabel=days<=60?`${60-days}d left in hot window`:`In warm window`;
+    const contactMatch=t._source==='supabase'&&t.summary?t.summary.match(/CONTACT:\s*([^|.]+)/i):null;
+    const contactLine=contactMatch?`<div style="margin-top:6px;padding:5px 10px;background:var(--gold-bg);border-radius:5px;font-size:12px"><i class="ti ti-user" style="color:var(--gold);margin-right:4px"></i>${esc(contactMatch[1].trim())}</div>`:'';
+    const trigCtx=JSON.stringify({name:t.name,new_role:t.new_role||'',new_co:t.new_co||'',title:t.title||'',summary:(t.summary||'').replace(/CONTACT:[^|]*/i,'').trim().substring(0,300),source_url:t.source_url||'',days}).replace(/"/g,'&quot;');
+    const actionBtns=t._source==='supabase'
+      ? `<button class="btn btn-xs btn-gold" onclick="openChatFromTrigger(JSON.parse(this.dataset.ctx))" data-ctx="${trigCtx}"><i class="ti ti-message-circle"></i> Ask AI</button>
+         <button class="btn btn-xs btn-outline" onclick="draftSbTriggerOutreach('${t._id}')"><i class="ti ti-message"></i> Draft message</button>
+         <button class="btn btn-xs btn-ghost" onclick="markTriggerActioned('${t._id}')"><i class="ti ti-check"></i> Done</button>`
+      : `<button class="btn btn-xs btn-gold" onclick="openChatFromTrigger(JSON.parse(this.dataset.ctx))" data-ctx="${trigCtx}"><i class="ti ti-message-circle"></i> Ask AI</button>
+         <button class="btn btn-xs btn-outline" onclick="draftTriggerOutreach(${localIdx})"><i class="ti ti-message"></i> Draft message</button>
+         <button class="btn btn-xs btn-ghost" onclick="deleteTrigger(${localIdx})"><i class="ti ti-trash"></i></button>`;
+    return `<div class="signal-card ${heat}">
+      <div class="signal-icon" style="background:${heat==='hot'?'var(--red-bg)':'var(--amber-bg)'};color:${heat==='hot'?'var(--red)':'var(--amber)'}"><i class="ti ti-user-check"></i></div>
+      <div class="signal-body">
+        <div class="signal-title">${esc(t.name)} <span style="font-size:12px;font-weight:400;color:var(--muted)">${t.new_role?'— '+esc(t.new_role):''}${t.new_co?', '+esc(t.new_co):''}</span></div>
+        ${t._source==='supabase'?`<div style="font-size:12px;color:var(--navy);margin:3px 0">${esc((t.title||'').substring(0,120))}</div>`:`<div class="signal-sub">${t.prev_role?`Previously: ${esc(t.prev_role)} — `:''}<span style="color:${heat==='hot'?'var(--red)':'var(--amber)'}">Day ${days} in role</span>${t.notes?'. '+esc(t.notes):''}</div>`}
+        ${contactLine}
+        <div class="signal-ft" style="margin-top:8px">
+          <span class="b ${heat==='hot'?'b-high':'b-followup'}">${windowLabel} · ${days}d ago</span>
+          ${t._source!=='supabase'?`<span class="b ${t.network==='yes'?'b-active':t.network==='2nd'?'b-engaged':'b-cold'}">${t.network==='yes'?'In my network':t.network==='2nd'?'2nd degree':'Not connected'}</span>`:''}
+          ${t.source_url?`<a href="${esc(t.source_url)}" target="_blank" class="btn btn-xs btn-ghost"><i class="ti ti-external-link"></i></a>`:''}
+          ${actionBtns}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
-async function markTriggerActioned(id){const db=_db();if(!db)return;await db.from('company_signals').update({actioned:true}).eq('id',id);showToast('Trigger marked done');loadTriggers();}
+
+async function markTriggerActioned(id){
+  const db=_db();if(!db)return;
+  await db.from('company_signals').update({actioned:true}).eq('id',id);
+  showToast('Trigger marked done');
+  loadTriggers();
+}
+
+async function draftSbTriggerOutreach(id){
+  const t=_sbTriggers.find(x=>x._id===id);
+  if(!t)return;
+  document.getElementById('chat-contact-name').textContent=t.name;
+  document.getElementById('chat-company-name').textContent=t.new_co;
+  document.getElementById('chat-messages').innerHTML='';
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatOverlay').classList.add('open');
+}
+
 function openAddTrigger(){document.getElementById('trig-date').value=new Date().toISOString().split('T')[0];document.getElementById('addTriggerOv').classList.add('open');}
-function saveTrigger(){const name=document.getElementById('trig-name').value.trim();if(!name){alert('Name required');return;}appointmentTriggers.push({id:Date.now(),name,new_role:document.getElementById('trig-new-role').value.trim(),new_co:document.getElementById('trig-new-co').value.trim(),prev_role:document.getElementById('trig-prev-role').value.trim(),date:document.getElementById('trig-date').value||new Date().toISOString().split('T')[0],network:document.getElementById('trig-network').value,notes:document.getElementById('trig-notes').value.trim()});saveTriggers();document.getElementById('addTriggerOv').classList.remove('open');loadTriggers();showToast('Trigger saved');}
+function saveTrigger(){
+  const name=document.getElementById('trig-name').value.trim();
+  if(!name){alert('Name required');return;}
+  appointmentTriggers.push({id:Date.now(),name,new_role:document.getElementById('trig-new-role').value.trim(),new_co:document.getElementById('trig-new-co').value.trim(),prev_role:document.getElementById('trig-prev-role').value.trim(),date:document.getElementById('trig-date').value||new Date().toISOString().split('T')[0],network:document.getElementById('trig-network').value,notes:document.getElementById('trig-notes').value.trim()});
+  saveTriggers();document.getElementById('addTriggerOv').classList.remove('open');
+  ['trig-name','trig-new-role','trig-new-co','trig-prev-role','trig-notes'].forEach(id=>document.getElementById(id).value='');
+  loadTriggers();showToast('Trigger saved');
+}
 function deleteTrigger(i){if(confirm('Delete this trigger?')){appointmentTriggers.splice(i,1);saveTriggers();loadTriggers();}}
+function draftTriggerOutreach(i){
+  const t=appointmentTriggers[i];
+  const days=Math.floor((new Date()-new Date(t.date))/864e5);
+  const prompt=`Draft a warm congratulatory message to ${t.name} who has just started as ${t.new_role||'a new senior role'} at ${t.new_co||'their new company'}. They are ${days} days into the role. From Michael Stubbs at Vantage Search Group. No pitch yet — just a warm congratulations and a door-opener. Under 80 words. No em-dashes.`;
+  document.getElementById('chat-contact-name').textContent=t.name;
+  document.getElementById('chat-company-name').textContent=t.new_co||'';
+  document.getElementById('chat-messages').innerHTML='';
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatOverlay').classList.add('open');
+  setTimeout(()=>{document.getElementById('chat-input').value=prompt;},300);
+}
+
 function openChatFromTrigger(t){
-  _actionCtx=t;currentChatContact={name:t.name,company:t.new_co||'',title:t.new_role||'',industry:'',stage:'',lastContact:'',followupDate:'',linkedin:'',notes:''};chatContactId=null;chatMessages=[];
-  const av=document.getElementById('chat-av');if(av){av.textContent=(t.name||'T')[0].toUpperCase();av.style.background='#b8860b';av.style.color='#fff';}
-  document.getElementById('chat-name').textContent=t.name||'Contact';document.getElementById('chat-co').textContent=(t.new_role?t.new_role+', ':'')+(t.new_co||'Leadership Trigger');
-  const welcomeParts=[`I have the context on this trigger.`];if(t.title)welcomeParts.push(`Signal: ${t.title}`);if(t.days!==undefined)welcomeParts.push(`${t.days} days into the role.`);welcomeParts.push(`Ask me to draft outreach or explore a different angle.`);
+  _actionCtx=t;
+  currentChatContact={name:t.name,company:t.new_co||'',title:t.new_role||'',industry:'',stage:'',lastContact:'',followupDate:'',linkedin:'',notes:''};
+  chatContactId=null;chatMessages=[];
+  const av=document.getElementById('chat-av');
+  if(av){av.textContent=(t.name||'T')[0].toUpperCase();av.style.background='#b8860b';av.style.color='#fff';}
+  document.getElementById('chat-name').textContent=t.name||'Contact';
+  document.getElementById('chat-co').textContent=(t.new_role?t.new_role+', ':'')+( t.new_co||'Leadership Trigger');
+  const welcomeParts=[`I have the context on this appointment trigger.`];
+  if(t.title)welcomeParts.push(`Signal: ${t.title}`);
+  if(t.summary)welcomeParts.push(`Context: ${t.summary.substring(0,250)}`);
+  if(t.days!==undefined)welcomeParts.push(`${t.days} days into the role — ${t.days<=60?'still in the 60-day hot window. Perfect timing to reach out.':'warm window — worth a thoughtful touch.'}`);
+  welcomeParts.push(`Ask me to draft outreach, explore a different angle, or dig into their background.`);
   renderChatMessages([{role:'assistant',content:welcomeParts.join('\n\n')}]);
-  const name=(t.name||'').replace(/'/g,"\\'");const co=(t.new_co||'their new company').replace(/'/g,"\\'");const role=(t.new_role||'a senior role').replace(/'/g,"\\'");
+  const name=(t.name||'').replace(/'/g,"\\'");
+  const co=(t.new_co||'their new company').replace(/'/g,"\\'");
+  const role=(t.new_role||'a senior role').replace(/'/g,"\\'");
   document.getElementById('chat-chips').innerHTML=`
-    <button class="chat-chip" onclick="quickChat('Draft warm outreach to ${name} who started as ${role} at ${co}. Day ${t.days||'?'} in role. No pitch, under 60 words, no em-dashes.')"><i class="ti ti-message"></i> Draft outreach</button>
-    <button class="chat-chip" onclick="quickChat('Different angle — what would ${name} be focused on as a new ${role}?')"><i class="ti ti-refresh"></i> Different angle</button>
+    <button class="chat-chip" onclick="quickChat('Draft a short warm outreach to ${name} who just started as ${role} at ${co}. Day ${t.days||'?'} in role. Specific, curious, no pitch — under 60 words. No em-dashes.')"><i class="ti ti-message"></i> Draft outreach</button>
+    <button class="chat-chip" onclick="quickChat('Rewrite the outreach with a completely different angle — reference something specific about what ${name} would be focused on as a new ${role}')"><i class="ti ti-refresh"></i> Different angle</button>
+    <button class="chat-chip" onclick="quickChat('What should I know about ${name}\\'s career background and what their priorities likely are ${t.days||''} days into the ${role} role at ${co}?')"><i class="ti ti-user"></i> Background</button>
+    <button class="chat-chip" onclick="quickChat('What senior hiring decisions would ${name} likely be facing right now as the new ${role} at ${co}? Be specific.')"><i class="ti ti-building"></i> Hiring intel</button>
   `;
-  document.getElementById('chatPanel').classList.add('open');document.getElementById('chatOverlay').classList.add('open');
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatOverlay').classList.add('open');
 }
 
 /* ═══════════════════════════════════════════════════
@@ -5210,27 +5295,173 @@ const DIGEST_FIELDS=['moves','building','obs','q','close'];
 let _digestPreviewMode=false;
 
 function loadDigest(){
-  const now=new Date();const monday=new Date(now);monday.setDate(now.getDate()+(1-now.getDay()+7)%7||7);const opts={day:'numeric',month:'long',year:'numeric'};
+  const now=new Date();
+  const monday=new Date(now);monday.setDate(now.getDate()+(1-now.getDay()+7)%7||7);
+  const opts={day:'numeric',month:'long',year:'numeric'};
   document.getElementById('digest-week-label').textContent='GCC Leadership Moves Digest';
   document.getElementById('digest-week-sub').textContent='Week of '+monday.toLocaleDateString('en-GB',opts)+' — edit each segment, then send';
   document.getElementById('digest-subject').value='GCC Leadership Moves — Week of '+monday.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-  loadDigestCounts();loadSavedDigest();
+  loadDigestCounts();
+  loadSavedDigest();
 }
-async function loadDigestCounts(){try{const db=_db();if(!db)return;const{data:contacts}=await db.from('contacts').select('industry,company');const counts={banking:0,swf:0,pe:0,fintech:0,consulting:0,general:0};DIGEST_SEGMENTS.forEach(s=>{const el=document.getElementById('digest-'+s+'-count');if(el)el.textContent=counts[s]+' contacts';});}catch(e){}}
-function loadSavedDigest(){const saved=JSON.parse(localStorage.getItem('vsg_digest')||'{}');DIGEST_SEGMENTS.forEach(seg=>{DIGEST_FIELDS.forEach(f=>{const el=document.getElementById('digest-'+seg+'-'+f);if(el&&saved[seg]&&saved[seg][f])el.value=saved[seg][f];});});}
-function saveDigestToStorage(){const data={};DIGEST_SEGMENTS.forEach(seg=>{data[seg]={};DIGEST_FIELDS.forEach(f=>{const el=document.getElementById('digest-'+seg+'-'+f);if(el)data[seg][f]=el.value;});});localStorage.setItem('vsg_digest',JSON.stringify(data));}
-function switchDigestTab(seg,btn){document.querySelectorAll('.digest-tab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');document.querySelectorAll('.digest-segment').forEach(s=>s.classList.remove('on'));document.getElementById('digest-seg-'+seg).classList.add('on');}
-function toggleDigestPreview(){_digestPreviewMode=!_digestPreviewMode;const btn=document.getElementById('digest-toggle-preview');btn.innerHTML=_digestPreviewMode?'<i class="ti ti-edit"></i> Edit':'<i class="ti ti-eye"></i> Preview';DIGEST_SEGMENTS.forEach(seg=>{const editDiv=document.getElementById('digest-'+seg+'-edit');const prevDiv=document.getElementById('digest-'+seg+'-preview');if(_digestPreviewMode){saveDigestToStorage();if(editDiv)editDiv.style.display='none';if(prevDiv)prevDiv.style.display='block';}else{if(editDiv)editDiv.style.display='block';if(prevDiv)prevDiv.style.display='none';}});}
-async function generateSegment(seg){const segNames={banking:'Banking (FAB, Emirates NBD, Goldman GCC, HSBC)',swf:'Sovereign Wealth Funds (ADIA, Mubadala, ADQ, PIF, QIA)',pe:'Private Equity and Asset Management',fintech:'Fintech, Digital, and AI',consulting:'Strategy and Consulting (McKinsey, BCG, Bain, Big 4)',general:'General GCC senior leadership'};const btn=document.querySelector(`#digest-seg-${seg} button`);btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Generating...';try{const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:`Generate the GCC Leadership Moves Digest for ${segNames[seg]}. Sections: MOVES, BUILDING, OBSERVATION, QUESTION, CLOSE. No em-dashes. Never criticise UAE/Saudi/GCC.`}]})});const data=await resp.json();const text=data.content||data.response||'';const extract=(label,next)=>{const r=new RegExp(label+'\\s*:?\\s*([\\s\\S]*?)(?='+next+':|$)','i');const m=text.match(r);return m?m[1].trim():'';};document.getElementById('digest-'+seg+'-moves').value=extract('MOVES','BUILDING');document.getElementById('digest-'+seg+'-building').value=extract('BUILDING','OBSERVATION');document.getElementById('digest-'+seg+'-obs').value=extract('OBSERVATION','QUESTION');document.getElementById('digest-'+seg+'-q').value=extract('QUESTION','CLOSE');document.getElementById('digest-'+seg+'-close').value=extract('CLOSE','$$$');saveDigestToStorage();showToast('Segment generated');}catch(e){showToast('Error generating');}btn.disabled=false;btn.innerHTML='<i class="ti ti-sparkles"></i> Generate with AI';}
+
+async function loadDigestCounts(){
+  try{
+    const segmentMap={banking:['bank','finance','nbk','qnb','fab','hsbc','citi','barclays'],swf:['adia','mubadala','adq','pif','qia','icd','gic','temasek','khazanah'],pe:['carlyle','kkr','blackstone','blackrock','warburg','private equity','asset management','family office'],fintech:['fintech','tech','digital','tabby','tamara','wio','revolut','stripe','google','microsoft','amazon'],consulting:['mckinsey','bcg','bain','strategy&','oliver wyman','accenture','deloitte','pwc','ey','kpmg']};
+    const{data:contacts}=await supabase.from('contacts').select('industry,company');
+    const counts={banking:0,swf:0,pe:0,fintech:0,consulting:0,general:0};
+    (contacts||[]).forEach(c=>{
+      const haystack=((c.industry||'')+(c.company||'')).toLowerCase();
+      let matched=false;
+      for(const[seg,keys]of Object.entries(segmentMap)){if(keys.some(k=>haystack.includes(k))){counts[seg]++;matched=true;break;}}
+      if(!matched)counts.general++;
+    });
+    DIGEST_SEGMENTS.forEach(s=>{const el=document.getElementById('digest-'+s+'-count');if(el)el.textContent=counts[s]+' contacts';});
+  }catch(e){}
+}
+
+function loadSavedDigest(){
+  const saved=JSON.parse(localStorage.getItem('vsg_digest')||'{}');
+  DIGEST_SEGMENTS.forEach(seg=>{DIGEST_FIELDS.forEach(f=>{const el=document.getElementById('digest-'+seg+'-'+f);if(el&&saved[seg]&&saved[seg][f])el.value=saved[seg][f];});});
+}
+
+function saveDigestToStorage(){
+  const data={};
+  DIGEST_SEGMENTS.forEach(seg=>{data[seg]={};DIGEST_FIELDS.forEach(f=>{const el=document.getElementById('digest-'+seg+'-'+f);if(el)data[seg][f]=el.value;});});
+  localStorage.setItem('vsg_digest',JSON.stringify(data));
+}
+
+function switchDigestTab(seg,btn){
+  document.querySelectorAll('.digest-tab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');
+  document.querySelectorAll('.digest-segment').forEach(s=>s.classList.remove('on'));
+  document.getElementById('digest-seg-'+seg).classList.add('on');
+}
+
+function toggleDigestPreview(){
+  _digestPreviewMode=!_digestPreviewMode;
+  const btn=document.getElementById('digest-toggle-preview');
+  btn.innerHTML=_digestPreviewMode?'<i class="ti ti-edit"></i> Edit':'<i class="ti ti-eye"></i> Preview';
+  DIGEST_SEGMENTS.forEach(seg=>{
+    const editDiv=document.getElementById('digest-'+seg+'-edit');
+    const prevDiv=document.getElementById('digest-'+seg+'-preview');
+    if(_digestPreviewMode){
+      saveDigestToStorage();
+      const moves=document.getElementById('digest-'+seg+'-moves')?.value||'';
+      const building=document.getElementById('digest-'+seg+'-building')?.value||'';
+      const obs=document.getElementById('digest-'+seg+'-obs')?.value||'';
+      const q=document.getElementById('digest-'+seg+'-q')?.value||'';
+      const close=document.getElementById('digest-'+seg+'-close')?.value||'';
+      prevDiv.innerHTML=`<div style="margin-bottom:16px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">MOVES OF THE WEEK</div><div>${esc(moves)||'<em style="color:var(--subtle)">Not filled in yet</em>'}</div></div><div style="margin-bottom:16px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">COMPANIES BUILDING</div><div>${esc(building)||'<em style="color:var(--subtle)">Not filled in yet</em>'}</div></div><div style="margin-bottom:16px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">MARKET OBSERVATION</div><div>${esc(obs)||'<em style="color:var(--subtle)">Not filled in yet</em>'}</div></div>${q?'<div style="margin-bottom:16px;padding:14px;background:#f8fafc;border-left:3px solid var(--gold);border-radius:0 var(--rs) var(--rs) 0"><em>'+esc(q)+'</em></div>':''}${close?'<div style="color:var(--muted);font-style:italic">'+esc(close)+'</div>':''}`;
+      if(editDiv)editDiv.style.display='none';
+      if(prevDiv)prevDiv.style.display='block';
+    }else{
+      if(editDiv)editDiv.style.display='block';
+      if(prevDiv)prevDiv.style.display='none';
+    }
+  });
+}
+
+async function generateSegment(seg){
+  const segNames={banking:'Banking (commercial/investment banks — FAB, Emirates NBD, Goldman GCC, HSBC etc)',swf:'Sovereign Wealth Funds (ADIA, Mubadala, ADQ, PIF, QIA etc)',pe:'Private Equity and Asset Management (Carlyle, KKR, Blackstone, regional PE, family offices)',fintech:'Fintech, Digital, and AI (Tabby, Tamara, Wio Bank, Revolut UAE, regional tech)',consulting:'Strategy and Consulting (McKinsey, BCG, Bain, Strategy&, Oliver Wyman, Big 4)',general:'General GCC senior leadership (cross-sector C-suite moves)'};
+  const btn=document.querySelector(`#digest-seg-${seg} button`);
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Generating...';
+  const prompt=`Generate one edition of the GCC Leadership Moves Digest for the ${segNames[seg]} segment.\n\nOutput format (each section labelled clearly):\nMOVES: [5-8 real or plausible GCC senior leadership moves relevant to ${segNames[seg]}. Format: Name — Previous Role, Previous Company to New Role, New Company. One sentence on why it matters.]\nBUILDING: [2-3 companies in this segment visibly scaling their senior teams. One line each.]\nOBSERVATION: [Michael's first-person read on the market in one paragraph. Intelligent, specific, opinionated. Not generic. Starts with "This week,"]\nQUESTION: [One provocative question for this segment's senior professionals]\nCLOSE: [One warm closing line positioning VSG as search partner — not salesy]\n\nTone: Sharp, intelligent briefing. Reads like it came from someone who genuinely knows the GCC.\nRules: Never criticise the UAE, Saudi, or any GCC government. No em-dashes.`;
+  try{
+    const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    const text=data.content||data.response||'';
+    const extract=(label,next)=>{const r=new RegExp(label+'\\s*:?\\s*([\\s\\S]*?)(?='+next+':|$)','i');const m=text.match(r);return m?m[1].trim():'';};
+    document.getElementById('digest-'+seg+'-moves').value=extract('MOVES','BUILDING');
+    document.getElementById('digest-'+seg+'-building').value=extract('BUILDING','OBSERVATION');
+    document.getElementById('digest-'+seg+'-obs').value=extract('OBSERVATION','QUESTION');
+    document.getElementById('digest-'+seg+'-q').value=extract('QUESTION','CLOSE');
+    document.getElementById('digest-'+seg+'-close').value=extract('CLOSE','$$$');
+    saveDigestToStorage();showToast('Segment generated');
+  }catch(e){showToast('Error generating — check API key');}
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-sparkles"></i> Generate with AI';
+}
+
 function generateAllSegments(){DIGEST_SEGMENTS.forEach((seg,i)=>setTimeout(()=>generateSegment(seg),i*3000));}
-function openSendDigest(){document.getElementById('digestSendOv').classList.add('open');}
-async function sendDigest(){const db=_db();const subject=document.getElementById('digest-subject')?.value||'GCC Leadership Moves Digest';showToast('Digest marked as sent.');document.getElementById('digestSendOv').classList.remove('open');const saved=JSON.parse(localStorage.getItem('vsg_digest')||'{}');saved._lastSent=new Date().toISOString();saved._lastSubject=subject;localStorage.setItem('vsg_digest',JSON.stringify(saved));if(typeof loadTriggers==='function')setTimeout(loadTriggers,500);}
+
+function openSendDigest(){loadDigestRecipientSummary();document.getElementById('digestSendOv').classList.add('open');}
+
+async function loadDigestRecipientSummary(){
+  try{
+    const db=_db();
+    const{data:cts}=await (db?db.from('contacts').select('name,industry,company,email').not('email','is',null):Promise.resolve({data:[]}));
+    const segMap={Banking:['bank','finance'],SWF:['adia','mubadala','adq','pif','qia'],PE:['carlyle','kkr','blackstone','asset management','private equity'],Fintech:['fintech','tech','digital'],Consulting:['mckinsey','bcg','bain','strategy','accenture','deloitte','pwc']};
+    const counts={Banking:0,SWF:0,PE:0,Fintech:0,Consulting:0,General:0};
+    (cts||[]).forEach(c=>{
+      const hay=((c.industry||'')+(c.company||'')).toLowerCase();
+      let hit=false;
+      for(const[seg,keys]of Object.entries(segMap)){if(keys.some(k=>hay.includes(k))){counts[seg]++;hit=true;break;}}
+      if(!hit)counts.General++;
+    });
+    const total=Object.values(counts).reduce((a,b)=>a+b,0);
+    document.getElementById('digest-recipient-summary').innerHTML=
+      Object.entries(counts).filter(([,v])=>v>0).map(([seg,n])=>`<div><strong>${seg}:</strong> ${n} contact${n!==1?'s':''}</div>`).join('')+
+      `<div style="margin-top:8px;font-weight:700;color:var(--navy)">Total: ${total} recipients</div>`;
+  }catch(e){document.getElementById('digest-recipient-summary').innerHTML='<em>Could not load recipients</em>';}
+}
+
+async function sendDigest(){
+  const db=_db();
+  const subject=document.getElementById('digest-subject')?.value||'GCC Leadership Moves Digest';
+  showToast('Digest marked as sent — extracting leadership moves...');
+  document.getElementById('digestSendOv').classList.remove('open');
+  if(db){
+    const movesSignals=[];
+    const now=new Date().toISOString();
+    DIGEST_SEGMENTS.forEach(seg=>{
+      const movesText=document.getElementById('digest-'+seg+'-moves')?.value||'';
+      if(!movesText.trim())return;
+      const lines=movesText.split('\n').filter(l=>l.trim()&&l.includes('—')&&l.length>10);
+      lines.forEach(line=>{
+        const toMatch=line.match(/\bto\s+([^,]+),\s*([^.]+)/i);
+        const company=toMatch?toMatch[2].trim():(line.split(',').pop()||'').trim();
+        const nameMatch=line.match(/^([^—]+)/);
+        const name=nameMatch?nameMatch[1].trim():'';
+        if(name&&company){
+          movesSignals.push({company_name:company.substring(0,100),signal_type:'leadership_change',title:line.substring(0,200),summary:`From GCC Leadership Moves Digest (${subject}). CONTACT: ${name}`,importance:'high',actioned:false,created_at:now});
+        }
+      });
+    });
+    if(movesSignals.length>0){
+      try{
+        await db.from('company_signals').insert(movesSignals);
+        showToast(`Digest sent — ${movesSignals.length} leadership move${movesSignals.length!==1?'s':''} added to Appointment Triggers`);
+      }catch(e){console.warn('Digest → signals error:',e);}
+    }
+  }
+  const saved=JSON.parse(localStorage.getItem('vsg_digest')||'{}');
+  saved._lastSent=new Date().toISOString();
+  saved._lastSubject=subject;
+  localStorage.setItem('vsg_digest',JSON.stringify(saved));
+  if(typeof loadTriggers==='function')setTimeout(loadTriggers,500);
+}
 
 /* ═══════════════════════════════════════════════════
    GAP 4 — LinkedIn connection follow-up wiring
 ════════════════════════════════════════════════════ */
 async function checkNewConnections(){
-  const db=_db();if(!db)return;const yesterday=new Date(Date.now()-26*60*60*1000).toISOString().slice(0,10);
-  try{const{data}=await db.from('linkedin_outreach').select('full_name,title,company,linkedin_url,date_connected').eq('status','connected').gte('date_connected',yesterday);if(!data||data.length===0)return;const signals=data.map(p=>({company_name:p.company||'LinkedIn',signal_type:'news',title:`${p.full_name} accepted your LinkedIn connection request`,summary:`New connection: ${p.full_name}${p.title?' ('+p.title+')':''}${p.company?' at '+p.company:''}. CONTACT: ${p.full_name}`,importance:'high',actioned:false}));await db.from('company_signals').insert(signals);showToast(`${data.length} new LinkedIn connection${data.length!==1?'s':''} — follow-up prompts added`);}catch(e){}
+  const db=_db();if(!db)return;
+  const yesterday=new Date(Date.now()-26*60*60*1000).toISOString().slice(0,10);
+  try{
+    const{data}=await db.from('linkedin_outreach')
+      .select('full_name,title,company,linkedin_url,date_connected')
+      .eq('status','connected')
+      .gte('date_connected',yesterday);
+    if(!data||data.length===0)return;
+    const signals=data.map(p=>({
+      company_name:p.company||'LinkedIn',
+      signal_type:'news',
+      title:`${p.full_name} accepted your LinkedIn connection request`,
+      summary:`New connection: ${p.full_name}${p.title?' ('+p.title+')':''}${p.company?' at '+p.company:''}. Send a warm welcome message now while you're fresh in their mind. CONTACT: ${p.full_name}`,
+      importance:'high',
+      actioned:false
+    }));
+    await db.from('company_signals').insert(signals);
+    showToast(`${data.length} new LinkedIn connection${data.length!==1?'s':''} — follow-up prompts added`);
+  }catch(e){console.warn('checkNewConnections:',e);}
 }
 setTimeout(()=>{if(typeof checkNewConnections==='function')checkNewConnections();},3000);
