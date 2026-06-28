@@ -1299,7 +1299,7 @@ textarea{resize:vertical;min-height:80px}
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span id="seo-period" style="font-size:11px;color:var(--muted)"></span>
           <button class="btn btn-outline" onclick="loadSEO()"><i class="ti ti-refresh"></i> Refresh</button>
-          <button class="btn btn-gold" onclick="openSEOChat()"><i class="ti ti-message-circle"></i> Ask AI about traffic</button>
+          <button class="btn btn-gold" onclick="openSEOChat()"><i class="ti ti-message-circle"></i> Ask Annie about traffic</button>
         </div>
       </div>
 
@@ -1321,7 +1321,7 @@ textarea{resize:vertical;min-height:80px}
           </div>
         </div>
         <div style="margin-top:24px">
-          <button class="btn btn-gold" onclick="openSEOChat()"><i class="ti ti-message-circle"></i> Ask AI SEO questions anyway</button>
+          <button class="btn btn-gold" onclick="openSEOChat()"><i class="ti ti-message-circle"></i> Ask Annie SEO questions anyway</button>
         </div>
       </div>
 
@@ -2666,7 +2666,7 @@ function filterCandidates(f,btn){
           ${liUrl?`<a href="${liUrl}" target="_blank" class="btn btn-xs btn-outline" style="padding:2px 8px;font-size:11px;background:#0077b5;color:#fff;border-color:#0077b5" onclick="event.stopPropagation()"><i class="ti ti-brand-linkedin"></i> LinkedIn</a>`:''}
           ${c.email?`<a href="mailto:${esc(c.email)}" class="btn btn-xs btn-ghost" onclick="event.stopPropagation()"><i class="ti ti-mail"></i></a>`:''}
           <button class="btn btn-xs btn-outline" onclick="event.stopPropagation();openEditCandidate(${c.id})"><i class="ti ti-edit"></i></button>
-          <button class="btn btn-xs btn-gold" onclick="event.stopPropagation();openChatFromCandidateCtx(${c.id})"><i class="ti ti-message-circle"></i> Ask AI</button>
+          <button class="btn btn-xs btn-gold" onclick="event.stopPropagation();openChatFromCandidateCtx(${c.id})"><i class="ti ti-message-circle"></i> Ask Annie</button>
         </div>
       </div>
     </div>`;
@@ -2846,7 +2846,7 @@ async function loadNetworkMap(){
         </div>
         <div style="width:220px;font-size:11px;color:var(--muted)">${hottest?esc(hottest.name)+' · ':''}<span style="color:${barColor}">${hottest?hottest.stage:'?'}</span></div>
         <div style="width:180px">${tags}</div>
-        <button class="btn btn-xs btn-ghost" onclick="openChatFromNetworkCtx('${esc(d.company).replace(/'/g,"\\'")}',${d.total},${d.warmContacts.length})" title="Ask AI about this company"><i class="ti ti-message-circle"></i></button>
+        <button class="btn btn-xs btn-ghost" onclick="openChatFromNetworkCtx('${esc(d.company).replace(/'/g,"\\'")}',${d.total},${d.warmContacts.length})" title="Ask Annie about this company"><i class="ti ti-message-circle"></i></button>
       </div>`;
     }).join('');
 
@@ -4378,7 +4378,7 @@ function copyToClipboard(text){
 const _origOpenDetail=window.openDetail;
 window.openDetail=function(id){
   _origOpenDetail(id);
-  setTimeout(()=>{const body=document.getElementById('detail-body');if(!body)return;const footer=body.querySelector('[style*="border-top"]');if(footer&&!footer.querySelector('.ai-chat-btn')){const btn=document.createElement('button');btn.className='btn btn-sm btn-purple ai-chat-btn';btn.innerHTML='<i class="ti ti-message-circle-2"></i> Ask AI';btn.onclick=()=>{document.getElementById('detailOv').classList.remove('open');openChatPanel(id);};footer.insertBefore(btn,footer.firstChild);}},50);
+  setTimeout(()=>{const body=document.getElementById('detail-body');if(!body)return;const footer=body.querySelector('[style*="border-top"]');if(footer&&!footer.querySelector('.ai-chat-btn')){const btn=document.createElement('button');btn.className='btn btn-sm btn-purple ai-chat-btn';btn.innerHTML='<i class="ti ti-message-circle-2"></i> Ask Annie';btn.onclick=()=>{document.getElementById('detailOv').classList.remove('open');openChatPanel(id);};footer.insertBefore(btn,footer.firstChild);}},50);
 };
 
 (function waitForDb(){
@@ -4623,7 +4623,7 @@ function _renderTodaysActionsCards(data,modeData){
         <div class="action-ft">
           <span class="effort-tag"><i class="ti ti-clock" style="font-size:10px"></i> ${esc(a.effort_label||'5 min')}</span>
           <span id="action-btns-${i}"></span>
-          <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask AI</button>
+          <button class="btn btn-xs btn-gold" onclick="openChatFromAction(${i})"><i class="ti ti-message"></i> Ask Annie</button>
         </div>
       </div>
     </div>
@@ -4880,7 +4880,7 @@ function filterTriggers(f,btn){
   const list=document.getElementById('triggers-list');const today=new Date();const allTriggers=[..._sbTriggers,...appointmentTriggers];let filtered=[...allTriggers].sort((a,b)=>new Date(b.date)-new Date(a.date));
   if(f==='hot')filtered=filtered.filter(t=>Math.floor((today-new Date(t.date))/864e5)<=60);else if(f==='warm')filtered=filtered.filter(t=>{const d=Math.floor((today-new Date(t.date))/864e5);return d>60&&d<=90;});else if(f==='mine')filtered=filtered.filter(t=>t.network==='yes');
   if(!filtered.length){list.innerHTML='<div class="empty"><i class="ti ti-user-star"></i><p>No triggers match this filter.</p></div>';return;}
-  list.innerHTML=filtered.map((t)=>{const localIdx=appointmentTriggers.indexOf(t);const days=Math.floor((today-new Date(t.date))/864e5);const heat=days<=60?'hot':'warm';const windowLabel=days<=60?`${60-days}d left in hot window`:`In warm window`;const contactMatch=t._source==='supabase'&&t.summary?t.summary.match(/CONTACT:\s*([^|.]+)/i):null;const contactLine=contactMatch?`<div style="margin-top:6px;padding:5px 10px;background:var(--gold-bg);border-radius:5px;font-size:12px"><i class="ti ti-user" style="color:var(--gold);margin-right:4px"></i>${esc(contactMatch[1].trim())}</div>`:'';const trigCtx=JSON.stringify({name:t.name,new_role:t.new_role||'',new_co:t.new_co||'',title:t.title||'',summary:(t.summary||'').replace(/CONTACT:[^|]*/i,'').trim().substring(0,300),source_url:t.source_url||'',days}).replace(/"/g,'&quot;');const actionBtns=t._source==='supabase'?`<button class="btn btn-xs btn-gold" onclick="openChatFromTrigger(JSON.parse(this.dataset.ctx))" data-ctx="${trigCtx}"><i class="ti ti-message-circle"></i> Ask AI</button><button class="btn btn-xs btn-ghost" onclick="markTriggerActioned('${t._id}')"><i class="ti ti-check"></i> Done</button>`:`<button class="btn btn-xs btn-gold" onclick="openChatFromTrigger(JSON.parse(this.dataset.ctx))" data-ctx="${trigCtx}"><i class="ti ti-message-circle"></i> Ask AI</button><button class="btn btn-xs btn-ghost" onclick="deleteTrigger(${localIdx})"><i class="ti ti-trash"></i></button>`;return `<div class="signal-card ${heat}"><div class="signal-icon" style="background:${heat==='hot'?'var(--red-bg)':'var(--amber-bg)'};color:${heat==='hot'?'var(--red)':'var(--amber)'}"><i class="ti ti-user-check"></i></div><div class="signal-body"><div class="signal-title">${esc(t.name)}</div>${t._source==='supabase'?`<div style="font-size:12px;color:var(--navy);margin:3px 0">${esc((t.title||'').substring(0,120))}</div>`:`<div class="signal-sub">Day ${days} in role${t.notes?'. '+esc(t.notes):''}</div>`}${contactLine}<div class="signal-ft" style="margin-top:8px"><span class="b ${heat==='hot'?'b-high':'b-followup'}">${windowLabel} · ${days}d ago</span>${actionBtns}</div></div></div>`;}).join('');
+  list.innerHTML=filtered.map((t)=>{const localIdx=appointmentTriggers.indexOf(t);const days=Math.floor((today-new Date(t.date))/864e5);const heat=days<=60?'hot':'warm';const windowLabel=days<=60?`${60-days}d left in hot window`:`In warm window`;const contactMatch=t._source==='supabase'&&t.summary?t.summary.match(/CONTACT:\s*([^|.]+)/i):null;const contactLine=contactMatch?`<div style="margin-top:6px;padding:5px 10px;background:var(--gold-bg);border-radius:5px;font-size:12px"><i class="ti ti-user" style="color:var(--gold);margin-right:4px"></i>${esc(contactMatch[1].trim())}</div>`:'';const trigCtx=JSON.stringify({name:t.name,new_role:t.new_role||'',new_co:t.new_co||'',title:t.title||'',summary:(t.summary||'').replace(/CONTACT:[^|]*/i,'').trim().substring(0,300),source_url:t.source_url||'',days}).replace(/"/g,'&quot;');const actionBtns=t._source==='supabase'?`<button class="btn btn-xs btn-gold" onclick="openChatFromTrigger(JSON.parse(this.dataset.ctx))" data-ctx="${trigCtx}"><i class="ti ti-message-circle"></i> Ask Annie</button><button class="btn btn-xs btn-ghost" onclick="markTriggerActioned('${t._id}')"><i class="ti ti-check"></i> Done</button>`:`<button class="btn btn-xs btn-gold" onclick="openChatFromTrigger(JSON.parse(this.dataset.ctx))" data-ctx="${trigCtx}"><i class="ti ti-message-circle"></i> Ask Annie</button><button class="btn btn-xs btn-ghost" onclick="deleteTrigger(${localIdx})"><i class="ti ti-trash"></i></button>`;return `<div class="signal-card ${heat}"><div class="signal-icon" style="background:${heat==='hot'?'var(--red-bg)':'var(--amber-bg)'};color:${heat==='hot'?'var(--red)':'var(--amber)'}"><i class="ti ti-user-check"></i></div><div class="signal-body"><div class="signal-title">${esc(t.name)}</div>${t._source==='supabase'?`<div style="font-size:12px;color:var(--navy);margin:3px 0">${esc((t.title||'').substring(0,120))}</div>`:`<div class="signal-sub">Day ${days} in role${t.notes?'. '+esc(t.notes):''}</div>`}${contactLine}<div class="signal-ft" style="margin-top:8px"><span class="b ${heat==='hot'?'b-high':'b-followup'}">${windowLabel} · ${days}d ago</span>${actionBtns}</div></div></div>`;}).join('');
 }
 async function markTriggerActioned(id){const db=_db();if(!db)return;await db.from('company_signals').update({actioned:true}).eq('id',id);showToast('Trigger marked done');loadTriggers();}
 function openAddTrigger(){document.getElementById('trig-date').value=new Date().toISOString().split('T')[0];document.getElementById('addTriggerOv').classList.add('open');}
