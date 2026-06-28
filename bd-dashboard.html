@@ -5473,4 +5473,15 @@ async function generateSegment(seg){
     const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     const text=data.content||data.response||'';
-    const extract=(label,next)=>{const r=new RegExp(label+'\\s*:?\\s*([\\s\\S]*?)(?='+next+':|$)','i');const m=text.match(r);return m?m[1].tr
+    const extract=(label,next)=>{const r=new RegExp(label+'\\s*:?\\s*([\\s\\S]*?)(?='+next+':|$)','i');const m=text.match(r);return m?m[1].trim():'';};
+    if(document.getElementById('digest-'+seg+'-moves'))document.getElementById('digest-'+seg+'-moves').value=extract('MOVES','BUILDING');
+    if(document.getElementById('digest-'+seg+'-building'))document.getElementById('digest-'+seg+'-building').value=extract('BUILDING','OBSERVATION');
+    if(document.getElementById('digest-'+seg+'-obs'))document.getElementById('digest-'+seg+'-obs').value=extract('OBSERVATION','QUESTION');
+    if(document.getElementById('digest-'+seg+'-q'))document.getElementById('digest-'+seg+'-q').value=extract('QUESTION','CLOSE');
+    if(document.getElementById('digest-'+seg+'-close'))document.getElementById('digest-'+seg+'-close').value=extract('CLOSE','$$$END$$$');
+    saveDigestToStorage();
+  }catch(e){console.warn('generateSegment:',e);}finally{if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-sparkle"></i> Generate';}}
+}
+</script>
+</body>
+</html>
