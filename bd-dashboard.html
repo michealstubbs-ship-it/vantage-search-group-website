@@ -4730,8 +4730,7 @@ async function runTodaysActions(){
         const schedule=[14,21,30,45];
         const nextIn=schedule[Math.min(touches,schedule.length-1)];
         return `- ${c.full_name} (${c.title||'?'} at ${c.company||'?'}) — connected${daysSince!==null?' '+daysSince+'d ago':''}, ${touches} follow-up touch${touches!==1?'es':''} sent, no reply yet. Next touch due in ~${nextIn} days. GOAL: get a reply and open a commercial conversation.${c.linkedin_url?' | '+c.linkedin_url:''}${c.notes?' | Notes: '+c.notes.substring(0,80):''}`;
-      }).join('
-')
+      }).join('\n')
     : 'None';
 
   // Group confirmed connections by company for warm routing
