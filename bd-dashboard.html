@@ -4614,7 +4614,7 @@ async function runTodaysActions(){
           .lt('last_contact',thirtyDaysAgo).is('follow_up_date',null)
           .order('last_contact',{ascending:true}).limit(8),
         db.from('company_signals').select('company_name,signal_type,title,summary,importance,created_at,named_contact,named_contact_title,named_contact_linkedin')
-          .eq('actioned',false).gte('created_at',fourteenDaysAgo)
+          .eq('actioned',false).neq('signal_type','news').gte('created_at',fourteenDaysAgo)
           .order('importance',{ascending:false}).order('created_at',{ascending:false}).limit(12),
         db.from('linkedin_leads').select('full_name,title,company,reply_summary,follow_up_date,days_since_reply,linkedin_url')
           .or('follow_up_date.lt.'+todayStr+',follow_up_date.is.null')
@@ -6001,31 +6001,7 @@ async function sendDigest(){
  if(typeof loadTriggers==='function')setTimeout(loadTriggers,500);
 }
 
-/* ═══════════════════════════════════════════════════
- GAP 4 — LinkedIn connection follow-up wiring
-════════════════════════════════════════════════════ */
-async function checkNewConnections(){
- const db=_db();if(!db)return;
- const yesterday=new Date(Date.now()-26*60*60*1000).toISOString().slice(0,10);
- try{
- const{data}=await db.from('linkedin_outreach')
- .select('full_name,title,company,linkedin_url,date_connected')
- .eq('status','connected')
- .gte('date_connected',yesterday);
- if(!data||data.length===0)return;
- const signals=data.map(p=>({
- company_name:p.company||'LinkedIn',
- signal_type:'news',
- title:`${p.full_name} accepted your LinkedIn connection request`,
- summary:`New connection: ${p.full_name}${p.title?' ('+p.title+')':''}${p.company?' at '+p.company:''}. Send a warm welcome message now while you're fresh in their mind. CONTACT: ${p.full_name}`,
- importance:'high',
- actioned:false
- }));
- await db.from('company_signals').insert(signals);
- showToast(`${data.length} new LinkedIn connection${data.length!==1?'s':''} — follow-up prompts added`);
- }catch(e){console.warn('checkNewConnections:',e);}
-}
-setTimeout(()=>{if(typeof checkNewConnections==='function')checkNewConnections();},3000);
+// checkNewConnections removed — new connections handled by fetchAndRenderPendingWelcomes() separately
 </script>
 </body>
 </html>
