@@ -6208,4 +6208,10 @@ async function sendDigest(){
  saved._lastSent=new Date().toISOString();
  saved._lastSubject=subject;
  localStorage.setItem('vsg_digest',JSON.stringify(saved));
- if(typeof loadT
+ if(typeof loadTriggers==='function')setTimeout(loadTriggers,500);
+}
+
+// checkNewConnections removed — new connections handled by fetchAndRenderPendingWelcomes() separately
+</script>
+</body>
+</html>
