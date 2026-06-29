@@ -4363,6 +4363,8 @@ async function sendChat(){
     let fetchBody;
     if(_leadCtx){
       const lc=_leadCtx;
+      // Await live Unipile enrichment before building system prompt (max ~8s)
+      if(lc._enrichmentPromise&&!lc._enrichment){try{await lc._enrichmentPromise;}catch(e){}}
       const sys=`You are an AI BD assistant for Michael Stubbs at Vantage Search Group, a boutique GCC executive search firm.
 
 You are helping Michael think through a specific LinkedIn lead. Here is everything known about them:
@@ -5138,12 +5140,12 @@ function openChatFromLead(l){
   _leadCtx=l;
   _leadCtx._enrichment=''; // will be populated async
   _actionCtx=null;window._seoCtx=null;
-  // Kick off live enrichment in background — no await, populates before first message typically
+  // Kick off live enrichment in background — store Promise so sendChat can await on first message
   if(l.full_name||l.company){
-    fetch('/.netlify/functions/enrich-lead',{
+    _leadCtx._enrichmentPromise=fetch('/.netlify/functions/enrich-lead',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name:l.full_name||'',company:l.company||'',title:l.title||''})
+      body:JSON.stringify({name:l.full_name||'',company:l.company||'',title:l.title||'',linkedin_url:l.linkedin_url||''})
     }).then(r=>r.json()).then(d=>{
       if(_leadCtx&&_leadCtx.id===l.id&&d.context){
         _leadCtx._enrichment=d.context;
