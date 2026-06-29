@@ -1,9 +1,18 @@
-// enrich-lead.js — all sources run in parallel
+// enrich-lead.js — all sources run in parallel with 6s timeout each
 const BRAVE_KEY = process.env.BRAVE_SEARCH_API_KEY;
 const UNIPILE_KEY = process.env.UNIPILE_API_KEY || 'zMwbwlhB.myGGJ3jwk5K0gRuagit2tBK6o8NIGlHISDyoWDgHoJo=';
 const UNIPILE_BASE = process.env.UNIPILE_BASE_URL || 'https://api53.unipile.com:18305';
 const UNIPILE_ACCOUNT = process.env.UNIPILE_ACCOUNT_ID || 'eFhbX6emR-68eQkgzPq77g';
 const APOLLO_KEY = process.env.APOLLO_API_KEY;
+
+// Fetch with auto-abort after ms milliseconds
+function fetchWithTimeout(url, options, ms = 6000) {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { ...options, signal: ctrl.signal })
+    .then(r => { clearTimeout(id); return r; })
+    .catch(e => { clearTimeout(id); throw e; });
+}
 
 exports.handler = async (event) => {
   const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Content-Type': 'application/json' };
@@ -20,17 +29,17 @@ exports.handler = async (event) => {
 
   const [profileResult, companyResult, peopleResult, apolloResult, newsResult, jobsResult] = await Promise.allSettled([
     // 1. Unipile profile
-    identifier ? fetch(`${UNIPILE_BASE}/api/v1/users/${identifier}?account_id=${UNIPILE_ACCOUNT}`, {
+    identifier ? fetchWithTimeout(`${UNIPILE_BASE}/api/v1/users/${identifier}?account_id=${UNIPILE_ACCOUNT}`, {
       headers: { 'X-API-KEY': UNIPILE_KEY, 'Accept': 'application/json' },
     }).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null),
 
     // 2. Unipile company
-    companySlug ? fetch(`${UNIPILE_BASE}/api/v1/linkedin/company/${companySlug}?account_id=${UNIPILE_ACCOUNT}`, {
+    companySlug ? fetchWithTimeout(`${UNIPILE_BASE}/api/v1/linkedin/company/${companySlug}?account_id=${UNIPILE_ACCOUNT}`, {
       headers: { 'X-API-KEY': UNIPILE_KEY, 'Accept': 'application/json' },
     }).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null),
 
     // 3. Unipile people at company
-    company ? fetch(`${UNIPILE_BASE}/api/v1/linkedin/search?account_id=${UNIPILE_ACCOUNT}&limit=10`, {
+    company ? fetchWithTimeout(`${UNIPILE_BASE}/api/v1/linkedin/search?account_id=${UNIPILE_ACCOUNT}&limit=10`, {
       method: 'POST',
       headers: { 'X-API-KEY': UNIPILE_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ api: 'classic', category: 'people', advanced_keywords: { company } }),
@@ -40,10 +49,10 @@ exports.handler = async (event) => {
     APOLLO_KEY && company ? apolloPeopleSearch(company_domain || company).catch(() => null) : Promise.resolve(null),
 
     // 5. Brave news
-    BRAVE_KEY && company ? braveFetch(`${company} funding hiring growth 2025 2026`, 'news') : Promise.resolve([]),
+    BRAVE_KEY && company ? braveFetch(`${company} funding hiring growth 2025 2026`, 'news').catch(() => []) : Promise.resolve([]),
 
     // 6. Brave jobs
-    BRAVE_KEY && company ? braveFetch(`${company} jobs open roles hiring executives`, 'web') : Promise.resolve([]),
+    BRAVE_KEY && company ? braveFetch(`${company} jobs open roles hiring executives`, 'web').catch(() => []) : Promise.resolve([]),
   ]);
 
   const sections = [];
@@ -55,10 +64,8 @@ exports.handler = async (event) => {
     if (p.headline) parts.push(`  Headline: ${p.headline}`);
     if (p.location) parts.push(`  Location: ${p.location}`);
     if (p.connections_count) parts.push(`  Connections: ${p.connections_count.toLocaleString()}`);
-    if (p.follower_count) parts.push(`  Followers: ${p.follower_count.toLocaleString()}`);
     if (p.network_distance) parts.push(`  Network distance: ${p.network_distance.replace('_', ' ')}`);
-    if (p.shared_connections_count) parts.push(`  Shared connections with Michael: ${p.shared_connections_count}`);
-    if (p.is_premium) parts.push(`  LinkedIn Premium: Yes`);
+    if (p.shared_connections_count) parts.push(`  Shared connections: ${p.shared_connections_count}`);
     sections.push(parts.join('\n'));
   }
 
@@ -68,10 +75,7 @@ exports.handler = async (event) => {
     const parts = [`LIVE COMPANY DATA — ${c.name || company}:`];
     if (c.industry) parts.push(`  Industry: ${c.industry}`);
     if (c.staff_count) parts.push(`  Headcount: ${c.staff_count.toLocaleString()}`);
-    if (c.staff_count_range) parts.push(`  Size range: ${c.staff_count_range}`);
     if (c.description) parts.push(`  About: ${c.description.substring(0, 200)}`);
-    if (c.website) parts.push(`  Website: ${c.website}`);
-    if (c.locations && c.locations.length) parts.push(`  HQ: ${c.locations[0].city || ''} ${c.locations[0].country || ''}`);
     if (c.follower_count) parts.push(`  LinkedIn followers: ${c.follower_count.toLocaleString()}`);
     sections.push(parts.join('\n'));
   }
@@ -85,7 +89,7 @@ exports.handler = async (event) => {
       .map(person => {
         const url = person.public_identifier ? `https://www.linkedin.com/in/${person.public_identifier}` : null;
         const dist = person.network_distance === 'DISTANCE_1' ? '1st' : person.network_distance === 'DISTANCE_2' ? '2nd' : '3rd+';
-        return `* ${person.name}${person.headline ? ' — ' + person.headline : ''}${person.location ? ' | ' + person.location : ''} | ${dist} degree${person.shared_connections_count ? ' | ' + person.shared_connections_count + ' shared' : ''}${url ? '\n  LinkedIn: ' + url : ''}`;
+        return `* ${person.name}${person.headline ? ' — ' + person.headline : ''}${person.location ? ' | ' + person.location : ''} | ${dist} degree${url ? '\n  LinkedIn: ' + url : ''}`;
       });
     if (people.length > 0) {
       sections.push(`PEOPLE AT ${company.toUpperCase()} — LinkedIn (live):\n${people.join('\n')}`);
@@ -109,14 +113,14 @@ exports.handler = async (event) => {
 
   // News
   const companyNews = newsResult.status === 'fulfilled' ? newsResult.value : [];
-  if (companyNews.length > 0) {
+  if (companyNews && companyNews.length > 0) {
     sections.push(`LIVE COMPANY NEWS:\n` +
       companyNews.slice(0, 3).map(r => `* ${r.title}: ${(r.description || r.snippet || '').substring(0, 150)}`).join('\n'));
   }
 
   // Jobs
   const companyJobs = jobsResult.status === 'fulfilled' ? jobsResult.value : [];
-  if (companyJobs.length > 0) {
+  if (companyJobs && companyJobs.length > 0) {
     sections.push(`HIRING SIGNALS:\n` +
       companyJobs.slice(0, 3).map(r => `* ${r.title}: ${(r.description || r.snippet || '').substring(0, 120)}`).join('\n'));
   }
@@ -131,12 +135,12 @@ exports.handler = async (event) => {
 async function apolloPeopleSearch(companyIdentifier) {
   const domain = companyIdentifier.includes('.') ? companyIdentifier
     : companyIdentifier.toLowerCase().replace(/[^a-z0-9]+/g, '') + '.com';
-  const res = await fetch('https://api.apollo.io/v1/mixed_people/search', {
+  const res = await fetchWithTimeout('https://api.apollo.io/v1/mixed_people/search', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', 'X-Api-Key': APOLLO_KEY },
     body: JSON.stringify({ q_organization_domains_list: [domain], person_seniorities: ['c_suite', 'vp', 'director', 'head', 'manager'], per_page: 10 }),
-  });
-  if (!res.ok) { console.warn('[enrich-lead] Apollo status:', res.status); return null; }
+  }, 6000);
+  if (!res.ok) return null;
   return res.json();
 }
 
@@ -150,7 +154,7 @@ async function braveFetch(query, type) {
   const endpoint = type === 'news'
     ? `https://api.search.brave.com/res/v1/news/search?q=${encodeURIComponent(query)}&count=3&freshness=pm`
     : `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=3`;
-  const res = await fetch(endpoint, { headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_KEY } });
+  const res = await fetchWithTimeout(endpoint, { headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_KEY } }, 5000);
   const data = await res.json();
   return type === 'news' ? (data.results || []) : (data.web && data.web.results || []);
 }

@@ -4364,7 +4364,7 @@ async function sendChat(){
     if(_leadCtx){
       const lc=_leadCtx;
       // Await live Unipile enrichment before building system prompt (max ~8s)
-      if(lc._enrichmentPromise&&!lc._enrichment){try{await Promise.race([lc._enrichmentPromise,new Promise(r=>setTimeout(r,12000))]);}catch(e){}}
+      if(lc._enrichmentPromise&&!lc._enrichment){try{await Promise.race([lc._enrichmentPromise,new Promise(r=>setTimeout(r,5000))]);}catch(e){}}
       const sys=`You are an AI BD assistant for Michael Stubbs at Vantage Search Group, a boutique GCC executive search firm.
 
 You are helping Michael think through a specific LinkedIn lead. Here is everything known about them:
