@@ -49,7 +49,7 @@ exports.handler = async (event) => {
 
   // Fetch leads
   const qualifiedFilter = forceRequalify ? '' : '&qualified_at=is.null';
-  const leadsParams = `?select=id,full_name,title,company,reply_summary,linkedin_url,days_since_reply&order=days_since_reply.asc&limit=30${qualifiedFilter}`;
+  const leadsParams = `?select=id,full_name,title,company,notes,linkedin_url,status&order=created_at.asc&limit=30${qualifiedFilter}`;
 
   let leads;
   try {
@@ -103,8 +103,8 @@ CONTACT:
 - Name: ${lead.full_name}
 - Title: ${lead.title || 'Unknown'}
 - Company: ${lead.company || 'Unknown'}
-- Their reply summary: ${lead.reply_summary || 'No reply yet'}
-- Days since reply: ${lead.days_since_reply || 'Unknown'}
+- Status: ${lead.status || 'Unknown'}
+- Notes: ${lead.notes || 'None'}
 
 ORIGINAL SIGNALS (why Vantage Search Group first reached out to this person):
 ${originalSignals || 'No historical signals found in database.'}
