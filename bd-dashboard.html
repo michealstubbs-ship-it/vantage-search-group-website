@@ -2216,7 +2216,7 @@ CLOSE: How Michael should end the meeting to move it forward
 
 Tone: Concise, intelligent. Written for someone who knows the GCC market. Under 250 words total.
 Rules: Never criticise UAE, Saudi, or any GCC government. No em-dashes.`;
-    const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
+    const resp=await fetch('https://vsg-bd-dashboard.netlify.app/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     const brief=data.content||data.response||'';
     if(brief&&db){
@@ -4435,12 +4435,13 @@ Give Michael specific, actionable SEO advice. Suggest keywords, content ideas, t
         }
       };
     }
-    const res=await fetch('/.netlify/functions/chat',{
+    const chatRes=await fetch('https://vsg-bd-dashboard.netlify.app/.netlify/functions/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(fetchBody)
     });
-    const data=await res.json();
+    if(!chatRes.ok){const errTxt=await chatRes.text().catch(()=>'');throw new Error(`HTTP ${chatRes.status}: ${errTxt.substring(0,200)}`);}
+    const data=await chatRes.json();
     if(data.error)throw new Error(data.error);
     chatMessages=chatMessages.filter(m=>!m.typing);
     // Detect and extract monitoring rule from AI response
@@ -4859,7 +4860,7 @@ Rules:
 - CRITICAL: Return ONLY raw JSON. No markdown. No code fences. No backticks. First character must be { and last must be }.`;
 
   try{
-    const resp=await fetch('/.netlify/functions/chat',{
+    const resp=await fetch('https://vsg-bd-dashboard.netlify.app/.netlify/functions/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({messages:[{role:'user',content:'Generate my Today\'s Actions list now.'}],systemOverride:systemPrompt,maxTokens:4096,model:'claude-haiku-4-5-20251001'})
@@ -5483,7 +5484,7 @@ async function submitAnnieFeedback(btn){
   if(!feedback){showToast('Tell Annie what to change first');return;}
   const origText=btn.textContent;btn.disabled=true;btn.textContent='Rewriting...';
   try{
-    const resp=await fetch('/.netlify/functions/chat',{
+    const resp=await fetch('https://vsg-bd-dashboard.netlify.app/.netlify/functions/chat',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         messages:[{role:'user',content:'Rewrite this LinkedIn message based on the feedback.\n\nContact: '+esc(c.name)+' ('+(c.title||'')+(c.company?' at '+c.company:'')+')\nSignal: '+signal+'\n\nCurrent message:\n'+currentMsg+'\n\nFeedback: '+feedback+'\n\nRules: max 60 words, no em-dashes, no "lets discuss", no "Id love to connect", no corporate language, conversational tone. Return ONLY the rewritten message text.'}],
@@ -6134,7 +6135,7 @@ async function generateSegment(seg){
  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Generating...';
  const prompt=`Generate one edition of the GCC Leadership Moves Digest for the ${segNames[seg]} segment.\n\nOutput format (each section labelled clearly):\nMOVES: [5-8 real or plausible GCC senior leadership moves relevant to ${segNames[seg]}. Format: Name — Previous Role, Previous Company to New Role, New Company. One sentence on why it matters.]\nBUILDING: [2-3 companies in this segment visibly scaling their senior teams. One line each.]\nOBSERVATION: [Michael's first-person read on the market in one paragraph. Intelligent, specific, opinionated. Not generic. Starts with "This week,"]\nQUESTION: [One provocative question for this segment's senior professionals]\nCLOSE: [One warm closing line positioning VSG as search partner — not salesy]\n\nTone: Sharp, intelligent briefing. Reads like it came from someone who genuinely knows the GCC.\nRules: Never criticise the UAE, Saudi, or any GCC government. No em-dashes.`;
  try{
- const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
+ const resp=await fetch('https://vsg-bd-dashboard.netlify.app/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
  const data=await resp.json();
  const text=data.content||data.response||'';
  const extract=(label,next)=>{const r=new RegExp(label+'\\s*:?\\s*([\\s\\S]*?)(?='+next+':|$)','i');const m=text.match(r);return m?m[1].trim():'';};
@@ -6204,10 +6205,4 @@ async function sendDigest(){
  saved._lastSent=new Date().toISOString();
  saved._lastSubject=subject;
  localStorage.setItem('vsg_digest',JSON.stringify(saved));
- if(typeof loadTriggers==='function')setTimeout(loadTriggers,500);
-}
-
-// checkNewConnections removed — new connections handled by fetchAndRenderPendingWelcomes() separately
-</script>
-</body>
-</html>
+ if(typeof loadT
