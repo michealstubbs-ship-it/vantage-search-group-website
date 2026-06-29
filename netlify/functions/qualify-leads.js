@@ -49,7 +49,8 @@ exports.handler = async (event) => {
 
   // Fetch leads
   const qualifiedFilter = forceRequalify ? '' : '&qualified_at=is.null';
-  const leadsParams = `?select=id,full_name,title,company,notes,linkedin_url,status&order=created_at.asc&limit=30${qualifiedFilter}`;
+  const batchLimit = forceRequalify ? 5 : 30;
+  const leadsParams = `?select=id,full_name,title,company,notes,linkedin_url,status&order=created_at.asc&limit=${batchLimit}${qualifiedFilter}`;
 
   let leads;
   try {
@@ -62,10 +63,8 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers, body: JSON.stringify({ qualified: 0, message: 'No leads to qualify' }) };
   }
 
-  let qualified = 0;
-
-  for (const lead of leads) {
-    try {
+  // Process all leads in parallel for speed
+  const results = await Promise.allSettled(leads.map(async (lead) => {
       // 1. Fetch original company signals
       let originalSignals = '';
       if (lead.company) {
@@ -157,14 +156,13 @@ No markdown. No explanation outside the JSON.`;
         qualified_at: new Date().toISOString(),
       });
 
-      qualified++;
-    } catch (e) {
-      console.error(`[qualify-leads] Error qualifying ${lead.full_name}:`, e.message);
-    }
+      return true;
+  }));
 
-    // Rate limit
-    await new Promise(r => setTimeout(r, 300));
-  }
+  const qualified = results.filter(r => r.status === 'fulfilled' && r.value === true).length;
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') console.error(`[qualify-leads] Error on lead ${i}:`, r.reason?.message);
+  });
 
   return {
     statusCode: 200,
