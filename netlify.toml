@@ -30,3 +30,4 @@
     X-Content-Type-Options = "nosniff"
 
 # env var added: SUPABASE_SERVICE_KEY
+# redeploy: trigger fresh build
