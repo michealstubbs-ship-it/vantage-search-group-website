@@ -4,12 +4,34 @@
 // contacted, and draft a suggested follow-up message.
 // Called from the LinkedIn Leads panel "Qualify All" button.
 
-const { createClient } = require('@supabase/supabase-js');
-
 const SUPA_URL = 'https://mkqbegnqrgveiygrycyg.supabase.co';
 const SUPA_KEY = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcWJlZ25xcmd2ZWl5Z3J5Y3lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjE3NjAsImV4cCI6MjA5Nzc5Nzc2MH0.0Qprp9wRW8iPhmqPbmXEkp0toz3z8TGXoVEESkP6Tp4';
 const CLAUDE_KEY = process.env.CLAUDE_API_KEY;
 const BRAVE_KEY = process.env.BRAVE_SEARCH_API_KEY;
+
+const SUPA_HEADERS = {
+  'apikey': SUPA_KEY,
+  'Authorization': `Bearer ${SUPA_KEY}`,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation',
+};
+
+async function supaSelect(table, params = '') {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${table}${params}`, {
+    headers: SUPA_HEADERS,
+  });
+  if (!res.ok) throw new Error(`Supabase select failed: ${await res.text()}`);
+  return res.json();
+}
+
+async function supaUpdate(table, id, data) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: SUPA_HEADERS,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`Supabase update failed: ${await res.text()}`);
+}
 
 exports.handler = async (event) => {
   const headers = {
@@ -22,38 +44,35 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   if (!CLAUDE_KEY) return { statusCode: 500, headers, body: JSON.stringify({ error: 'CLAUDE_API_KEY not set' }) };
 
-  const db = createClient(SUPA_URL, SUPA_KEY);
-
   const body = JSON.parse(event.body || '{}');
   const forceRequalify = body.force === true;
 
-  let query = db.from('linkedin_leads')
-    .select('id,full_name,title,company,reply_summary,linkedin_url,days_since_reply')
-    .order('days_since_reply', { ascending: true })
-    .limit(30);
+  // Fetch leads
+  const qualifiedFilter = forceRequalify ? '' : '&qualified_at=is.null';
+  const leadsParams = `?select=id,full_name,title,company,reply_summary,linkedin_url,days_since_reply&order=days_since_reply.asc&limit=30${qualifiedFilter}`;
 
-  if (!forceRequalify) {
-    query = query.is('qualified_at', null);
+  let leads;
+  try {
+    leads = await supaSelect('linkedin_leads', leadsParams);
+  } catch (e) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };
   }
 
-  const { data: leads, error } = await query;
-  if (error) return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
-  if (!leads || leads.length === 0) return { statusCode: 200, headers, body: JSON.stringify({ qualified: 0, message: 'No leads to qualify' }) };
+  if (!leads || leads.length === 0) {
+    return { statusCode: 200, headers, body: JSON.stringify({ qualified: 0, message: 'No leads to qualify' }) };
+  }
 
   let qualified = 0;
 
   for (const lead of leads) {
     try {
-      // 1. Fetch original company signals from Supabase (why we contacted them)
+      // 1. Fetch original company signals
       let originalSignals = '';
       if (lead.company) {
-        const { data: signals } = await db
-          .from('company_signals')
-          .select('signal_type,title,summary,created_at,importance')
-          .ilike('company_name', `%${lead.company}%`)
-          .order('created_at', { ascending: false })
-          .limit(3);
-
+        const companyEncoded = encodeURIComponent(`%${lead.company}%`);
+        const signals = await supaSelect('company_signals',
+          `?select=signal_type,title,summary,created_at,importance&company_name=ilike.${companyEncoded}&order=created_at.desc&limit=3`
+        );
         if (signals && signals.length > 0) {
           originalSignals = signals
             .map(s => `[${s.signal_type || 'Signal'}] ${s.title || ''}: ${(s.summary || '').substring(0, 120)}`)
@@ -129,14 +148,14 @@ No markdown. No explanation outside the JSON.`;
       const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
       const parsed = JSON.parse(cleaned);
 
-      await db.from('linkedin_leads').update({
+      await supaUpdate('linkedin_leads', lead.id, {
         qualification_score: parsed.score,
         qualification_notes: parsed.notes || null,
         qualification_hooks: parsed.hook || null,
         outreach_reason: parsed.outreach_reason || null,
         suggested_message: parsed.suggested_message || null,
         qualified_at: new Date().toISOString(),
-      }).eq('id', lead.id);
+      });
 
       qualified++;
     } catch (e) {
