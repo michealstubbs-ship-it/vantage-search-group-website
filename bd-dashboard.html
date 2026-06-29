@@ -4603,11 +4603,11 @@ async function runTodaysActions(){
   const fourteenDaysAgo=new Date(Date.now()-14*864e5).toISOString();
   const sevenDaysAgo=new Date(Date.now()-7*864e5).toISOString().slice(0,10);
 
-  let overdueFollowUps=[], staleContacts=[], liveSignals=[], liLeads=[], activeMandates=[], newConnections=[], pendingSequences=[], myConnections=[], styleRules=[];
+  let overdueFollowUps=[], staleContacts=[], liveSignals=[], liLeads=[], activeMandates=[], newConnections=[], pendingSequences=[], myConnections=[], styleRules=[], followUpContacts=[];
 
   if(db){
     try{
-      const [fuRes,staleRes,sigRes,liRes,jobsRes,connRes,seqRes,myConnRes,styleRulesRes]=await Promise.all([
+      const [fuRes,staleRes,sigRes,liRes,jobsRes,connRes,seqRes,myConnRes,styleRulesRes,followUpRes]=await Promise.all([
         db.from('contacts').select('name,title,company,stage,last_contact,follow_up_date,notes,linkedin,email')
           .not('stage','in','("lost","rejected","not_interested","placed")')
           .lt('follow_up_date',todayStr).not('follow_up_date','is',null)
@@ -4629,6 +4629,7 @@ async function runTodaysActions(){
           .order('created_at',{ascending:false}).limit(6),
         db.from('linkedin_connections').select('full_name,title,company,linkedin_url').order('full_name',{ascending:true}).limit(500),
         db.from('message_style_rules').select('rule_type,feedback').order('created_at',{ascending:false}).limit(15),
+        db.from('linkedin_outreach').select('full_name,title,company,linkedin_url,date_connected,touch_count,last_touch_date,notes').eq('status','connected').eq('welcome_sent',true).is('date_replied',null).or('next_touch_date.is.null,next_touch_date.lte.'+todayStr).order('date_connected',{ascending:true}).limit(5),
       ]);
       overdueFollowUps=fuRes.data||[];
       staleContacts=staleRes.data||[];
@@ -4639,6 +4640,7 @@ async function runTodaysActions(){
       pendingSequences=seqRes.data||[];
       myConnections=myConnRes.data||[];
       styleRules=styleRulesRes?.data||[];
+      followUpContacts=followUpRes?.data||[];
     }catch(e){console.warn('[Today\'s Actions] Data fetch error:',e);}
   }
 
@@ -4668,6 +4670,17 @@ async function runTodaysActions(){
 
   const sequencesCtx=pendingSequences.length
     ? pendingSequences.map(s=>`- ${s.title} at ${s.company_name} (${fmt(s.created_at)})`).join('\n')
+    : 'None';
+
+  const followUpCtx=followUpContacts.length
+    ? followUpContacts.map(c=>{
+        const daysSince=c.date_connected?Math.floor((Date.now()-new Date(c.date_connected))/864e5):null;
+        const touches=c.touch_count||0;
+        const schedule=[14,21,30,45];
+        const nextIn=schedule[Math.min(touches,schedule.length-1)];
+        return `- ${c.full_name} (${c.title||'?'} at ${c.company||'?'}) — connected${daysSince!==null?' '+daysSince+'d ago':''}, ${touches} follow-up touch${touches!==1?'es':''} sent, no reply yet. Next touch due in ~${nextIn} days. GOAL: get a reply and open a commercial conversation.${c.linkedin_url?' | '+c.linkedin_url:''}${c.notes?' | Notes: '+c.notes.substring(0,80):''}`;
+      }).join('
+')
     : 'None';
 
   // Group confirmed connections by company for warm routing
@@ -4718,6 +4731,9 @@ ${signalsCtx}
 
 PENDING SEQUENCE MESSAGES (drafted, awaiting Michael's review):
 ${sequencesCtx}
+
+CONNECTED — AWAITING REPLY (sent a welcome/follow-up, no reply yet — AI must monitor and resurface until outcome):
+${followUpCtx}
 
 YOUR CONFIRMED 1ST-DEGREE LINKEDIN CONNECTIONS (grouped by company — use this for warm routing):
 ${myConnectionsCtx}
@@ -5106,6 +5122,23 @@ async function markActionDone(i){
   _updateActionsNavBadge();
   showToast('Marked done — learning trail updated');
   await Promise.all([_persistActionStates(), _recordMichaelAction(a.rank||i+1,'acted')]);
+  // Fire-and-forget: if this action was a follow-up for a connected-but-no-reply contact, advance their touch schedule
+  if(a.contact_li_url&&_db()){
+    const _db2=_db();
+    (async()=>{
+      try{
+        const{data:outr}=await _db2.from('linkedin_outreach').select('id,touch_count')
+          .eq('linkedin_url',a.contact_li_url).eq('status','connected').is('date_replied',null).maybeSingle();
+        if(outr){
+          const tc=(outr.touch_count||0)+1;
+          const sched=[14,21,30,45];
+          const days=sched[Math.min(tc,sched.length-1)];
+          const nextDate=new Date(Date.now()+days*864e5).toISOString().slice(0,10);
+          await _db2.from('linkedin_outreach').update({touch_count:tc,last_touch_date:new Date().toISOString().slice(0,10),next_touch_date:nextDate}).eq('id',outr.id);
+        }
+      }catch(_){}
+    })();
+  }
 }
 
 async function dismissActionItem(i){
