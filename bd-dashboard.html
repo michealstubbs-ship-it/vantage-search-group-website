@@ -5700,7 +5700,7 @@ async function loadLeads(){
     const actionBtns=l.id
       ?`<button class="btn btn-sm btn-green" onclick="markLeadContacted('${l.id}')"><i class="ti ti-check"></i> Mark contacted</button>
          <button class="btn btn-sm btn-ghost" onclick="markLeadConverted('${l.id}')"><i class="ti ti-star"></i> Converted</button>
-         <button class="btn btn-sm" style="background:rgba(0,119,181,.1);color:#0077b5;border:1px solid rgba(0,119,181,.2)" onclick="openChatFromLeadId(${l.id})"><i class="ti ti-message-circle"></i> Ask AI</button>`
+         <button class="btn btn-sm" style="background:rgba(0,119,181,.1);color:#0077b5;border:1px solid rgba(0,119,181,.2)" onclick="openChatFromLeadId('${l.id}')"><i class="ti ti-message-circle"></i> Ask AI</button>`
       :`<span style="font-size:11px;color:var(--muted)">Edit in All Contacts</span>`;
     return `<div class="fu ${isOverdue?'overdue':isSoon?'today':''}" style="${borderClass}">
       <div class="fu-top">
