@@ -4479,7 +4479,7 @@ Give Michael specific, actionable SEO advice. Suggest keywords, content ideas, t
     chatMessages=chatMessages.filter(m=>!m.typing);
     addChatMessage('assistant',err.message.includes('CLAUDE_API_KEY')?
       'The AI chat needs the CLAUDE_API_KEY configured in Netlify. Go to Netlify Dashboard, Site Settings, Environment Variables, and add your Claude API key as CLAUDE_API_KEY.':
-      'Could not reach the AI right now. Make sure the Netlify function is deployed and your API key is configured.');
+      'Error: ' + err.message);
   }
 }
 
