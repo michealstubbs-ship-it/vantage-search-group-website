@@ -1,4 +1,4 @@
-// VSG AI Chat — Netlify Serverless Function v4
+// VSG AI Chat — Netlify Serverless Function v5
 // Proxies requests to Claude API with contact context injected
 exports.handler = async (event) => {
   const cors = {
