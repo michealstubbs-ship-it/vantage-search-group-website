@@ -948,7 +948,10 @@ textarea{resize:vertical;min-height:80px}
           <h1><i class="ti ti-user-star" style="color:var(--gold);margin-right:6px;font-size:22px;vertical-align:middle"></i>LinkedIn Leads</h1>
           <p>Senior GCC contacts who replied to your outreach or are actively engaged — nurture until follow-up date</p>
         </div>
-        <button class="btn btn-sm btn-ghost" onclick="loadLeads()"><i class="ti ti-refresh"></i> Refresh</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-sm btn-ghost" onclick="loadLeads()"><i class="ti ti-refresh"></i> Refresh</button>
+          <button class="btn btn-sm btn-gold" id="qualify-btn" onclick="qualifyAllLeads()"><i class="ti ti-brain"></i> <span id="qualify-lbl">Qualify All</span></button>
+        </div>
       </div>
       <div class="metrics" id="leads-metrics" style="grid-template-columns:repeat(3,1fr)"></div>
       <div id="leads-overdue-section" style="display:none">
@@ -4616,7 +4619,7 @@ async function runTodaysActions(){
         db.from('company_signals').select('company_name,signal_type,title,summary,importance,created_at,named_contact,named_contact_title,named_contact_linkedin')
           .eq('actioned',false).neq('signal_type','news').gte('created_at',fourteenDaysAgo)
           .order('importance',{ascending:false}).order('created_at',{ascending:false}).limit(12),
-        db.from('linkedin_leads').select('full_name,title,company,reply_summary,follow_up_date,days_since_reply,linkedin_url')
+        db.from('linkedin_leads').select('full_name,title,company,reply_summary,follow_up_date,days_since_reply,linkedin_url,qualification_score,qualification_notes,qualification_hooks')
           .or('follow_up_date.lt.'+todayStr+',follow_up_date.is.null')
           .order('days_since_reply',{ascending:false}).limit(8),
         db.from('jobs').select('title,company,status,deadline,notes').eq('status','active').limit(5),
@@ -4652,7 +4655,7 @@ async function runTodaysActions(){
     : 'None';
 
   const liLeadsCtx=liLeads.length
-    ? liLeads.map(c=>`- ${c.full_name} (${c.title||'?'} at ${c.company||'?'}) — replied ${c.days_since_reply||'?'}d ago${c.reply_summary?' | Reply: '+c.reply_summary.substring(0,100):''}${c.follow_up_date?' | Follow-up due: '+fmt(c.follow_up_date):''}${c.linkedin_url?' | '+c.linkedin_url:''}`).join('\n')
+    ? liLeads.map(c=>`- ${c.full_name} (${c.title||'?'} at ${c.company||'?'}) — replied ${c.days_since_reply||'?'}d ago${c.reply_summary?' | Reply: '+c.reply_summary.substring(0,100):''}${c.follow_up_date?' | Follow-up due: '+fmt(c.follow_up_date):''}${c.qualification_score?' | Qualification: '+c.qualification_score+'/5 — '+(c.qualification_score>=4?'PURSUE':c.qualification_score===3?'NURTURE':'PASS')+(c.qualification_notes?' ('+c.qualification_notes+')':''):''}${c.qualification_hooks?' | Hook: '+c.qualification_hooks:''}${c.linkedin_url?' | '+c.linkedin_url:''}`).join('\n')
     : 'None';
 
   const mandatesCtx=activeMandates.length
@@ -5473,7 +5476,7 @@ async function loadLeads(){
   const nextMonthStr=new Date(Date.now()+31*864e5).toISOString().slice(0,10);
 
   const [leadsRes,outreachRes,engagedRes]=await Promise.all([
-    db?db.from('linkedin_leads').select('*').order('follow_up_date',{ascending:true}):Promise.resolve({data:[]}),
+    db?db.from('linkedin_leads').select('*,qualification_score,qualification_notes,qualification_hooks,qualified_at').order('follow_up_date',{ascending:true}):Promise.resolve({data:[]}),
     db?db.from('linkedin_outreach').select('status'):Promise.resolve({data:[]}),
     db?db.from('contacts').select('name,title,company,linkedin,stage,notes,last_contact,follow_up_date').in('stage',['engaged','meeting']).not('linkedin','is',null):Promise.resolve({data:[]})
   ]);
@@ -5534,6 +5537,13 @@ async function loadLeads(){
       :l.status==='engaged'?'<span class="b b-active" style="background:rgba(245,158,11,.12);color:#92400e">Engaged</span>'
       :'<span class="b b-cold">Pending</span>';
     const sourceTag=l._source==='contacts'?'<span class="b b-cold" style="font-size:9px;opacity:.6">All Contacts</span>':'<span class="b b-cold" style="font-size:9px;opacity:.6">LinkedIn reply</span>';
+    const qScore=l.qualification_score||0;
+    const qLabel=qScore>=4?'Pursue':qScore===3?'Nurture':qScore>=1?'Pass':'';
+    const qColor=qScore>=4?'#065f46':qScore===3?'#92400e':'#991b1b';
+    const qBg=qScore>=4?'rgba(16,185,129,.1)':qScore===3?'rgba(245,158,11,.1)':'rgba(239,68,68,.1)';
+    const qBadge=qLabel?`<span class="b" style="background:${qBg};color:${qColor};font-weight:700">${qScore>=4?'✓':qScore===3?'~':'✕'} ${qLabel}</span>`:'<span class="b b-cold" style="opacity:.5">Not qualified</span>';
+    const qNotes=l.qualification_notes?`<div style="font-size:11px;color:var(--muted);margin:4px 0 2px;font-style:italic">${esc(l.qualification_notes)}</div>`:'';
+    const qHook=l.qualification_hooks&&qScore>=3?`<div style="margin:5px 0;padding:6px 10px;background:rgba(201,168,76,.07);border-left:2px solid var(--gold);border-radius:0 5px 5px 0;font-size:12px;color:var(--navy)"><i class="ti ti-message-circle" style="font-size:11px;margin-right:4px;color:var(--gold)"></i>${esc(l.qualification_hooks)}</div>`:'';
     const actionBtns=l.id
       ?`<button class="btn btn-sm btn-green" onclick="markLeadContacted('${l.id}')"><i class="ti ti-check"></i> Mark contacted</button>
          <button class="btn btn-sm btn-ghost" onclick="markLeadConverted('${l.id}')"><i class="ti ti-star"></i> Converted</button>`
@@ -5545,11 +5555,12 @@ async function loadLeads(){
           <div style="flex:1;min-width:0">
             <div class="fu-name">${esc(l.full_name||'—')}</div>
             <div class="fu-detail">${esc((l.title||'').split('|')[0].trim())}${l.company?' at '+esc(l.company):''}${l.location?' · '+esc(l.location):''}</div>
-            <div class="fu-badges">${fuLabel} ${statusBadge} ${sourceTag}</div>
+            <div class="fu-badges">${fuLabel} ${statusBadge} ${sourceTag} ${qBadge}</div>
           </div>
         </div>
       </div>
       ${l.notes?`<div class="fu-note">${esc(l.notes.substring(0,200))}</div>`:''}
+      ${qNotes}${qHook}
       <div class="fu-actions">
         <a href="${l.linkedin_url||'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(l.full_name||'')}" target="_blank" class="btn btn-sm" style="background:#0077b5;color:#fff;border:none"><i class="ti ti-brand-linkedin"></i> View on LinkedIn</a>
         ${actionBtns}
@@ -5576,6 +5587,30 @@ window.markLeadConverted=async function(id){
   await db.from('linkedin_leads').update({status:'converted'}).eq('id',id);
   loadLeads();
 };
+
+
+async function qualifyAllLeads(force=false){
+  const btn=document.getElementById('qualify-btn');
+  const lbl=document.getElementById('qualify-lbl');
+  if(btn)btn.disabled=true;
+  if(lbl)lbl.textContent='Qualifying...';
+  try{
+    const resp=await fetch('/.netlify/functions/qualify-leads',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({force})
+    });
+    const data=await resp.json();
+    if(data.error){showToast('Qualification failed: '+data.error);return;}
+    showToast(`${data.qualified} lead${data.qualified!==1?'s':''} qualified — refreshing...`);
+    await loadLeads();
+  }catch(e){
+    showToast('Error: '+e.message);
+  }finally{
+    if(btn)btn.disabled=false;
+    if(lbl)lbl.textContent='Qualify All';
+  }
+}
 
 /* ═══════════════════════════════════════════════════
    HIRING SIGNALS
