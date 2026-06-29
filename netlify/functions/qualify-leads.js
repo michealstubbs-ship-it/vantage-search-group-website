@@ -124,7 +124,7 @@ Return ONLY a JSON object with these exact keys:
   "notes": "<20-30 word honest assessment of why this score — mention company stage, hiring signals, or lack thereof>",
   "hook": "<20-30 word suggested conversation angle based on what you found — specific, not generic. If Pass, write null>",
   "outreach_reason": "<1-2 sentences explaining the specific signal that originally drove outreach to this person — e.g. 'Company posted 3 senior finance roles in Q1' or 'ADGM registered 2 new entities in their sector'. If no signals found, write null>",
-  "suggested_message": "<A short, specific LinkedIn message (60-100 words) to send this warm lead. It must: reference the original signal or fresh finding, acknowledge their reply warmly, and move toward a commercial conversation — asking if they have hiring needs or if they would be open to a brief call. Do NOT use generic openers. If score is 1-2, write null>"
+  "suggested_message": "<A short, specific LinkedIn message (60-100 words) to send this warm lead. CRITICAL: This person is a potential CLIENT, not a candidate. Vantage Search Group wants to WIN THEIR HIRING MANDATE — they should be asked whether their company or team has senior hiring needs that VSG could support. Do NOT suggest they are a candidate or ask them to refer others. The message must: acknowledge their reply warmly, reference something specific about their company or role, and move toward asking if they have open senior roles VSG could help fill. Do NOT use generic openers. If score is 1-2, write null>"
 }
 
 No markdown. No explanation outside the JSON.`;
