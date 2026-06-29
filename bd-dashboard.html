@@ -4391,7 +4391,8 @@ Never expose this tag in your conversational response — only output it as the 
       fetchBody={
         messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
         systemOverride:sys,
-        maxTokens:1024
+        maxTokens:1024,
+        model:'claude-sonnet-4-6'
       };
     } else if(_actionCtx){
       const sys=`You are an AI BD assistant for Michael Stubbs at Vantage Search Group, a boutique GCC executive search firm headquartered in Dubai. VSG has placed leaders at Mubadala, PIF, TAQA, Red Sea Global, Diriyah Gate, ADNOC, Accenture, Kearney and many others.
@@ -4410,7 +4411,8 @@ Help Michael: refine or rewrite the message, find a different angle, provide com
       fetchBody={
         messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
         systemOverride:sys,
-        maxTokens:1024
+        maxTokens:1024,
+        model:'claude-sonnet-4-6'
       };
     } else if(window._seoCtx&&currentChatContact&&currentChatContact.name==='SEO Assistant'){
       const seaSys=`You are an SEO advisor for Vantage Search Group, a boutique executive search firm headquartered in Dubai serving the GCC. The website is vantagesearchgroup.com.
@@ -4421,7 +4423,8 @@ Give Michael specific, actionable SEO advice. Suggest keywords, content ideas, t
       fetchBody={
         messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
         systemOverride:seaSys,
-        maxTokens:1024
+        maxTokens:1024,
+        model:'claude-sonnet-4-6'
       };
     } else {
       fetchBody={
