@@ -3936,6 +3936,7 @@ let chatMessages=[];
 let currentChatContact=null;
 let chatContactId=null;
 let _actionCtx=null; // stores Today's Actions context when chatting from an action card
+let _leadCtx=null; // stores LinkedIn Lead context when chatting from a lead card
 
 // Supabase instance (reuse from parent scope via window)
 const _db=()=>window._vsgDb;
@@ -4318,7 +4319,7 @@ function closeChatPanel(){
   document.getElementById('chatPanel').classList.remove('open');
   document.getElementById('chatOverlay').classList.remove('open');
   currentChatContact=null;chatContactId=null;chatMessages=[];
-  _actionCtx=null;window._seoCtx=null;
+  _actionCtx=null;_leadCtx=null;window._seoCtx=null;
   // Restore default chips
   const chips=document.getElementById('chat-chips');
   if(chips) chips.innerHTML=`
@@ -4360,7 +4361,35 @@ async function sendChat(){
   addChatMessage('assistant','Thinking...',true);
   try{
     let fetchBody;
-    if(_actionCtx){
+    if(_leadCtx){
+      const lc=_leadCtx;
+      const sys=`You are an AI BD assistant for Michael Stubbs at Vantage Search Group, a boutique GCC executive search firm.
+
+You are helping Michael think through a specific LinkedIn lead. Here is everything known about them:
+
+CONTACT: ${lc.full_name||'Unknown'}
+TITLE: ${lc.title||'Unknown'}
+COMPANY: ${lc.company||'Unknown'}
+REPLY SUMMARY: ${lc.reply_summary||'No reply recorded'}
+DAYS SINCE REPLY: ${lc.days_since_reply||'Unknown'}
+QUALIFICATION: ${lc.qualification_score?lc.qualification_score+'/5 — '+(lc.qualification_score>=4?'Pursue':lc.qualification_score===3?'Nurture':'Pass'):'Not yet qualified'}
+WHY ORIGINALLY CONTACTED: ${lc.outreach_reason||'Unknown — run Qualify All to populate'}
+QUALIFICATION NOTES: ${lc.qualification_notes||'None'}
+SUGGESTED HOOK: ${lc.qualification_hooks||'None'}
+LINKEDIN: ${lc.linkedin_url||'Unknown'}
+
+Help Michael with research questions, message ideas, or strategic thinking about this lead. Be concise and direct.
+
+IMPORTANT: If Michael asks you to monitor, watch, track, or alert him about something specific for this person (e.g., "monitor if they move company", "tell me if they announce a hire", "watch for a new role"), at the very END of your response output this exact tag on its own line:
+[MONITOR:{"contact_name":"${(lc.full_name||'').replace(/"/g,'\\"')}","linkedin_url":"${(lc.linkedin_url||'').replace(/"/g,'\\"')}","company":"${(lc.company||'').replace(/"/g,'\\"')}","watch_for":"<describe exactly what to watch for in plain English>","trigger_description":"<one sentence describing what would trigger this alert>"}]
+
+Never expose this tag in your conversational response — only output it as the final line if a monitoring rule is being set.`;
+      fetchBody={
+        messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
+        systemOverride:sys,
+        maxTokens:1024
+      };
+    } else if(_actionCtx){
       const sys=`You are an AI BD assistant for Michael Stubbs at Vantage Search Group, a boutique GCC executive search firm headquartered in Dubai. VSG has placed leaders at Mubadala, PIF, TAQA, Red Sea Global, Diriyah Gate, ADNOC, Accenture, Kearney and many others.
 
 Michael is following up on a specific BD action from his dashboard. Here is the full context:
@@ -4410,13 +4439,35 @@ Give Michael specific, actionable SEO advice. Suggest keywords, content ideas, t
     const data=await res.json();
     if(data.error)throw new Error(data.error);
     chatMessages=chatMessages.filter(m=>!m.typing);
-    addChatMessage('assistant',data.content);
+    // Detect and extract monitoring rule from AI response
+    let displayContent=data.content;
+    const monitorMatch=data.content.match(/\[MONITOR:(\{[^\]]+\})\]/s);
+    if(monitorMatch&&_leadCtx){
+      try{
+        const rule=JSON.parse(monitorMatch[1]);
+        displayContent=data.content.replace(/\n?\[MONITOR:\{[^\]]+\}\]/s,'').trim();
+        const mdb=_db();
+        if(mdb){
+          await mdb.from('monitoring_rules').insert([{
+            contact_name:rule.contact_name||_leadCtx.full_name||'',
+            linkedin_url:rule.linkedin_url||_leadCtx.linkedin_url||null,
+            company:rule.company||_leadCtx.company||null,
+            watch_for:rule.watch_for||'',
+            trigger_description:rule.trigger_description||null,
+            source_lead_id:_leadCtx.id||null,
+            active:true
+          }]);
+          showToast('📡 Monitoring rule saved — signal monitor will watch for this');
+        }
+      }catch(e){console.warn('monitor rule parse error:',e);}
+    }
+    addChatMessage('assistant',displayContent);
     try{
       const db=_db();
       if(db&&chatContactId){
         await db.from('chat_history').insert([
           {contact_id:chatContactId,role:'user',content:text},
-          {contact_id:chatContactId,role:'assistant',content:data.content}
+          {contact_id:chatContactId,role:'assistant',content:displayContent}
         ]);
       }
     }catch(e){console.error('chat save:',e);}
@@ -5077,6 +5128,34 @@ function openChatFromAction(idx){
   document.getElementById('chatOverlay').classList.add('open');
 }
 
+function openChatFromLead(l){
+  _leadCtx=l;
+  _actionCtx=null;window._seoCtx=null;
+  currentChatContact={name:l.full_name||'Lead',company:l.company||'',title:l.title||'',industry:'',stage:'',lastContact:'',followupDate:'',linkedin:l.linkedin_url||'',notes:''};
+  chatContactId=null;
+  chatMessages=[];
+  const av=document.getElementById('chat-av');
+  if(av){av.textContent=(l.full_name||'L')[0].toUpperCase();av.style.background='#0077b5';av.style.color='#fff';}
+  document.getElementById('chat-name').textContent=l.full_name||'Lead';
+  document.getElementById('chat-co').textContent=(l.title||'')+(l.company?' at '+l.company:'');
+  const welcomeParts=[`I have the full context on this lead.`];
+  if(l.outreach_reason) welcomeParts.push(`Originally contacted because: ${l.outreach_reason}`);
+  if(l.qualification_score) welcomeParts.push(`Qualification: ${l.qualification_score}/5 — ${l.qualification_score>=4?'Pursue':l.qualification_score===3?'Nurture':'Pass'}${l.qualification_notes?' ('+l.qualification_notes+')':''}`);
+  if(l.reply_summary) welcomeParts.push(`Their reply: ${l.reply_summary}`);
+  welcomeParts.push(`What would you like to do? Ask for research, refine your approach, or set a monitoring rule (e.g. "watch if they move company").`);
+  renderChatMessages([{role:'assistant',content:welcomeParts.join('\n\n')}]);
+  const co=(l.company||'this company').replace(/'/g,"\\'");
+  const ct=(l.full_name||'this person').replace(/'/g,"\\'");
+  document.getElementById('chat-chips').innerHTML=`
+    <button class="chat-chip" onclick="quickChat('What do you know about ${co}? Any recent news, hiring signals, or growth indicators?')"><i class="ti ti-building"></i> Company intel</button>
+    <button class="chat-chip" onclick="quickChat('Suggest a different message angle for ${ct} — something more specific to their context')"><i class="ti ti-refresh"></i> New angle</button>
+    <button class="chat-chip" onclick="quickChat('Monitor if ${ct} moves to a new company and alert me when it happens')"><i class="ti ti-radar"></i> Watch for move</button>
+    <button class="chat-chip" onclick="quickChat('What is the best way to move this lead toward a commercial conversation about hiring?')"><i class="ti ti-target"></i> Next move</button>
+  `;
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatOverlay').classList.add('open');
+}
+
 /* ─── Recommendation lifecycle handlers ─── */
 async function _recordMichaelAction(rank, actionType){
   try{
@@ -5613,9 +5692,11 @@ async function loadLeads(){
     const outreachReason=l.outreach_reason?`<div style="margin:4px 0;font-size:11px;color:var(--muted)"><i class="ti ti-radar" style="font-size:11px;margin-right:3px;color:var(--gold)"></i><strong>Why contacted:</strong> ${esc(l.outreach_reason)}</div>`:'';
     const msgId='msg-'+l.id;
     const suggestedMsg=l.suggested_message&&qScore>=3?`<div style="margin:6px 0 2px"><div style="font-size:11px;font-weight:600;color:var(--navy);margin-bottom:3px"><i class="ti ti-pencil" style="font-size:11px;margin-right:3px;color:var(--gold)"></i>AI draft message</div><textarea id="${msgId}" rows="4" style="width:100%;font-size:12px;padding:7px 9px;border:1px solid rgba(0,0,0,.12);border-radius:6px;resize:vertical;font-family:inherit;color:var(--navy);background:rgba(201,168,76,.04)">${esc(l.suggested_message)}</textarea><button class="btn btn-sm btn-ghost" style="margin-top:4px;font-size:11px" onclick="(function(){const t=document.getElementById('${msgId}');if(t){navigator.clipboard.writeText(t.value).then(()=>showToast('Message copied to clipboard'));}})()" ><i class="ti ti-copy"></i> Copy message</button></div>`:'';;
+    const leadJson=JSON.stringify({id:l.id,full_name:l.full_name,title:l.title,company:l.company,linkedin_url:l.linkedin_url,reply_summary:l.reply_summary,days_since_reply:l.days_since_reply,qualification_score:l.qualification_score,qualification_notes:l.qualification_notes,qualification_hooks:l.qualification_hooks,outreach_reason:l.outreach_reason}).replace(/`/g,'\\`').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const actionBtns=l.id
       ?`<button class="btn btn-sm btn-green" onclick="markLeadContacted('${l.id}')"><i class="ti ti-check"></i> Mark contacted</button>
-         <button class="btn btn-sm btn-ghost" onclick="markLeadConverted('${l.id}')"><i class="ti ti-star"></i> Converted</button>`
+         <button class="btn btn-sm btn-ghost" onclick="markLeadConverted('${l.id}')"><i class="ti ti-star"></i> Converted</button>
+         <button class="btn btn-sm" style="background:rgba(0,119,181,.1);color:#0077b5;border:1px solid rgba(0,119,181,.2)" onclick="openChatFromLead(${leadJson})"><i class="ti ti-message-circle"></i> Ask AI</button>`
       :`<span style="font-size:11px;color:var(--muted)">Edit in All Contacts</span>`;
     return `<div class="fu ${isOverdue?'overdue':isSoon?'today':''}" style="${borderClass}">
       <div class="fu-top">

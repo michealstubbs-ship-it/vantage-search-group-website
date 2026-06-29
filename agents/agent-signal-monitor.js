@@ -206,35 +206,39 @@ Extract the most senior relevant person's details.`
   }
 }
 
-// ── Main ─────────────────────────────────────────────────────────────────────
+// ── Monitoring rules: check user-defined watch rules for named contacts ───────
+// Called at the end of each run. For each active rule, searches for the trigger
+// (e.g. "Anas moved company") and fires a signal + Today's Action if found.
+async function checkMonitoringRules() {
+  if (!BRAVE_API_KEY || !CLAUDE_API_KEY) return;
 
-async function run() {
-  console.log('[Signal Monitor] Starting weekly signal scan...');
+  const { data: rules, error } = await db
+    .from('monitoring_rules')
+    .select('*')
+    .eq('active', true);
 
-  const signals = [];
+  if (error || !rules || rules.length === 0) {
+    console.log('[Signal Monitor] No active monitoring rules to check.');
+    return;
+  }
 
-  // Check which companies we've already processed this week to avoid duplicates
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const fortnightAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
-  const { data: recentSignals } = await db
-    .from('company_signals')
-    .select('company_name, signal_type, title, actioned')
-    .gte('created_at', weekAgo);
-  const recentTitles = new Set((recentSignals || []).map(s => s.title));
+  console.log(`[Signal Monitor] Checking ${rules.length} monitoring rules...`);
 
-  // Also check recently actioned signals (14 days) — don't re-surface same company+type
-  const { data: actionedSignals } = await db
-    .from('company_signals')
-    .select('company_name, signal_type')
-    .eq('actioned', true)
-    .gte('created_at', fortnightAgo);
-  const recentlyActioned = new Set(
-    (actionedSignals || []).map(s => `${(s.company_name||'').toLowerCase()}::${s.signal_type}`)
-  );
-  console.log(`[Signal Monitor] ${recentTitles.size} recent titles, ${recentlyActioned.size} recently-actioned combos to skip`);
+  for (const rule of rules) {
+    try {
+      // Search for the specific trigger
+      const query = `${rule.contact_name}${rule.company ? ' ' + rule.company : ''} ${rule.watch_for}`;
+      const results = await searchWeb(query, 'web');
+      const newsResults = await searchWeb(query, 'news');
+      const allResults = [...results.slice(0, 3), ...newsResults.slice(0, 2)];
 
-  for (const company of TARGET_COMPANIES) {
-    console.log(`[Signal Monitor] Scanning: ${company}`);
+      if (allResults.length === 0) {
+        await db.from('monitoring_rules').update({ last_checked_at: new Date().toISOString() }).eq('id', rule.id);
+        continue;
+      }
 
-    const queries = [
-      
+      const snippets = allResults.map(r => `${r.title || ''}: ${r.description || r.snippet || ''}`).join('\n');
+
+      // Ask Claude: has the trigger actually fired?
+      const assessment = await callClaude(
+        `You are assessing whether a specifi
