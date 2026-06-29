@@ -30,7 +30,7 @@ exports.handler = async (event) => {
 
     // Use caller-supplied system prompt override if provided (e.g. Today's Actions, Strategic Brief)
     if (systemOverride) {
-      const model = modelOverride || 'claude-haiku-4-5-20251001';
+      const model = modelOverride || 'claude-haiku-3-5-20241022';
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
