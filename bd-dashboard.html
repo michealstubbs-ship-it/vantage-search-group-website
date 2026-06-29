@@ -5127,6 +5127,11 @@ function openChatFromAction(idx){
   document.getElementById('chatOverlay').classList.add('open');
 }
 
+function openChatFromLeadId(id){
+  const l=(window._leadCache||{})[id];
+  if(!l){showToast('Lead data not found — refresh the page');return;}
+  openChatFromLead(l);
+}
 function openChatFromLead(l){
   _leadCtx=l;
   _actionCtx=null;window._seoCtx=null;
@@ -5691,11 +5696,11 @@ async function loadLeads(){
     const outreachReason=l.outreach_reason?`<div style="margin:4px 0;font-size:11px;color:var(--muted)"><i class="ti ti-radar" style="font-size:11px;margin-right:3px;color:var(--gold)"></i><strong>Why contacted:</strong> ${esc(l.outreach_reason)}</div>`:'';
     const msgId='msg-'+l.id;
     const suggestedMsg=l.suggested_message&&qScore>=3?`<div style="margin:6px 0 2px"><div style="font-size:11px;font-weight:600;color:var(--navy);margin-bottom:3px"><i class="ti ti-pencil" style="font-size:11px;margin-right:3px;color:var(--gold)"></i>AI draft message</div><textarea id="${msgId}" rows="4" style="width:100%;font-size:12px;padding:7px 9px;border:1px solid rgba(0,0,0,.12);border-radius:6px;resize:vertical;font-family:inherit;color:var(--navy);background:rgba(201,168,76,.04)">${esc(l.suggested_message)}</textarea><button class="btn btn-sm btn-ghost" style="margin-top:4px;font-size:11px" onclick="(function(){const t=document.getElementById('${msgId}');if(t){navigator.clipboard.writeText(t.value).then(()=>showToast('Message copied to clipboard'));}})()" ><i class="ti ti-copy"></i> Copy message</button></div>`:'';;
-    const leadJson=JSON.stringify({id:l.id,full_name:l.full_name,title:l.title,company:l.company,linkedin_url:l.linkedin_url,reply_summary:l.reply_summary,days_since_reply:l.days_since_reply,qualification_score:l.qualification_score,qualification_notes:l.qualification_notes,qualification_hooks:l.qualification_hooks,outreach_reason:l.outreach_reason}).replace(/`/g,'\\`').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    if(l.id) window._leadCache=window._leadCache||{}, window._leadCache[l.id]=l;
     const actionBtns=l.id
       ?`<button class="btn btn-sm btn-green" onclick="markLeadContacted('${l.id}')"><i class="ti ti-check"></i> Mark contacted</button>
          <button class="btn btn-sm btn-ghost" onclick="markLeadConverted('${l.id}')"><i class="ti ti-star"></i> Converted</button>
-         <button class="btn btn-sm" style="background:rgba(0,119,181,.1);color:#0077b5;border:1px solid rgba(0,119,181,.2)" onclick="openChatFromLead(${leadJson})"><i class="ti ti-message-circle"></i> Ask AI</button>`
+         <button class="btn btn-sm" style="background:rgba(0,119,181,.1);color:#0077b5;border:1px solid rgba(0,119,181,.2)" onclick="openChatFromLeadId(${l.id})"><i class="ti ti-message-circle"></i> Ask AI</button>`
       :`<span style="font-size:11px;color:var(--muted)">Edit in All Contacts</span>`;
     return `<div class="fu ${isOverdue?'overdue':isSoon?'today':''}" style="${borderClass}">
       <div class="fu-top">
