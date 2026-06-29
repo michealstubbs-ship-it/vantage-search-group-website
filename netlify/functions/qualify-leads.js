@@ -120,4 +120,51 @@ No markdown. No explanation outside the JSON.`;
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 600,
-          message
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+
+      const data = await res.json();
+      const raw = data.content?.[0]?.text || '';
+      const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+      const parsed = JSON.parse(cleaned);
+
+      await db.from('linkedin_leads').update({
+        qualification_score: parsed.score,
+        qualification_notes: parsed.notes || null,
+        qualification_hooks: parsed.hook || null,
+        outreach_reason: parsed.outreach_reason || null,
+        suggested_message: parsed.suggested_message || null,
+        qualified_at: new Date().toISOString(),
+      }).eq('id', lead.id);
+
+      qualified++;
+    } catch (e) {
+      console.error(`[qualify-leads] Error qualifying ${lead.full_name}:`, e.message);
+    }
+
+    // Rate limit
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  return {
+    statusCode: 200,
+    headers,
+    body: JSON.stringify({ qualified, total: leads.length }),
+  };
+};
+
+async function braveFetch(query, type = 'news') {
+  try {
+    const endpoint = type === 'news'
+      ? `https://api.search.brave.com/res/v1/news/search?q=${encodeURIComponent(query)}&count=3&freshness=pm`
+      : `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=3`;
+    const res = await fetch(endpoint, {
+      headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_KEY },
+    });
+    const data = await res.json();
+    return type === 'news' ? (data.results || []) : (data.web?.results || []);
+  } catch (e) {
+    return [];
+  }
+}

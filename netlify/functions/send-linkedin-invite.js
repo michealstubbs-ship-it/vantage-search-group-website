@@ -114,4 +114,15 @@ exports.handler = async (event) => {
       return {
         statusCode: inviteRes.status,
         headers,
-        body: JSON.st
+        body: JSON.stringify({ error: inviteData.title || inviteData.detail || 'Invite failed', fallback: true }),
+      };
+    }
+  } catch (e) {
+    console.error('[send-linkedin-invite] Unexpected error:', e.message);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: e.message, fallback: true }),
+    };
+  }
+};

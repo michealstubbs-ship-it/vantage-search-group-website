@@ -4380,6 +4380,8 @@ LINKEDIN: ${lc.linkedin_url||'Unknown'}
 
 Help Michael with research questions, message ideas, or strategic thinking about this lead. Be concise and direct.
 
+You HAVE been given live data above — use it. Do not say you lack real-time access.${lc._enrichment||''}
+
 IMPORTANT: If Michael asks you to monitor, watch, track, or alert him about something specific for this person (e.g., "monitor if they move company", "tell me if they announce a hire", "watch for a new role"), at the very END of your response output this exact tag on its own line:
 [MONITOR:{"contact_name":"${(lc.full_name||'').replace(/"/g,'\\"')}","linkedin_url":"${(lc.linkedin_url||'').replace(/"/g,'\\"')}","company":"${(lc.company||'').replace(/"/g,'\\"')}","watch_for":"<describe exactly what to watch for in plain English>","trigger_description":"<one sentence describing what would trigger this alert>"}]
 
@@ -5134,7 +5136,20 @@ function openChatFromLeadId(id){
 }
 function openChatFromLead(l){
   _leadCtx=l;
+  _leadCtx._enrichment=''; // will be populated async
   _actionCtx=null;window._seoCtx=null;
+  // Kick off live enrichment in background — no await, populates before first message typically
+  if(l.full_name||l.company){
+    fetch('/.netlify/functions/enrich-lead',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:l.full_name||'',company:l.company||'',title:l.title||''})
+    }).then(r=>r.json()).then(d=>{
+      if(_leadCtx&&_leadCtx.id===l.id&&d.context){
+        _leadCtx._enrichment=d.context;
+      }
+    }).catch(()=>{});
+  }
   currentChatContact={name:l.full_name||'Lead',company:l.company||'',title:l.title||'',industry:'',stage:'',lastContact:'',followupDate:'',linkedin:l.linkedin_url||'',notes:''};
   chatContactId=null;
   chatMessages=[];

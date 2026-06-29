@@ -241,4 +241,197 @@ async function checkMonitoringRules() {
 
       // Ask Claude: has the trigger actually fired?
       const assessment = await callClaude(
-        `You are assessing whether a specifi
+        `You are assessing whether a specific monitoring trigger has been met based on search results.
+Return ONLY a JSON object: {"triggered": true/false, "evidence": "<one sentence of what you found, or null if not triggered>"}
+No markdown. No explanation.`,
+        `MONITORING RULE:
+Person: ${rule.contact_name}
+Company: ${rule.company || 'Unknown'}
+Watch for: ${rule.watch_for}
+Trigger description: ${rule.trigger_description || rule.watch_for}
+
+SEARCH RESULTS:
+${snippets}
+
+Has the trigger been met? Only return triggered:true if there is clear evidence in the search results.`
+      );
+
+      await db.from('monitoring_rules').update({ last_checked_at: new Date().toISOString() }).eq('id', rule.id);
+
+      if (!assessment) continue;
+      const cleaned = assessment.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+      const parsed = JSON.parse(cleaned);
+
+      if (parsed.triggered && parsed.evidence) {
+        console.log(`[Signal Monitor] 🚨 Monitoring rule triggered: ${rule.contact_name} — ${parsed.evidence}`);
+
+        // Write a company signal
+        await db.from('company_signals').insert([{
+          company_name: rule.company || rule.contact_name,
+          signal_type: 'monitoring_rule',
+          title: `Watch alert: ${rule.contact_name} — ${rule.watch_for}`,
+          summary: `${parsed.evidence}\n\nOriginal rule: ${rule.watch_for}${rule.trigger_description ? ' | ' + rule.trigger_description : ''}`,
+          importance: 'high',
+          actioned: false,
+          named_contact: rule.contact_name,
+          named_contact_linkedin: rule.linkedin_url || null,
+        }]);
+
+        // Update rule — increment trigger count, record when
+        await db.from('monitoring_rules').update({
+          triggered_at: new Date().toISOString(),
+          trigger_count: (rule.trigger_count || 0) + 1,
+        }).eq('id', rule.id);
+      }
+    } catch (e) {
+      console.warn(`[Signal Monitor] Error checking rule for ${rule.contact_name}:`, e.message);
+    }
+
+    await new Promise(r => setTimeout(r, 400));
+  }
+}
+
+// ── Main ─────────────────────────────────────────────────────────────────────
+
+async function run() {
+  console.log('[Signal Monitor] Starting weekly signal scan...');
+
+  const signals = [];
+
+  // Check which companies we've already processed this week to avoid duplicates
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const fortnightAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: recentSignals } = await db
+    .from('company_signals')
+    .select('company_name, signal_type, title, actioned')
+    .gte('created_at', weekAgo);
+  const recentTitles = new Set((recentSignals || []).map(s => s.title));
+
+  // Also check recently actioned signals (14 days) — don't re-surface same company+type
+  const { data: actionedSignals } = await db
+    .from('company_signals')
+    .select('company_name, signal_type')
+    .eq('actioned', true)
+    .gte('created_at', fortnightAgo);
+  const recentlyActioned = new Set(
+    (actionedSignals || []).map(s => `${(s.company_name||'').toLowerCase()}::${s.signal_type}`)
+  );
+  console.log(`[Signal Monitor] ${recentTitles.size} recent titles, ${recentlyActioned.size} recently-actioned combos to skip`);
+
+  for (const company of TARGET_COMPANIES) {
+    console.log(`[Signal Monitor] Scanning: ${company}`);
+
+    const queries = [
+      `${company} hiring GCC 2026`,
+      `${company} funding expansion Middle East 2026`,
+      `${company} UAE Saudi Arabia news 2026`,
+    ];
+
+    for (const q of queries) {
+      const results = await searchWeb(q);
+      for (const result of results.slice(0, 2)) {
+        const title = result.title || '';
+        const description = result.description || '';
+        if (!title || recentTitles.has(title)) continue;
+
+        const signalType = classifySignal(title, description);
+        const importance = scoreSignal(signalType, title + ' ' + description) >= 70 ? 'high' : 'medium';
+
+        // Only add high-relevance signals
+        if (importance !== 'high' && signalType === 'news') continue;
+
+        // Skip if same company+type was already actioned within 14 days
+        const actionedKey = `${company.toLowerCase()}::${signalType}`;
+        if (recentlyActioned.has(actionedKey)) {
+          console.log(`[Signal Monitor] Skipping ${company} (${signalType}) — actioned recently`);
+          continue;
+        }
+
+        // Enrich with role-matched contact
+        const contact = await findRoleMatchedContact(company, signalType, title, description);
+
+        signals.push({
+          company_name: company,
+          signal_type: signalType,
+          title: title.slice(0, 200),
+          summary: description.slice(0, 400),
+          source_url: result.url || null,
+          importance,
+          actioned: false,
+          named_contact: contact?.name || null,
+          named_contact_title: contact?.title || null,
+          named_contact_linkedin: contact?.linkedin_url || null,
+        });
+        recentTitles.add(title);
+      }
+    }
+
+    // Rate limit — don't hammer the search API
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  // If no search API, generate a weekly briefing using Claude from existing contact data
+  if (signals.length === 0 && CLAUDE_API_KEY) {
+    const { data: contacts } = await db.from('contacts').select('company, stage').not('company', 'is', null);
+    const warmCompanies = [...new Set(
+      (contacts || []).filter(c => ['engaged','meeting','active'].includes(c.stage)).map(c => c.company)
+    )].slice(0, 10);
+
+    const briefing = await callClaude(
+      `You are an AI research assistant for Vantage Search Group, an executive search firm in Dubai.
+Your job is to produce a concise weekly BD briefing about the GCC tech, fintech and AI market.
+Focus on: hiring trends, funding news, company expansions into UAE/Saudi.
+Never criticise UAE, Saudi Arabia or any GCC government.
+Keep it factual and actionable. Under 200 words.`,
+      `Write a brief weekly market briefing for an executive recruiter in Dubai focused on AI and fintech companies.
+Warm pipeline companies include: ${warmCompanies.join(', ') || 'various tech/fintech firms'}.
+Include any relevant trends about hiring in GCC for senior digital, data, AI, and commercial roles.`
+    );
+
+    if (briefing) {
+      await db.from('agent_outputs').insert([{
+        agent_type: 'signal_monitor',
+        title: `Weekly BD Briefing — ${new Date().toLocaleDateString('en-GB', { day:'numeric',month:'short',year:'numeric' })}`,
+        summary: briefing,
+        action_required: false,
+      }]);
+      console.log('[Signal Monitor] Wrote weekly briefing (no search API configured).');
+      return;
+    }
+  }
+
+  // Write signals to Supabase
+  if (signals.length > 0) {
+    const { error } = await db.from('company_signals').insert(signals);
+    if (error) console.error('company_signals insert error:', error);
+
+    const enriched = signals.filter(s => s.named_contact).length;
+    const highSignals = signals.filter(s => s.importance === 'high');
+    await db.from('agent_outputs').insert([{
+      agent_type: 'signal_monitor',
+      title: `Weekly scan: ${signals.length} signals found, ${enriched} with role-matched contacts`,
+      summary: highSignals.length > 0
+        ? `High priority: ${highSignals.slice(0, 3).map(s => s.company_name + ' — ' + s.signal_type + (s.named_contact ? ' (contact: ' + s.named_contact + ')' : '')).join('; ')}`
+        : `${signals.length} signals detected. Check Companies tab for details.`,
+      data: { total: signals.length, high: highSignals.length, enriched, companies_scanned: TARGET_COMPANIES.length },
+      action_required: highSignals.length > 0,
+    }]);
+
+    console.log(`[Signal Monitor] Wrote ${signals.length} signals (${highSignals.length} high priority, ${enriched} enriched with contacts).`);
+  } else {
+    await db.from('agent_outputs').insert([{
+      agent_type: 'signal_monitor',
+      title: 'Weekly signal scan complete — no new signals',
+      summary: `Scanned ${TARGET_COMPANIES.length} companies. No new high-priority signals this week.`,
+      action_required: false,
+    }]);
+    console.log('[Signal Monitor] No new signals this week.');
+  }
+
+  // ── Check user-defined monitoring rules (always runs, after main scan) ──────
+  await checkMonitoringRules();
+
+  console.log('[Signal Monitor] Done.');
+}
+
+run().catch(e => { console.error('[Signal Monitor] Fatal error:', e); process.exit(1); });
