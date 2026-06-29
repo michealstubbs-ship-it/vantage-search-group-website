@@ -1,7 +1,9 @@
 // enrich-lead.js
 // Enriches a LinkedIn lead using:
-// 1. Unipile LinkedIn API — live profile data, company info, shared connections
-// 2. Brave search — company news and hiring signals
+// 1. Unipile LinkedIn API — live profile data
+// 2. Unipile LinkedIn API — company profile
+// 3. Unipile LinkedIn API — other decision-makers at the same company (live people search)
+// 4. Brave search — company news and hiring signals
 // Returns a formatted context block injected into the AI chat system prompt.
 
 const BRAVE_KEY = process.env.BRAVE_SEARCH_API_KEY;
@@ -78,7 +80,35 @@ exports.handler = async (event) => {
     }
   }
 
-  // 3. Brave: company news and hiring signals
+  // 3. Unipile: search for other decision-makers at the company
+  if (UNIPILE_KEY && company) {
+    try {
+      const searchRes = await fetch(`${UNIPILE_BASE}/api/v1/linkedin/search?account_id=${UNIPILE_ACCOUNT}&limit=10`, {
+        method: 'POST',
+        headers: { 'X-API-KEY': UNIPILE_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ api: 'classic', category: 'people', advanced_keywords: { company } }),
+      });
+      if (searchRes.ok) {
+        const searchData = await searchRes.json();
+        const firstName = (name || '').split(' ')[0].toLowerCase();
+        const people = (searchData.items || [])
+          .filter(p => p.type === 'PEOPLE')
+          .filter(p => !firstName || !p.name.toLowerCase().includes(firstName)) // exclude the lead we already have
+          .map(p => {
+            const url = p.public_identifier ? `https://www.linkedin.com/in/${p.public_identifier}` : null;
+            const dist = p.network_distance === 'DISTANCE_1' ? '1st' : p.network_distance === 'DISTANCE_2' ? '2nd' : '3rd+';
+            return `• ${p.name}${p.headline ? ' — ' + p.headline : ''}${p.location ? ' | ' + p.location : ''} | ${dist} degree${p.shared_connections_count ? ' | ' + p.shared_connections_count + ' shared' : ''}${url ? '\n  ' + url : ''}`;
+          });
+        if (people.length > 0) {
+          sections.push(`OTHER PEOPLE AT ${company.toUpperCase()} (live LinkedIn search):\n${people.join('\n')}`);
+        }
+      }
+    } catch (e) {
+      console.warn('[enrich-lead] Company people search error:', e.message);
+    }
+  }
+
+  // 4. Brave: company news and hiring signals
   if (BRAVE_KEY && company) {
     try {
       const searches = await Promise.allSettled([
