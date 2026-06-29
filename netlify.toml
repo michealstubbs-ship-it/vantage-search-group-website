@@ -20,6 +20,9 @@
 [functions."send-linkedin-invite"]
   timeout = 26
 
+[functions."qualify-leads"]
+  timeout = 26
+
 [[headers]]
   for = "/*"
   [headers.values]
