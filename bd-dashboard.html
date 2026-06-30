@@ -5658,7 +5658,7 @@ async function loadLeads(){
     db?db.from('linkedin_outreach').select('status'):Promise.resolve({data:[]}),
     db?db.from('contacts').select('name,title,company,linkedin,stage,notes,last_contact,follow_up_date').in('stage',['engaged','meeting']).not('linkedin','is',null):Promise.resolve({data:[]})
   ]);
-  const leadsRaw=leadsRes.data||[];
+  const leadsRaw=(leadsRes.data||[]).filter(l=>!['contacted','converted','disregarded'].includes(l.status));
   const outreach=outreachRes.data||[];
   const engagedContacts=engagedRes.data||[];
 
@@ -5729,6 +5729,7 @@ async function loadLeads(){
     const actionBtns=l.id
       ?`<button class="btn btn-sm btn-green" onclick="markLeadContacted('${l.id}')"><i class="ti ti-check"></i> Mark contacted</button>
          <button class="btn btn-sm btn-ghost" onclick="markLeadConverted('${l.id}')"><i class="ti ti-star"></i> Converted</button>
+         <button class="btn btn-sm btn-ghost" onclick="markLeadDisregarded('${l.id}')" style="color:var(--muted)"><i class="ti ti-x"></i> Disregard</button>
          <button class="btn btn-sm" style="background:rgba(0,119,181,.1);color:#0077b5;border:1px solid rgba(0,119,181,.2)" onclick="openChatFromLeadId('${l.id}')"><i class="ti ti-sparkles"></i> Ask Annie</button>`
       :`<span style="font-size:11px;color:var(--muted)">Edit in All Contacts</span>`;
     return `<div class="fu ${isOverdue?'overdue':isSoon?'today':''}" style="${borderClass}">
@@ -5760,15 +5761,46 @@ async function loadLeads(){
     :'<div class="empty"><i class="ti ti-user-star"></i><p>No leads yet. Replied LinkedIn contacts and engaged prospects will appear here automatically.</p></div>';
 }
 
+async function _leadToContact(id, stage){
+  const db=_db();if(!db)return;
+  const l=(window._leadCache||{})[id];
+  if(l){
+    try{
+      await db.from('contacts').insert([{
+        name:l.full_name||'Unknown',
+        title:l.title||null,
+        company:l.company||null,
+        linkedin:l.linkedin_url||null,
+        stage:stage,
+        source:'linkedin_leads',
+        notes:l.notes||null,
+        last_contact:new Date().toISOString().slice(0,10)
+      }]);
+    }catch(e){/* may already exist — that's fine */}
+  }
+  // Remove card instantly from UI
+  const cards=document.querySelectorAll('.fu');
+  cards.forEach(card=>{
+    if(card.innerHTML.includes(`'${id}'`)||card.innerHTML.includes(`"${id}"`)){card.style.transition='opacity .3s';card.style.opacity='0';setTimeout(()=>card.remove(),300);}
+  });
+}
 window.markLeadContacted=async function(id){
   const db=_db();if(!db)return;
+  await _leadToContact(id,'cold');
   await db.from('linkedin_leads').update({status:'contacted'}).eq('id',id);
-  loadLeads();
+  showToast('Moved to Pipeline as cold lead');
 };
 window.markLeadConverted=async function(id){
   const db=_db();if(!db)return;
+  await _leadToContact(id,'replied');
   await db.from('linkedin_leads').update({status:'converted'}).eq('id',id);
-  loadLeads();
+  showToast('Moved to Pipeline as replied');
+};
+window.markLeadDisregarded=async function(id){
+  const db=_db();if(!db)return;
+  await _leadToContact(id,'cold');
+  await db.from('linkedin_leads').update({status:'disregarded'}).eq('id',id);
+  showToast('Lead disregarded — moved to Pipeline');
 };
 
 
