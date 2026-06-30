@@ -4452,19 +4452,19 @@ Give Michael specific, actionable SEO advice. Suggest keywords, content ideas, t
     // Detect and extract monitoring rule from AI response
     let displayContent=data.content;
     const monitorMatch=data.content.match(/\[MONITOR:(\{[^\]]+\})\]/s);
-    if(monitorMatch&&_leadCtx){
+    if(monitorMatch){
       try{
         const rule=JSON.parse(monitorMatch[1]);
         displayContent=data.content.replace(/\n?\[MONITOR:\{[^\]]+\}\]/s,'').trim();
         const mdb=_db();
         if(mdb){
           await mdb.from('monitoring_rules').insert([{
-            contact_name:rule.contact_name||_leadCtx.full_name||'',
-            linkedin_url:rule.linkedin_url||_leadCtx.linkedin_url||null,
-            company:rule.company||_leadCtx.company||null,
-            watch_for:rule.watch_for||'',
+            contact_name:rule.contact_name||(_leadCtx&&_leadCtx.full_name)||currentChatContact?.name||'',
+            linkedin_url:rule.linkedin_url||(_leadCtx&&_leadCtx.linkedin_url)||currentChatContact?.linkedin||null,
+            company:rule.company||(_leadCtx&&_leadCtx.company)||currentChatContact?.company||null,
+            watch_for:rule.watch_for||'job_change',
             trigger_description:rule.trigger_description||null,
-            source_lead_id:_leadCtx.id||null,
+            source_lead_id:(_leadCtx&&_leadCtx.id)||null,
             active:true
           }]);
           showToast('📡 Monitoring rule saved — signal monitor will watch for this');
@@ -5729,7 +5729,7 @@ async function loadLeads(){
     const actionBtns=l.id
       ?`<button class="btn btn-sm btn-green" onclick="markLeadContacted('${l.id}')"><i class="ti ti-check"></i> Mark contacted</button>
          <button class="btn btn-sm btn-ghost" onclick="markLeadConverted('${l.id}')"><i class="ti ti-star"></i> Converted</button>
-         <button class="btn btn-sm" style="background:rgba(0,119,181,.1);color:#0077b5;border:1px solid rgba(0,119,181,.2)" onclick="openChatFromLeadId('${l.id}')"><i class="ti ti-message-circle"></i> Ask AI</button>`
+         <button class="btn btn-sm" style="background:rgba(0,119,181,.1);color:#0077b5;border:1px solid rgba(0,119,181,.2)" onclick="openChatFromLeadId('${l.id}')"><i class="ti ti-sparkles"></i> Ask Annie</button>`
       :`<span style="font-size:11px;color:var(--muted)">Edit in All Contacts</span>`;
     return `<div class="fu ${isOverdue?'overdue':isSoon?'today':''}" style="${borderClass}">
       <div class="fu-top">
