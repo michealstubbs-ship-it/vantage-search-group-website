@@ -259,18 +259,72 @@ exports.handler = async (event) => {
       currentMessages = [...currentMessages, { role: 'assistant', content: d.content }, { role: 'user', content: toolResults }];
     }
 
-    // Log the interaction (fire and forget)
+    // Log interaction + extract learning patterns in parallel (fire and forget — don't block response)
     const userMsg = (messages || []).filter(m => m.role === 'user').slice(-1)[0]?.content || '';
-    supaInsert('interaction_log', {
-      interaction_type: 'annie_chat',
-      contact_name: contactContext?.name || null,
-      contact_company: contactContext?.company || null,
-      contact_stage: contactContext?.stage || null,
-      contact_type: contactContext?.type || null,
-      user_message: typeof userMsg === 'string' ? userMsg.substring(0, 500) : null,
-      ai_response: finalText.substring(0, 500),
-      search_queries: searchLog.length ? searchLog : null,
-    });
+    const userMsgText = typeof userMsg === 'string' ? userMsg : JSON.stringify(userMsg);
+
+    Promise.allSettled([
+      // 1. Log the raw interaction
+      supaInsert('interaction_log', {
+        interaction_type: 'annie_chat',
+        contact_name: contactContext?.name || null,
+        contact_company: contactContext?.company || null,
+        contact_stage: contactContext?.stage || null,
+        contact_type: contactContext?.type || null,
+        user_message: userMsgText.substring(0, 500),
+        ai_response: finalText.substring(0, 500),
+        search_queries: searchLog.length ? searchLog : null,
+        metadata: { searches_run: searchLog.length },
+      }),
+      // 2. Extract patterns via Haiku and update user_preferences
+      (async () => {
+        if (!userMsgText || userMsgText.length < 10) return;
+        const learnPrompt = `You are a behaviour pattern extractor for a BD system. Analyse this single interaction and extract any meaningful preference or pattern it reveals about how the user operates commercially.
+
+USER ASKED: ${userMsgText.substring(0, 300)}
+CONTACT: ${contactContext?.name || 'N/A'} — ${contactContext?.title || ''} at ${contactContext?.company || 'N/A'}
+SEARCHES RUN: ${searchLog.join(', ') || 'none'}
+AI RESPONSE SUMMARY: ${finalText.substring(0, 200)}
+
+Extract 0-3 preference patterns. Only extract if genuinely meaningful — not every interaction reveals a preference. Return JSON array:
+[{"category": "research|messaging|pipeline|prioritisation", "preference_key": "snake_case_key", "preference_value": "what this tells us about how Michael operates", "example": "concrete example from this interaction"}]
+If nothing meaningful, return []. No markdown.`;
+
+        const lr = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 300, messages: [{ role: 'user', content: learnPrompt }] }),
+        });
+        if (!lr.ok) return;
+        const ld = await lr.json();
+        const raw = ld.content?.[0]?.text?.trim() || '[]';
+        const patterns = JSON.parse(raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim());
+        if (!Array.isArray(patterns) || !patterns.length) return;
+
+        // Upsert each pattern — increment confidence if already known
+        for (const p of patterns) {
+          if (!p.category || !p.preference_key || !p.preference_value) continue;
+          // Try update first (increment confidence)
+          const updateRes = await fetch(
+            `${SUPA_URL}/rest/v1/user_preferences?category=eq.${encodeURIComponent(p.category)}&preference_key=eq.${encodeURIComponent(p.preference_key)}`,
+            { method: 'PATCH', headers: { ...SUPA_HEADERS, 'Prefer': 'return=representation' },
+              body: JSON.stringify({ preference_value: p.preference_value, last_observed: new Date().toISOString(), example: p.example, updated_at: new Date().toISOString() }) }
+          );
+          const updated = await updateRes.json();
+          if (!updated || !updated.length) {
+            // Insert new preference
+            await supaInsert('user_preferences', { ...p, confidence: 1, last_observed: new Date().toISOString() });
+          } else {
+            // Increment confidence
+            await fetch(
+              `${SUPA_URL}/rest/v1/user_preferences?category=eq.${encodeURIComponent(p.category)}&preference_key=eq.${encodeURIComponent(p.preference_key)}`,
+              { method: 'PATCH', headers: SUPA_HEADERS,
+                body: JSON.stringify({ confidence: (updated[0].confidence || 1) + 1 }) }
+            );
+          }
+        }
+      })(),
+    ]).catch(() => {});
 
     return {
       statusCode: 200,
