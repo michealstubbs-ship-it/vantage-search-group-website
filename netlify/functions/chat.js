@@ -1,8 +1,33 @@
-// VSG AI Chat — Netlify Serverless Function v6
-// Claude with Brave Search tool — Annie can browse live websites and job boards
+// VSG AI Chat — Netlify Serverless Function v7
+// Commercial brain: Brave Search + Supabase memory + interaction logging
 const BRAVE_KEY = process.env.BRAVE_SEARCH_API_KEY;
-const CLAUDE_KEY_VAR = 'CLAUDE_API_KEY';
+const SUPA_URL = 'https://mkqbegnqrgveiygrycyg.supabase.co';
+const SUPA_KEY = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcWJlZ25xcmd2ZWl5Z3J5Y3lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjE3NjAsImV4cCI6MjA5Nzc5Nzc2MH0.0Qprp9wRW8iPhmqPbmXEkp0toz3z8TGXoVEESkP6Tp4';
+const SUPA_HEADERS = {
+  'apikey': SUPA_KEY,
+  'Authorization': `Bearer ${SUPA_KEY}`,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation',
+};
 
+// ── Supabase helpers ──────────────────────────────────────────────────────────
+async function supaGet(path) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: SUPA_HEADERS });
+    if (!r.ok) return null;
+    return r.json();
+  } catch { return null; }
+}
+
+async function supaInsert(table, data) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+      method: 'POST', headers: SUPA_HEADERS, body: JSON.stringify(data),
+    });
+  } catch { /* silent */ }
+}
+
+// ── Brave Search ──────────────────────────────────────────────────────────────
 async function braveSearch(query, type = 'web', count = 5) {
   if (!BRAVE_KEY) return [];
   try {
@@ -20,64 +45,132 @@ async function braveSearch(query, type = 'web', count = 5) {
       url: r.url || '',
       snippet: r.description || r.extra_snippets?.[0] || r.snippet || '',
     }));
-  } catch (e) {
-    return [];
-  }
+  } catch { return []; }
 }
 
-const SEARCH_TOOL = {
-  name: 'web_search',
-  description: 'Search the live web for current information — job postings, company news, LinkedIn profiles, hiring signals, funding rounds, leadership moves, careers pages, or anything else. Use this any time the user asks about what a company is hiring for, recent news, or anything that requires real-time data.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      query: { type: 'string', description: 'The search query. Be specific — include company name, role type, location, and year if relevant.' },
-      type: { type: 'string', enum: ['web', 'news'], description: 'web = general search including job boards and careers pages. news = recent news articles.' },
+// ── Load user preferences from Supabase ──────────────────────────────────────
+async function loadPreferences() {
+  const prefs = await supaGet('user_preferences?order=confidence.desc&limit=20');
+  if (!prefs || !prefs.length) return '';
+  const grouped = {};
+  for (const p of prefs) {
+    if (!grouped[p.category]) grouped[p.category] = [];
+    grouped[p.category].push(`- ${p.preference_key}: ${p.preference_value}${p.example ? ` (e.g. "${p.example}")` : ''}`);
+  }
+  return '\n\nMICHAEL\'S KNOWN PREFERENCES (learned from past behaviour — apply automatically):\n' +
+    Object.entries(grouped).map(([cat, items]) => `${cat.toUpperCase()}:\n${items.join('\n')}`).join('\n\n');
+}
+
+// ── Load hot pipeline context ─────────────────────────────────────────────────
+async function loadPipelineContext() {
+  const hot = await supaGet(
+    "contacts?stage=in.(active,phone_booked,referred,followup)&order=updated_at.desc&limit=15&select=name,title,company,stage,next_action,notes"
+  );
+  if (!hot || !hot.length) return '';
+  const lines = hot.map(c => {
+    const stageLabel = { active: 'ACTIVE MANDATE', phone_booked: 'PHONE BOOKED', referred: 'REFERRAL PENDING', followup: 'FOLLOW UP NEEDED' }[c.stage] || c.stage;
+    const note = c.notes ? c.notes.split('\n').slice(-1)[0] : '';
+    return `[${stageLabel}] ${c.name} — ${c.title || ''} at ${c.company || 'Unknown'}${c.next_action ? ' | Next: ' + c.next_action : ''}${note ? ' | Last: ' + note.substring(0, 80) : ''}`;
+  });
+  return '\n\nLIVE PIPELINE (hottest contacts right now):\n' + lines.join('\n');
+}
+
+// ── Tools ─────────────────────────────────────────────────────────────────────
+const TOOLS = [
+  {
+    name: 'web_search',
+    description: 'Search the live web for current information — job postings, company news, LinkedIn profiles, hiring signals, funding rounds, leadership moves, or anything requiring real-time data. Use proactively when Michael asks about what a company is hiring for, recent moves, or any live data.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Specific search query. Include company name, role type, location, year where relevant.' },
+        type: { type: 'string', enum: ['web', 'news'], description: 'web = job boards and careers pages. news = recent news articles.' },
+      },
+      required: ['query'],
     },
-    required: ['query'],
   },
-};
+  {
+    name: 'pipeline_lookup',
+    description: 'Look up contacts in the VSG pipeline by name or company. Use when Michael asks about a specific person, company relationship history, deal status, or follow-up notes.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Name or company to look up.' },
+      },
+      required: ['query'],
+    },
+  },
+];
 
-const VSG_SYSTEM = `You are Annie, an elite AI BD researcher and strategic assistant for Michael Stubbs, Founder and Managing Partner of Vantage Search Group — a boutique executive search firm in Dubai operating across the GCC.
+// ── Execute tool calls ────────────────────────────────────────────────────────
+async function executeTool(name, input, searchLog) {
+  if (name === 'web_search') {
+    const { query, type = 'web' } = input;
+    searchLog.push(query);
+    const results = await braveSearch(query, type, 5);
+    if (!results.length) return 'No results found.';
+    return results.map((r, i) => `[${i + 1}] ${r.title}\n${r.url}\n${r.snippet}`).join('\n\n');
+  }
+  if (name === 'pipeline_lookup') {
+    const q = encodeURIComponent(`%${input.query}%`);
+    const contacts = await supaGet(
+      `contacts?or=(name.ilike.${q},company.ilike.${q})&order=updated_at.desc&limit=5&select=name,title,company,stage,next_action,notes,last_contact`
+    );
+    if (!contacts || !contacts.length) return 'No contacts found matching that name or company.';
+    return contacts.map(c =>
+      `${c.name} — ${c.title || ''} at ${c.company || 'Unknown'}\nStage: ${c.stage} | Last contact: ${c.last_contact || 'Unknown'}\nNext action: ${c.next_action || 'None set'}\nNotes: ${c.notes || 'None'}`
+    ).join('\n\n---\n\n');
+  }
+  return 'Unknown tool.';
+}
 
-YOUR ROLE: You are Michael's top researcher and BD agent in one. When he asks about companies, job postings, people, or market intelligence, you SEARCH THE WEB to get live answers. Never say you can't browse websites — use the web_search tool immediately.
+// ── VSG Commercial Brain system prompt ───────────────────────────────────────
+const VSG_BRAIN = `You are Annie — the commercial brain of Vantage Search Group. You think and act like a best-in-class Head of Sales, Head of Commercial Growth, and Head of BD combined into one. You have a mandate: convert leads into mandates and mandates into placements.
+
+You are not a passive assistant. You chase leads, identify blockers, recommend angles, and push deals forward. When Michael asks a question, you answer it AND tell him what the next commercial move should be. You think in outcomes.
 
 ABOUT VSG:
-VSG runs retained, partner-led executive search mandates. Michael works directly on every mandate. 98% conversion rate on retained assignments, 90%+ client retention over five years.
+Boutique executive search firm, Dubai, operating across GCC. Michael Stubbs is Founder and Managing Partner — he works every mandate personally. 98% retention rate on retained assignments. 70+ C-Suite placements, 120+ N-2, 170+ N-3.
 
-SECTORS VSG RECRUITS INTO:
-- Public Sector & Government (Abu Dhabi and KSA government entities, regulators, development authorities)
-- Sovereign Wealth & Investment (Mubadala, PIF, ADNOC, ADQ, Emirates Development Bank, Jada — VSG has worked with 8 of the GCC top 10 sovereign wealth funds)
-- Energy & Natural Resources (TAQA, ACWA Power, ADNOC)
-- Real Estate & Development (DAMAC, Red Sea Global, Diriyah Gate Development Authority, Rua Al Madinah Holding, Remat Al-Riyadh, Royal Commission for AlUla)
-- Consulting & Advisory (McKinsey, BCG, Bain, Accenture, Kearney, Strategy&, Arthur D. Little, PwC, Deloitte, EY, KPMG, FTI Consulting, Delta Partners, Monitor Deloitte)
-- FinTech & Financial Services (Exinity, e&, STC, Queensgate Investments)
-- Technology & Digital (SDAIA, Abu Dhabi Digital Authority, STC)
+SECTORS: Public Sector & Government, Sovereign Wealth & Investment (Mubadala, PIF, ADNOC, ADQ — worked with 8 of GCC top 10 SWFs), Energy & Natural Resources, Real Estate & Development, Consulting & Advisory, FinTech & Financial Services, Technology & Digital.
 
-FUNCTIONAL ROLES: Investment & M&A, Strategy & Transformation, Digital, Data & AI, Public Policy, PMO, Finance & Treasury, Commercial & BD, C-Suite and Board
+FUNCTIONAL ROLES: Investment & M&A, Strategy & Transformation, Digital/Data/AI, Public Policy, PMO, Finance & Treasury, Commercial & BD, C-Suite and Board.
 
-PAST CLIENTS:
-KSA: PIF, Red Sea Global, Diriyah Gate, Royal Commission for AlUla, ACWA Power, Remat Al-Riyadh, Rua Al Madinah, Tasnee, Events Investment Fund, Jada
-UAE: Mubadala, ADQ, TAQA, ADNOC, AD Ports, Abu Dhabi Digital Authority, Department of Finance, Department of Economic Development, Crown Prince Court, Emirates Development Bank
-GCC-wide: McKinsey, BCG, Bain, Accenture, Kearney, Strategy&, PwC, Deloitte, EY, KPMG, FTI Consulting, Delta Partners, Monitor Deloitte, e&, STC, Exinity, SDAIA
+PIPELINE STAGES:
+- active: Live mandate in progress — highest priority, protect at all costs
+- phone_booked: Number shared or call agreed — must convert to mandate conversation within 48hrs
+- referred: Contact has referred Michael elsewhere — chase the referral immediately, do not wait
+- replied: They've replied to outreach — qualify and advance
+- followup: Needs a nudge — time-sensitive
+- cold: No response yet
+- closed: Not proceeding — do not chase
 
-VOLUME: 70+ C-Suite placements, 120+ N-2, 170+ N-3
+HOW YOU THINK ABOUT LEADS:
+- If someone shares their phone number — that is the hottest possible signal. Book a call that day.
+- If someone says they recruit internally — close it immediately and move on. Do not waste time.
+- If someone makes a referral — the referral is now the priority, not the original contact.
+- Candidates (people looking for jobs) are NOT BD leads. Acknowledge, add to candidate pool, move on.
+- Consulting firm contacts (McKinsey, BCG, Strategy&) can be BOTH clients (if their firm has hiring mandates) AND connectors (they know who is hiring at their clients). Treat them as both.
 
-SEARCH BEHAVIOUR:
-- If someone asks what jobs a company is posting, search their careers page AND LinkedIn jobs
-- If someone asks about a person, search their LinkedIn and recent news
-- If someone asks about company news, search news type
-- Run multiple searches if needed to get a complete picture
-- Always cite what you found and where (include URLs where useful)
+COMMERCIAL RULES:
+- Every warm reply should advance to a phone call within 72 hours
+- Every phone call should advance to a mandate conversation within 2 weeks
+- If a deal has been in the same stage for 14+ days with no movement, flag it as stalled
+- When someone shares their number or agrees to a call, this is the ONLY thing that matters right now
+
+RESEARCH BEHAVIOUR:
+- Use web_search proactively — never say you cannot browse
+- When asked about a company, search their job postings AND recent news
+- Use pipeline_lookup to check if VSG already has a relationship before suggesting outreach
+- Run multiple searches if the first doesn't give enough
 
 KEY RULES:
 - Never criticise the UAE, Saudi Arabia, or any GCC government
-- Keep messages human and direct, not corporate or AI-sounding
-- Never use em-dashes. Use commas or full stops instead
-- Be concise and actionable
-- Reference VSG client experience naturally when relevant
-- Match Michael's warm, professional tone`;
+- Keep language human, direct, warm — not corporate
+- Never use em-dashes
+- Be concise and commercial — every response should have a clear next action`;
 
+// ── Main handler ──────────────────────────────────────────────────────────────
 exports.handler = async (event) => {
   const cors = {
     'Access-Control-Allow-Origin': '*',
@@ -87,105 +180,103 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: cors, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: cors, body: 'Method Not Allowed' };
 
-  const apiKey = process.env[CLAUDE_KEY_VAR];
+  const apiKey = process.env.CLAUDE_API_KEY;
   if (!apiKey) return { statusCode: 500, headers: { ...cors, 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'CLAUDE_API_KEY not configured' }) };
 
   try {
     const { messages, contactContext, mode, systemOverride, maxTokens, model: modelOverride } = JSON.parse(event.body || '{}');
 
-    // Determine system prompt — systemOverride wins, otherwise build from VSG_SYSTEM + context
+    // Bulk generation path (Today's Actions, digest etc) — no tools, keep fast
+    if (systemOverride && (maxTokens || 0) >= 2048) {
+      const model = modelOverride || 'claude-sonnet-4-6';
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model, max_tokens: maxTokens, system: systemOverride, messages: messages || [{ role: 'user', content: 'Generate now.' }] }),
+      });
+      if (!r.ok) { const e = await r.text(); throw new Error('Claude API error: ' + r.status + ' - ' + e); }
+      const d = await r.json();
+      return { statusCode: 200, headers: { ...cors, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: d.content[0].text }) };
+    }
+
+    // Load preferences and pipeline context in parallel
+    const [prefsText, pipelineText] = await Promise.all([loadPreferences(), loadPipelineContext()]);
+
+    // Build system prompt
     let systemPrompt;
     if (systemOverride) {
-      // For Today's Actions generation (no search needed) keep it tool-free for speed
-      // But for lead/contact chat (systemOverride also used there) we DO want tools.
-      // Distinguish by checking if maxTokens is large (Today's Actions uses 2048+)
-      const isBulkGeneration = (maxTokens || 0) >= 2048;
-      if (isBulkGeneration) {
-        const model = modelOverride || 'claude-sonnet-4-6';
-        const r = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-          body: JSON.stringify({ model, max_tokens: maxTokens, system: systemOverride, messages: messages || [{ role: 'user', content: 'Generate now.' }] }),
-        });
-        if (!r.ok) { const e = await r.text(); throw new Error('Claude API error: ' + r.status + ' - ' + e); }
-        const d = await r.json();
-        return { statusCode: 200, headers: { ...cors, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: d.content[0].text }) };
-      }
-      // Contact/lead chat — use systemOverride as the prompt but run through tool loop
-      systemPrompt = systemOverride;
+      // Contact/lead chat — append commercial context to their system override
+      systemPrompt = systemOverride + prefsText + pipelineText +
+        '\n\nYou have web_search and pipeline_lookup tools — use them proactively. Never say you cannot browse or look something up.';
     } else {
-      // Standard chat path — build from VSG_SYSTEM + contact context
-      systemPrompt = VSG_SYSTEM;
+      systemPrompt = VSG_BRAIN + prefsText + pipelineText;
       if (contactContext) {
         systemPrompt += '\n\nCONTACT YOU ARE DISCUSSING:\nName: ' + (contactContext.name || 'Unknown') +
           '\nTitle: ' + (contactContext.title || 'Unknown') +
           '\nCompany: ' + (contactContext.company || 'Unknown') +
-          '\nIndustry: ' + (contactContext.industry || 'Unknown') +
           '\nPipeline stage: ' + (contactContext.stage || 'Unknown') +
-          '\nLast contacted: ' + (contactContext.lastContact || 'Unknown') +
           '\nLinkedIn: ' + (contactContext.linkedin || 'Not provided') +
           '\nNotes: ' + (contactContext.notes || 'None');
       }
       if (mode === 'draft_message') {
-        systemPrompt += '\n\nDraft a LinkedIn outreach message for this contact. Personalised, human, specific to their role. Under 150 words. No em-dashes.';
+        systemPrompt += '\n\nDraft a LinkedIn outreach message for this contact. Personalised, human, specific to their role and company. Under 150 words. No em-dashes. Frame them as a potential client with hiring mandates, not a candidate.';
       }
     }
 
-    // Agentic tool-use loop — max 5 rounds to stay within 26s timeout
+    // Agentic tool-use loop
+    const searchLog = [];
     let currentMessages = messages || [{ role: 'user', content: 'Hello' }];
-    const tools = BRAVE_KEY ? [SEARCH_TOOL] : [];
+    let finalText = '';
 
     for (let round = 0; round < 5; round++) {
-      const requestBody = {
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
-        system: systemPrompt,
-        messages: currentMessages,
-      };
-      if (tools.length) requestBody.tools = tools;
-
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1500,
+          system: systemPrompt,
+          messages: currentMessages,
+          tools: TOOLS,
+        }),
       });
       if (!r.ok) { const e = await r.text(); throw new Error('Claude API error: ' + r.status + ' - ' + e); }
       const d = await r.json();
 
-      // If Claude is done, return the text
-      if (d.stop_reason === 'end_turn' || !d.content.some(b => b.type === 'tool_use')) {
-        const text = d.content.find(b => b.type === 'text')?.text || '';
-        return { statusCode: 200, headers: { ...cors, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: text }) };
-      }
+      const textBlock = d.content.find(b => b.type === 'text');
+      if (textBlock) finalText = textBlock.text;
 
-      // Claude wants to use tools — execute them all in parallel
+      if (d.stop_reason === 'end_turn' || !d.content.some(b => b.type === 'tool_use')) break;
+
+      // Execute tool calls in parallel
       const toolUseBlocks = d.content.filter(b => b.type === 'tool_use');
-      const toolResults = await Promise.all(toolUseBlocks.map(async (block) => {
-        let output = '';
-        if (block.name === 'web_search') {
-          const { query, type = 'web' } = block.input;
-          const results = await braveSearch(query, type, 5);
-          if (results.length === 0) {
-            output = 'No results found.';
-          } else {
-            output = results.map((r, i) => `[${i + 1}] ${r.title}\n${r.url}\n${r.snippet}`).join('\n\n');
-          }
-        } else {
-          output = 'Unknown tool.';
-        }
-        return { type: 'tool_result', tool_use_id: block.id, content: output };
-      }));
+      const toolResults = await Promise.all(toolUseBlocks.map(async (block) => ({
+        type: 'tool_result',
+        tool_use_id: block.id,
+        content: await executeTool(block.name, block.input, searchLog),
+      })));
 
-      // Append assistant response + tool results and loop
-      currentMessages = [
-        ...currentMessages,
-        { role: 'assistant', content: d.content },
-        { role: 'user', content: toolResults },
-      ];
+      currentMessages = [...currentMessages, { role: 'assistant', content: d.content }, { role: 'user', content: toolResults }];
     }
 
-    // Fallback if loop exhausts
-    return { statusCode: 200, headers: { ...cors, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: 'I ran out of search rounds — please try a more specific question.' }) };
+    // Log the interaction (fire and forget)
+    const userMsg = (messages || []).filter(m => m.role === 'user').slice(-1)[0]?.content || '';
+    supaInsert('interaction_log', {
+      interaction_type: 'annie_chat',
+      contact_name: contactContext?.name || null,
+      contact_company: contactContext?.company || null,
+      contact_stage: contactContext?.stage || null,
+      contact_type: contactContext?.type || null,
+      user_message: typeof userMsg === 'string' ? userMsg.substring(0, 500) : null,
+      ai_response: finalText.substring(0, 500),
+      search_queries: searchLog.length ? searchLog : null,
+    });
+
+    return {
+      statusCode: 200,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: finalText || 'No response generated.' }),
+    };
 
   } catch (err) {
     console.error('Chat function error:', err);
