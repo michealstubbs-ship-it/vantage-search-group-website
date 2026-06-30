@@ -4382,6 +4382,8 @@ LINKEDIN: ${lc.linkedin_url||'Unknown'}
 
 Help Michael with research questions, message ideas, or strategic thinking about this lead. Be concise and direct.
 
+You have a web_search tool — use it proactively whenever Michael asks about job postings, company news, LinkedIn activity, recent moves, or anything requiring live data. Search immediately rather than saying you cannot browse.
+
 You HAVE been given live data above — use it. Do not say you lack real-time access.${lc._enrichment||''}
 
 IMPORTANT: If Michael asks you to monitor, watch, track, or alert him about something specific for this person (e.g., "monitor if they move company", "tell me if they announce a hire", "watch for a new role"), at the very END of your response output this exact tag on its own line:
@@ -4565,17 +4567,22 @@ async function loadTodaysActions(){
       let carried=[];
       if(yestRes.data&&yestRes.data.length>0){
         const yact=yestRes.data[0].actions||[];
-        carried=yact.filter(a=>a.status==='snoozed'||!a.status||a.status==='pending')
+        carried=yact.filter(a=>a.status==='snoozed')
           .map(a=>({...a,status:undefined,_carriedFrom:'yesterday'}));
       }
       if(todayRes.data&&todayRes.data.length>0&&todayRes.data[0].actions&&todayRes.data[0].actions.length>0){
         const row=todayRes.data[0];
         const modeData={mode:row.mode||'prospecting',jobs:0,pipeline:0};
-        // Prepend carried items not already in today's list (dedup by title)
+        // Prepend carried items not already in today's list (dedup by title AND company)
         let actions=row.actions;
         if(carried.length){
-          const existing=new Set(actions.map(a=>a.title));
-          const fresh=carried.filter(a=>!existing.has(a.title));
+          const existingTitles=new Set(actions.map(a=>(a.title||'').toLowerCase()));
+          const existingCompanies=new Set(actions.map(a=>(a.company||'').toLowerCase()).filter(Boolean));
+          const fresh=carried.filter(a=>{
+            const t=(a.title||'').toLowerCase();
+            const c=(a.company||'').toLowerCase();
+            return !existingTitles.has(t)&&(!c||!existingCompanies.has(c));
+          });
           if(fresh.length) actions=[...fresh,...actions];
         }
         renderTodaysActions({mode:row.mode,daily_effort_total:row.daily_effort_total,actions},modeData);

@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "Fix: surface signal contacts and source URLs in Today's Actions — 500 char summary, CONTACT extraction, source link button"
+git commit -m "Fix: stop duplicate actions — only carry snoozed items from yesterday, dedup by company name"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...
