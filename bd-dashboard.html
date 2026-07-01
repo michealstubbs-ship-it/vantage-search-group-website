@@ -4355,7 +4355,7 @@ function addChatMessage(role,content,typing=false){
 async function sendChat(){
   const input=document.getElementById('chat-input');
   const text=(input?.value||'').trim();
-  if(!text||!currentChatContact)return;
+  if(!text||(chatContactId!=='general'&&!currentChatContact))return;
   input.value='';
   addChatMessage('user',text);
   addChatMessage('assistant','Thinking...',true);
@@ -4426,6 +4426,34 @@ Give Michael specific, actionable SEO advice. Suggest keywords, content ideas, t
         messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
         systemOverride:seaSys,
         maxTokens:1024,
+        model:'claude-sonnet-4-6'
+      };
+    } else if(chatContactId==='general'){
+      const generalSys=`You are Annie, the commercial brain for Vantage Search Group — a boutique executive search firm in Dubai placing C-suite and senior leaders across the GCC (UAE, Saudi Arabia, Qatar, Kuwait, Bahrain, Oman).
+
+VSG's track record: placements at Mubadala, PIF, TAQA, Red Sea Global, Diriyah Gate, ADNOC, Accenture, Kearney, FAB, Emirates NBD and many others.
+
+VSG's focus functions: Strategy | Digital & Technology | AI & Data | Finance & Investments | Commercial & Sales | Operations | Transformation | HR & Talent | Risk & Compliance | Marketing
+
+You are Michael's strategic thinking partner. Help him:
+- Identify which GCC companies to target and why
+- Figure out how to get into specific accounts with no relationship
+- Plan outreach angles and conversation hooks
+- Think through sector trends and where leadership hiring is happening
+- Draft or refine messaging for any situation
+- Prioritise his BD activity for the week
+
+Rules:
+- Be direct and opinionated — give your best recommendation immediately
+- No bullet-point lists for every answer — use prose where natural
+- No em-dashes, no corporate language, no "Id love to help"
+- Never criticise UAE, Saudi Arabia, or any GCC government
+- If you need live market data, say so briefly — Michael knows you don't have real-time web access in this mode
+- Keep responses tight — Michael is in the middle of his workday`;
+      fetchBody={
+        messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
+        systemOverride:generalSys,
+        maxTokens:2048,
         model:'claude-sonnet-4-6'
       };
     } else {
@@ -5545,6 +5573,35 @@ const QUICK_ACTIONS=[
   {icon:'ti-building',color:'#6366f1',bg:'rgba(99,102,241,.08)',title:'Companies',sub:'Browse all target companies',fn:()=>{goPage('companies',document.querySelector('[onclick*="companies"]'));renderCompanies();}},
 ];
 
+function openGeneralAnnieChat(query){
+  _leadCtx=null;_actionCtx=null;window._seoCtx=null;
+  currentChatContact=null;
+  chatContactId='general';
+  chatMessages=[];
+  const av=document.getElementById('chat-av');
+  if(av){av.textContent='A';av.style.background='var(--gold)';av.style.color='#1e3a5f';}
+  document.getElementById('chat-name').textContent='Annie';
+  document.getElementById('chat-co').textContent='VSG BD Brain — strategy, research, brainstorm';
+  document.getElementById('chat-chips').innerHTML=`
+    <button class="chat-chip" onclick="quickChat('What GCC companies should VSG be targeting for new mandates right now, and why?')"><i class="ti ti-target"></i> New targets</button>
+    <button class="chat-chip" onclick="quickChat('Which sectors in the GCC are hiring senior executives most actively right now?')"><i class="ti ti-trending-up"></i> Hot sectors</button>
+    <button class="chat-chip" onclick="quickChat('Help me plan a focused BD push for this week — what should I prioritise?')"><i class="ti ti-calendar"></i> Plan my week</button>
+    <button class="chat-chip" onclick="quickChat('How should I approach a target company where we have no existing relationship?')"><i class="ti ti-route"></i> Cold approach</button>
+  `;
+  loadChatHistory('general').then(()=>{
+    if(chatMessages.length===0){
+      renderChatMessages([{role:'assistant',content:'Hi Michael. Ask me anything — company strategy, how to get into a specific account, what to say to someone, sector intel, or help planning your week. What are you thinking about?'}]);
+    }
+  });
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatOverlay').classList.add('open');
+  if(query){
+    setTimeout(()=>{const el=document.getElementById('chat-input');if(el){el.value=query;sendChat();}},250);
+  } else {
+    setTimeout(()=>document.getElementById('chat-input')?.focus(),100);
+  }
+}
+
 function cmdSearch(q){
   const box=document.getElementById('cmd-results');
   _cmdIdx=-1;_cmdGroups=[];
@@ -5570,7 +5627,7 @@ function cmdSearch(q){
     if(mco.length) _cmdGroups.push({label:'Companies',items:mco.map(co=>({icon:'ti-building',color:'#6366f1',bg:'rgba(99,102,241,.08)',title:co.name,sub:co.count+' contact'+(co.count!==1?'s':''),badge:'Filter',fn:()=>{goPage('contacts',document.querySelector('[onclick*="contacts"]'));setTimeout(()=>{const si=document.getElementById('srch');if(si){si.value=co.name;renderContacts();}},200);}}))});
 
     // Ask Annie
-    _cmdGroups.push({label:'Ask Annie',items:[{icon:'ti-sparkles',color:'var(--gold)',bg:'rgba(201,168,76,.1)',title:'Ask Annie: "'+q+'"',sub:'Research, draft, or answer anything',badge:'Ask',fn:()=>{const inp=document.getElementById('cmd-input');const txt=inp?inp.value:q;cmdClose();setTimeout(()=>{const chatEl=document.getElementById('chat-input');if(chatEl){chatEl.value=txt;chatEl.dispatchEvent(new Event('input'));}const chatPage=document.querySelector('[onclick*="\'chat\'"]');if(chatPage)chatPage.click();},100);}}]});
+    _cmdGroups.push({label:'Ask Annie',items:[{icon:'ti-sparkles',color:'var(--gold)',bg:'rgba(201,168,76,.1)',title:'Ask Annie: "'+q+'"',sub:'Strategy, research, BD brainstorm — anything',badge:'Ask',fn:()=>{const txt=q;cmdClose();setTimeout(()=>openGeneralAnnieChat(txt),100);}}]});
   }
 
   if(!_cmdGroups.length){box.classList.remove('open');return;}
