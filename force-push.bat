@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "Persist lead chat history to Supabase — chat now remembers per lead"
+git commit -m "Fix Annie: single Haiku call for contact chat, no tools, no cold start timeout"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...

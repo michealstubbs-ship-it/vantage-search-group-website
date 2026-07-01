@@ -206,20 +206,43 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers: { ...cors, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: d.content[0].text }) };
     }
 
-    // Contact/lead chat path (systemOverride + small maxTokens) — lean 2-round loop, no pipeline load
-    // This keeps us well under Netlify's 10s timeout
+    // Contact/lead chat path (systemOverride + small maxTokens) — single Haiku call, no tools, no loop
+    // Eliminates cold-start timeouts. Contact context is in the system prompt — Haiku doesn't need web search
+    // for message drafting, BD advice, or monitoring rules (MONITOR tag is LLM output, not a tool).
     const isContactChat = systemOverride && (maxTokens || 0) < 2048;
 
-    // Load preferences (always). Load pipeline context only for the full VSG brain path.
-    const prefsText = await loadPreferences();
-    const pipelineText = isContactChat ? '' : await loadPipelineContext();
+    if (isContactChat) {
+      const prefsText = await loadPreferences();
+      const systemPrompt = systemOverride + prefsText +
+        '\n\nCRITICAL RULES FOR THIS CHAT:\n' +
+        '- Never ask Michael to go check LinkedIn, a website, or any external source himself. That is your job.\n' +
+        '- If a person\'s company is not stated, infer it from their title, LinkedIn URL slug, or industry context. A "Group CDO & Deputy Group Head of Consumer Banking" at a major UAE bank is almost certainly Emirates NBD or FAB — state your best inference and proceed.\n' +
+        '- Use plain conversational text only. No markdown bold (**text**), no bullet lists, no numbered lists, no headers. Write in short paragraphs.\n' +
+        '- Be direct and opinionated. Give Michael your best answer immediately — do not list what you need before you can help.\n' +
+        '- If you set a monitoring rule, output [MONITOR:{...}] tag on its own line at the end. Otherwise say nothing about monitoring.';
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 600,
+          system: systemPrompt,
+          messages: messages || [{ role: 'user', content: 'Hello' }],
+        }),
+      });
+      if (!r.ok) { const e = await r.text(); throw new Error('Claude API error: ' + r.status + ' - ' + e); }
+      const d = await r.json();
+      const finalText = d.content?.[0]?.text || '';
+      return { statusCode: 200, headers: { ...cors, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: finalText }) };
+    }
+
+    // Full VSG brain path (no systemOverride) — load all context, run agentic loop
+    const [prefsText, pipelineText] = await Promise.all([loadPreferences(), loadPipelineContext()]);
 
     // Build system prompt
     let systemPrompt;
     if (systemOverride) {
-      // Contact/lead chat — append preferences to their system override (skip pipeline — not needed per-contact)
-      systemPrompt = systemOverride + prefsText +
-        '\n\nYou have web_search and pipeline_lookup tools — use them proactively. Never say you cannot browse or look something up.';
+      systemPrompt = systemOverride + prefsText + pipelineText;
     } else {
       systemPrompt = VSG_BRAIN + prefsText + pipelineText;
       if (contactContext) {
@@ -235,20 +258,18 @@ exports.handler = async (event) => {
       }
     }
 
-    // Agentic tool-use loop — 2 rounds for contact chat, 5 for full brain
-    const maxRounds = isContactChat ? 2 : 5;
-    const loopMaxTokens = isContactChat ? 700 : 1500;
+    // Agentic tool-use loop — full brain path only
     const searchLog = [];
     let currentMessages = messages || [{ role: 'user', content: 'Hello' }];
     let finalText = '';
 
-    for (let round = 0; round < maxRounds; round++) {
+    for (let round = 0; round < 5; round++) {
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: loopMaxTokens,
+          max_tokens: 1500,
           system: systemPrompt,
           messages: currentMessages,
           tools: TOOLS,
