@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "Annie learning layer — unified memory across all chat modes, nightly learning agent, memory panel"
+git commit -m "Outreach learning system — log every send, match replies, AI performance panel, nightly learning"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...

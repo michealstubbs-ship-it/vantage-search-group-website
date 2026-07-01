@@ -2265,6 +2265,144 @@ async function schedulePlacementFollowUps(c){
   }catch(e){console.warn('Placement follow-up error:',e);}
 }
 
+async function loadOutreachPerf(){
+  const db=_db();
+  if(!db){document.getElementById('perf-stats-row').innerHTML='<p style="color:var(--muted);padding:20px">Not connected</p>';return;}
+  try{
+    const{data:logs}=await db.from('outreach_log').select('*').order('sent_at',{ascending:false}).limit(500);
+    if(!logs||logs.length===0){
+      document.getElementById('perf-sent').textContent='0';
+      document.getElementById('perf-replied').textContent='0';
+      document.getElementById('perf-rate').textContent='—';
+      document.getElementById('perf-meetings').textContent='0';
+      document.getElementById('perf-best-list').innerHTML='<div class="empty"><i class="ti ti-send"></i><p>No messages logged yet. Start sending from Today\'s Actions and data will appear here.</p></div>';
+      document.getElementById('perf-worst-list').innerHTML='<div class="empty"><i class="ti ti-clock"></i><p>Patterns will surface after 20+ messages sent.</p></div>';
+      document.getElementById('perf-chart').innerHTML='<p style="color:var(--muted);font-size:12px;text-align:center;padding:20px">No data yet</p>';
+      return;
+    }
+    const sent=logs.length;
+    const replied=logs.filter(l=>l.status==='replied').length;
+    const rate=sent>0?Math.round(replied/sent*100):0;
+    document.getElementById('perf-sent').textContent=sent;
+    document.getElementById('perf-replied').textContent=replied;
+    document.getElementById('perf-rate').textContent=rate+'%';
+    document.getElementById('perf-meetings').textContent=logs.filter(l=>l.status==='meeting_booked').length;
+
+    // Hook type breakdown
+    const hookStats={};
+    for(const l of logs){
+      const h=l.hook_type||'cold';
+      if(!hookStats[h])hookStats[h]={sent:0,replied:0};
+      hookStats[h].sent++;
+      if(l.status==='replied'||l.status==='meeting_booked')hookStats[h].replied++;
+    }
+
+    // Best: replied messages sorted by days_to_reply asc
+    const bestMsgs=logs.filter(l=>l.status==='replied'||l.status==='meeting_booked').sort((a,b)=>(a.days_to_reply||99)-(b.days_to_reply||99)).slice(0,5);
+    const bestEl=document.getElementById('perf-best-list');
+    if(bestMsgs.length>0){
+      bestEl.innerHTML=bestMsgs.map(l=>`
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+            <div style="font-size:12px;font-weight:700;color:var(--navy)">${esc(l.contact_name||'Unknown')}${l.contact_company?' <span style="font-weight:400;color:var(--muted)">at '+esc(l.contact_company)+'</span>':''}</div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <span style="font-size:10px;background:rgba(16,185,129,.12);color:#10b981;border-radius:4px;padding:2px 6px">${l.hook_type||'cold'}</span>
+              ${l.days_to_reply!=null?`<span style="font-size:10px;background:rgba(30,58,95,.08);color:var(--muted);border-radius:4px;padding:2px 6px">replied in ${l.days_to_reply}d</span>`:''}
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--navy);line-height:1.5;background:rgba(16,185,129,.05);border-left:2px solid #10b981;padding:8px 10px;border-radius:0 4px 4px 0">"${esc((l.message_sent||'').substring(0,160))}${(l.message_sent||'').length>160?'...':''}"</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">${l.message_length||0} chars · ${l.send_source||'manual'}</div>
+        </div>`).join('');
+    } else {
+      bestEl.innerHTML='<div class="empty"><i class="ti ti-thumb-up"></i><p>Replied messages will appear here as data builds up.</p></div>';
+    }
+
+    // Hook type performance table
+    const worstEl=document.getElementById('perf-worst-list');
+    const hookRows=Object.entries(hookStats).sort((a,b)=>{
+      const rA=a[1].sent>0?a[1].replied/a[1].sent:0;
+      const rB=b[1].sent>0?b[1].replied/b[1].sent:0;
+      return rA-rB;
+    });
+    worstEl.innerHTML=`<div style="padding:12px 16px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Reply rate by approach type</div>
+      ${hookRows.map(([hook,s])=>{
+        const r=s.sent>0?Math.round(s.replied/s.sent*100):0;
+        const color=r>=20?'#10b981':r>=10?'var(--gold)':'var(--red)';
+        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:90px;font-size:11px;color:var(--navy);font-weight:600">${hook}</div>
+          <div style="flex:1;height:6px;background:var(--border);border-radius:3px"><div style="height:100%;background:${color};border-radius:3px;width:${Math.min(r*3,100)}%"></div></div>
+          <div style="font-size:11px;color:${color};font-weight:700;width:36px;text-align:right">${r}%</div>
+          <div style="font-size:10px;color:var(--muted);width:48px">${s.replied}/${s.sent}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+    // Monthly trend chart
+    const monthly={};
+    for(const l of logs){
+      const m=l.sent_at?l.sent_at.substring(0,7):'unknown';
+      if(!monthly[m])monthly[m]={sent:0,replied:0};
+      monthly[m].sent++;
+      if(l.status==='replied'||l.status==='meeting_booked')monthly[m].replied++;
+    }
+    const months=Object.keys(monthly).sort().slice(-6);
+    const chartEl=document.getElementById('perf-chart');
+    if(months.length>0){
+      chartEl.innerHTML=months.map(m=>{
+        const s=monthly[m];
+        const r=s.sent>0?Math.round(s.replied/s.sent*100):0;
+        const h=Math.max(4,Math.min(r*2,60));
+        return `<div style="flex:1;text-align:center">
+          <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:4px">${r}%</div>
+          <div style="height:${h}px;background:var(--gold);border-radius:3px 3px 0 0;margin:0 2px;min-height:4px"></div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">${m.substring(5)}</div>
+          <div style="font-size:10px;color:var(--muted)">${s.sent}s/${s.replied}r</div>
+        </div>`;
+      }).join('');
+      chartEl.style.display='flex';chartEl.style.alignItems='flex-end';chartEl.style.gap='4px';chartEl.style.padding='0 4px';
+    }
+
+    // Load Annie's outreach learnings into insights box
+    const{data:memRow}=await db.from('annie_memory').select('value').eq('key','outreach_learnings').single();
+    const insightsEl=document.getElementById('perf-insights');
+    if(memRow&&memRow.value&&memRow.value.trim()){
+      insightsEl.innerHTML=`<div style="font-size:13px;line-height:1.7;color:var(--navy);white-space:pre-line">${esc(memRow.value)}</div>
+        <div style="margin-top:12px;font-size:11px;color:var(--muted)">Updated nightly by Annie's learning agent. Click "Analyse with AI" for a fresh analysis.</div>`;
+    } else {
+      insightsEl.innerHTML='<div class="empty" style="padding:24px"><i class="ti ti-brain"></i><p>Annie hasn\'t analysed this yet. Click "Analyse with AI" for immediate insights, or wait for tonight\'s nightly learning run.</p></div>';
+    }
+
+  }catch(e){console.error('loadOutreachPerf:',e);document.getElementById('perf-sent').textContent='!';}
+}
+
+async function runOutreachInsights(){
+  const db=_db();if(!db)return;
+  const el=document.getElementById('perf-insights');
+  el.innerHTML='<div class="empty" style="padding:24px"><i class="ti ti-loader ti-spin"></i><p>Annie is analysing your outreach data...</p></div>';
+  try{
+    const{data:logs}=await db.from('outreach_log').select('*').order('sent_at',{ascending:false}).limit(200);
+    if(!logs||logs.length===0){el.innerHTML='<div class="empty" style="padding:24px"><p>No outreach data yet. Send some messages from Today\'s Actions first.</p></div>';return;}
+    const mem=await loadAnnieMemory();
+    const summary=`OUTREACH LOG (${logs.length} messages):\n`+logs.map(l=>`${l.sent_at?.substring(0,10)} | ${l.hook_type||'cold'} | ${l.message_length||0} chars | ${l.status} | days_to_reply: ${l.days_to_reply??'—'} | msg: "${(l.message_sent||'').substring(0,80)}"`).join('\n');
+    const sys=`You are Annie, the commercial brain of Vantage Search Group. Analyse Michael's LinkedIn outreach data and give specific, actionable recommendations to improve reply rates.${mem}`;
+    const resp=await fetch('https://vsg-bd-dashboard.netlify.app/.netlify/functions/chat',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        systemOverride:sys,
+        messages:[{role:'user',content:`Here is my full outreach log:\n\n${summary}\n\nAnalyse this. What's working? What's not? Give me 3-5 specific recommendations to improve my reply rate. Be direct and specific — reference actual messages where possible.`}],
+        maxTokens:2048,model:'claude-sonnet-4-6'
+      })
+    });
+    const d=await resp.json();
+    const text=d.content||'Analysis failed';
+    el.innerHTML=`<div style="font-size:13px;line-height:1.7;color:var(--navy);white-space:pre-line">${esc(text)}</div>`;
+    // Save to annie_memory
+    await db.from('annie_memory').upsert({key:'outreach_learnings',value:text,source:'agent',updated_at:new Date().toISOString()},{onConflict:'key'});
+    _annieMemory=null;
+  }catch(e){el.innerHTML='<div class="empty" style="padding:24px"><p>Analysis failed: '+esc(e.message)+'</p></div>';}
+}
+
 async function loadBDPerf(){
   const db=_db();
   const metricsEl=document.getElementById('bdperf-metrics');
@@ -5166,6 +5304,7 @@ async function sendWelcomeMsg(wi,liUrl,name,msgId,lblId){
       const item=document.getElementById('welcome-item-'+wi);
       if(item){item.style.opacity='.4';item.style.pointerEvents='none';}
       showToast('Welcome message sent to '+name);
+      logOutreach({contactName:name,linkedinUrl:liUrl,message:msg,channel:'linkedin_message',sendSource:'welcome_sequence',signal:'new_connection'});
       const db=_db();
       if(db){
         const slug=liUrl.replace(/\/$/,'').split('/').pop();
@@ -5414,6 +5553,7 @@ async function sendLinkedInMsg(i){
       btn.innerHTML='<i class="ti ti-check"></i> Sent';
       if(status)status.textContent='Message sent via LinkedIn';
       await _recordMichaelAction(a.rank||i+1,'sent_linkedin');
+      logOutreach({contactName:a.contact,contactTitle:(a.contacts_to_reach||[])[0]?.title,contactCompany:a.company,linkedinUrl:(a.contacts_to_reach||[])[0]?.linkedin,message:a.suggested_message||'',channel:'linkedin_message',sendSource:'today_actions',signal:a.signal||'',actionRank:a.rank||i+1});
     }else if(data.fallback){
       btn.disabled=false;
       if(status)status.textContent=(data.error||'Send failed')+' — copy and send manually';
@@ -5445,6 +5585,7 @@ async function sendLinkedInInvite(i){
       btn.innerHTML='<i class="ti ti-check"></i> Invite Sent';
       if(status)status.textContent='Connection invite sent';
       await _recordMichaelAction(a.rank||i+1,'sent_invite');
+      logOutreach({contactName:a.contact,contactTitle:(a.contacts_to_reach||[])[0]?.title,contactCompany:a.company,linkedinUrl:li,message:a.connect_note||'',channel:'linkedin_connect',sendSource:'today_actions',signal:a.signal||''});
     }else if(data.already_connected){
       if(lbl)lbl.textContent='Send Message';
       btn.disabled=false;btn.style.background='var(--gold)';btn.style.color='#000';
@@ -5458,6 +5599,38 @@ async function sendLinkedInInvite(i){
     btn.disabled=false;
     if(status)status.textContent='Invite failed: '+e.message;
   }
+}
+
+/* ─── Outreach Logging ─── */
+function _inferHookType(signal,message){
+  const s=(signal+' '+message).toLowerCase();
+  if(/new role|joined|appointment|recently joined|new cto|new cfo|new cdo|new ceo|new head/i.test(s)) return 'new_joiner';
+  if(/fund|series|raised|investment|backed|capital/i.test(s)) return 'funding';
+  if(/hiring|job post|open role|vacancy|recruit|mandate/i.test(s)) return 'hiring_signal';
+  if(/follow.?up|following up|checking in|touched base/i.test(s)) return 'follow_up';
+  if(/referred|introduc|mutual|knows you/i.test(s)) return 'referral';
+  if(/expansion|launch|new office|growing|partnership/i.test(s)) return 'expansion';
+  return 'cold';
+}
+
+async function logOutreach({contactName,contactTitle,contactCompany,linkedinUrl,message,channel,sendSource,signal,actionRank}){
+  const db=_db();if(!db||!message)return;
+  try{
+    const hookType=_inferHookType(signal||'',message);
+    await db.from('outreach_log').insert([{
+      contact_name:contactName||'',
+      contact_title:contactTitle||'',
+      contact_company:contactCompany||'',
+      linkedin_url:linkedinUrl||null,
+      message_sent:message,
+      message_length:message.length,
+      hook_type:hookType,
+      channel:channel||'linkedin_message',
+      send_source:sendSource||'manual',
+      status:'sent',
+      sent_at:new Date().toISOString()
+    }]);
+  }catch(e){console.warn('logOutreach error:',e);}
 }
 
 /* ─── Per-contact LinkedIn Send / Connect ─── */
@@ -5524,6 +5697,7 @@ async function sendContactMsg(i,ci){
       btn.innerHTML='<i class="ti ti-check"></i> Sent';
       showToast('Message sent to '+esc(c.name));
       await _recordMichaelAction(a.rank||i+1,'sent_linkedin');
+      logOutreach({contactName:c.name,contactTitle:c.title,contactCompany:c.company||a.company,linkedinUrl:c.linkedin,message:msg,channel:'linkedin_message',sendSource:'today_actions',signal:a.signal||''});
     }else{
       btn.disabled=false;
       showToast((data.error||'Send failed')+' — copy and send manually','error');
@@ -5547,6 +5721,7 @@ async function sendContactInvite(i,ci){
       btn.style.background='#166534';btn.style.color='#fff';
       btn.innerHTML='<i class="ti ti-check"></i> Invite Sent';
       await _recordMichaelAction(a.rank||i+1,'sent_invite');
+      logOutreach({contactName:c.name,contactTitle:c.title,contactCompany:c.company||a.company,linkedinUrl:c.linkedin,message:a.connect_note||'',channel:'linkedin_connect',sendSource:'today_actions',signal:a.signal||''});
     }else if(data.already_connected){
       if(lbl)lbl.textContent='Send Message';
       btn.disabled=false;btn.style.background='var(--gold)';btn.style.color='#000';
