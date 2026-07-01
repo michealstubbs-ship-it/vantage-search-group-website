@@ -206,14 +206,19 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers: { ...cors, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: d.content[0].text }) };
     }
 
-    // Load preferences and pipeline context in parallel
-    const [prefsText, pipelineText] = await Promise.all([loadPreferences(), loadPipelineContext()]);
+    // Contact/lead chat path (systemOverride + small maxTokens) — lean 2-round loop, no pipeline load
+    // This keeps us well under Netlify's 10s timeout
+    const isContactChat = systemOverride && (maxTokens || 0) < 2048;
+
+    // Load preferences (always). Load pipeline context only for the full VSG brain path.
+    const prefsText = await loadPreferences();
+    const pipelineText = isContactChat ? '' : await loadPipelineContext();
 
     // Build system prompt
     let systemPrompt;
     if (systemOverride) {
-      // Contact/lead chat — append commercial context to their system override
-      systemPrompt = systemOverride + prefsText + pipelineText +
+      // Contact/lead chat — append preferences to their system override (skip pipeline — not needed per-contact)
+      systemPrompt = systemOverride + prefsText +
         '\n\nYou have web_search and pipeline_lookup tools — use them proactively. Never say you cannot browse or look something up.';
     } else {
       systemPrompt = VSG_BRAIN + prefsText + pipelineText;
@@ -230,18 +235,20 @@ exports.handler = async (event) => {
       }
     }
 
-    // Agentic tool-use loop
+    // Agentic tool-use loop — 2 rounds for contact chat, 5 for full brain
+    const maxRounds = isContactChat ? 2 : 5;
+    const loopMaxTokens = isContactChat ? 700 : 1500;
     const searchLog = [];
     let currentMessages = messages || [{ role: 'user', content: 'Hello' }];
     let finalText = '';
 
-    for (let round = 0; round < 5; round++) {
+    for (let round = 0; round < maxRounds; round++) {
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1500,
+          max_tokens: loopMaxTokens,
           system: systemPrompt,
           messages: currentMessages,
           tools: TOOLS,

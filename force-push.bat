@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "Leads: 3-button action flow (contacted/converted/disregard) → Pipeline, Annie fixes"
+git commit -m "Fix Annie timeout: 2-round loop, skip pipeline load for contact chat"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...
