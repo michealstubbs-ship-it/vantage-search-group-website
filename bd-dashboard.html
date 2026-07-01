@@ -712,6 +712,8 @@ textarea{resize:vertical;min-height:80px}
     <button class="nav-btn" onclick="goPage('outreach-perf',this);loadOutreachPerf()"><i class="ti ti-target"></i>Outreach Performance</button>
     <button class="nav-btn" onclick="goPage('bd-perf',this);loadBDPerf()"><i class="ti ti-chart-bar"></i>BD Performance</button>
     <button class="nav-btn" onclick="goPage('network',this)"><i class="ti ti-network"></i>Network Map</button>
+    <div class="nav-section">Settings</div>
+    <button class="nav-btn" onclick="goPage('annie-memory',this);loadAnnieMemoryPanel()"><i class="ti ti-brain"></i>Annie's Memory</button>
     <div class="nav-section">Finance</div>
     <button class="nav-btn" onclick="goPage('finance',this)"><i class="ti ti-receipt"></i>Invoices<span class="nav-badge amber" id="nb-inv" style="display:none"></span></button>
     <div class="sidebar-footer">
@@ -1614,6 +1616,21 @@ textarea{resize:vertical;min-height:80px}
         <div class="card-b p0" id="net-coverage-list">
           <div class="empty"><i class="ti ti-network"></i><p>Loading your network coverage across Tier 1 and 2 target companies...</p></div>
         </div>
+      </div>
+    </div>
+
+    <!-- ANNIE'S MEMORY -->
+    <div id="p-annie-memory" class="page">
+      <div class="ph">
+        <h1><i class="ti ti-brain"></i> Annie's Memory</h1>
+        <p>Everything Annie has learned about VSG's strategy, preferences, and context — injected into every conversation</p>
+      </div>
+      <div class="alert" style="margin-bottom:20px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);color:var(--navy)">
+        <i class="ti ti-sparkles" style="color:var(--gold)"></i>
+        <div>Annie reads this memory before every chat — lead chat, action chat, general brainstorm, contact chat. Edit any field and save to update her immediately. The nightly learning agent updates this automatically from your daily conversations at 10pm.</div>
+      </div>
+      <div id="annie-memory-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card"><div class="card-b" style="padding:16px"><div class="empty"><i class="ti ti-loader ti-spin"></i><p>Loading Annie's memory...</p></div></div></div>
       </div>
     </div>
 
@@ -3935,6 +3952,34 @@ let intelFilter='all';
 let chatMessages=[];
 let currentChatContact=null;
 let chatContactId=null;
+let _annieMemory=null; // cached after first load
+
+async function loadAnnieMemory(){
+  if(_annieMemory!==null)return _annieMemory;
+  try{
+    const db=_db();
+    if(!db){_annieMemory='';return '';}
+    const{data}=await db.from('annie_memory').select('key,value').order('key');
+    if(!data||data.length===0){_annieMemory='';return '';}
+    const parts=data
+      .filter(r=>r.value&&r.value.trim())
+      .map(r=>{
+        const label={
+          priority_targets:'Priority BD targets',
+          sectors_focus:'Sectors to focus on',
+          current_strategy:'Current VSG strategy',
+          style_rules:'Michael\'s communication style',
+          relationship_notes:'Relationship notes',
+          sectors_avoid:'Sectors/companies to avoid',
+          recent_wins:'Recent wins',
+          open_mandates:'Open mandates'
+        }[r.key]||r.key;
+        return `${label}: ${r.value}`;
+      });
+    _annieMemory=parts.length>0?`\n\n--- ANNIE'S MEMORY (learned from past sessions) ---\n${parts.join('\n')}\n--- END MEMORY ---`:'';
+    return _annieMemory;
+  }catch(e){console.warn('loadAnnieMemory error:',e);_annieMemory='';return '';}
+}
 let _actionCtx=null; // stores Today's Actions context when chatting from an action card
 let _leadCtx=null; // stores LinkedIn Lead context when chatting from a lead card
 
@@ -4360,6 +4405,7 @@ async function sendChat(){
   addChatMessage('user',text);
   addChatMessage('assistant','Thinking...',true);
   try{
+    const mem=await loadAnnieMemory();
     let fetchBody;
     if(_leadCtx){
       const lc=_leadCtx;
@@ -4389,7 +4435,7 @@ You HAVE been given live data above — use it. Do not say you lack real-time ac
 IMPORTANT: If Michael asks you to monitor, watch, track, or alert him about something specific for this person (e.g., "monitor if they move company", "tell me if they announce a hire", "watch for a new role"), at the very END of your response output this exact tag on its own line:
 [MONITOR:{"contact_name":"${(lc.full_name||'').replace(/"/g,'\\"')}","linkedin_url":"${(lc.linkedin_url||'').replace(/"/g,'\\"')}","company":"${(lc.company||'').replace(/"/g,'\\"')}","watch_for":"<describe exactly what to watch for in plain English>","trigger_description":"<one sentence describing what would trigger this alert>"}]
 
-Never expose this tag in your conversational response — only output it as the final line if a monitoring rule is being set.`;
+Never expose this tag in your conversational response — only output it as the final line if a monitoring rule is being set.`+mem;
       fetchBody={
         messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
         systemOverride:sys,
@@ -4409,7 +4455,7 @@ WHY ACT NOW: ${_actionCtx.why||''}
 DRAFTED MESSAGE: ${_actionCtx.suggested_message||'None'}
 CONTACTS TO REACH: ${(_actionCtx.contacts_to_reach&&_actionCtx.contacts_to_reach.length)?_actionCtx.contacts_to_reach.map(c=>`${c.name} (${c.title||''}${c.company?' at '+c.company:''})${c.linkedin?' LinkedIn: '+c.linkedin:''}${c.email?' Email: '+c.email:''}`).join('; '):'Not specified'}
 
-Help Michael: refine or rewrite the message, find a different angle, provide company or person intel, answer any question about this outreach. Be concise and direct. No em-dashes. No corporate language.`;
+Help Michael: refine or rewrite the message, find a different angle, provide company or person intel, answer any question about this outreach. Be concise and direct. No em-dashes. No corporate language.`+mem;
       fetchBody={
         messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
         systemOverride:sys,
@@ -4421,7 +4467,7 @@ Help Michael: refine or rewrite the message, find a different angle, provide com
 VSG publishes SEO articles targeting: executive search Dubai, C-suite recruitment GCC, executive headhunter Saudi Arabia, CFO recruitment UAE, sovereign wealth fund talent, and similar.
 CURRENT TRAFFIC DATA:
 ${window._seoCtx}
-Give Michael specific, actionable SEO advice. Suggest keywords, content ideas, technical quick wins, or help draft content. Be direct and concise. No em-dashes.`;
+Give Michael specific, actionable SEO advice. Suggest keywords, content ideas, technical quick wins, or help draft content. Be direct and concise. No em-dashes.`+mem;
       fetchBody={
         messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
         systemOverride:seaSys,
@@ -4449,7 +4495,7 @@ Rules:
 - No em-dashes, no corporate language, no "Id love to help"
 - Never criticise UAE, Saudi Arabia, or any GCC government
 - If you need live market data, say so briefly — Michael knows you don't have real-time web access in this mode
-- Keep responses tight — Michael is in the middle of his workday`;
+- Keep responses tight — Michael is in the middle of his workday`+mem;
       fetchBody={
         messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
         systemOverride:generalSys,
@@ -5572,6 +5618,59 @@ const QUICK_ACTIONS=[
   {icon:'ti-bell',color:'#ef4444',bg:'rgba(239,68,68,.1)',title:'Follow-ups',sub:'View overdue and upcoming follow-ups',fn:()=>goPage('followups',document.querySelector('[onclick*="followups"]'))},
   {icon:'ti-building',color:'#6366f1',bg:'rgba(99,102,241,.08)',title:'Companies',sub:'Browse all target companies',fn:()=>{goPage('companies',document.querySelector('[onclick*="companies"]'));renderCompanies();}},
 ];
+
+const MEMORY_LABELS={
+  priority_targets:{label:'Priority BD targets',icon:'ti-target',hint:'Companies Michael is actively trying to get into — updated by Annie as you discuss targets'},
+  sectors_focus:{label:'Sectors to focus on',icon:'ti-trending-up',hint:'Functions and verticals VSG is prioritising right now'},
+  current_strategy:{label:'Current strategy',icon:'ti-bulb',hint:'VSG\'s positioning, differentiator, and commercial focus this period'},
+  style_rules:{label:'Communication style',icon:'ti-writing',hint:'How Michael likes messages written — tone, length, format'},
+  relationship_notes:{label:'Relationship notes',icon:'ti-users',hint:'Who Michael knows, warm intros, history with key accounts'},
+  sectors_avoid:{label:'Sectors / companies to avoid',icon:'ti-ban',hint:'Things to steer clear of — competitors, bad relationships, deprioritised areas'},
+  recent_wins:{label:'Recent wins',icon:'ti-trophy',hint:'Placements, mandates won, successful intros — gives Annie confidence context'},
+  open_mandates:{label:'Open mandates',icon:'ti-briefcase',hint:'Live roles VSG is currently trying to fill'}
+};
+
+async function loadAnnieMemoryPanel(){
+  const grid=document.getElementById('annie-memory-grid');
+  if(!grid)return;
+  const db=_db();if(!db){grid.innerHTML='<p style="color:var(--muted);padding:20px">Not connected to database</p>';return;}
+  try{
+    const{data}=await db.from('annie_memory').select('key,value,source,updated_at').order('key');
+    if(!data){grid.innerHTML='<p style="color:var(--muted);padding:20px">Could not load memory</p>';return;}
+    const map={};data.forEach(r=>{map[r.key]=r;});
+    grid.innerHTML=Object.entries(MEMORY_LABELS).map(([key,meta])=>{
+      const row=map[key]||{value:'',source:'manual',updated_at:null};
+      const updated=row.updated_at?new Date(row.updated_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'Never';
+      const badge=row.source==='agent'?'<span style="font-size:10px;background:rgba(16,185,129,.12);color:#10b981;border-radius:4px;padding:2px 6px;margin-left:6px">Auto-learned</span>':'<span style="font-size:10px;background:rgba(30,58,95,.1);color:var(--muted);border-radius:4px;padding:2px 6px;margin-left:6px">Manual</span>';
+      return `<div class="card">
+        <div class="card-b" style="padding:16px">
+          <div style="display:flex;align-items:center;margin-bottom:6px">
+            <i class="ti ${meta.icon}" style="color:var(--gold);margin-right:8px;font-size:16px"></i>
+            <span style="font-size:13px;font-weight:700;color:var(--navy)">${meta.label}</span>${badge}
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px">${meta.hint}</div>
+          <textarea id="mem-${key}" rows="3" style="width:100%;font-size:12px;line-height:1.6;border:1px solid var(--border);border-radius:6px;padding:8px;background:var(--bg);color:var(--navy);resize:vertical">${(row.value||'').replace(/</g,'&lt;')}</textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+            <span style="font-size:10px;color:var(--muted)">Last updated: ${updated}</span>
+            <button class="btn btn-xs btn-gold" onclick="saveMemoryField('${key}')"><i class="ti ti-check"></i> Save</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){grid.innerHTML='<p style="color:var(--muted);padding:20px">Error loading memory: '+e.message+'</p>';}
+}
+
+async function saveMemoryField(key){
+  const el=document.getElementById('mem-'+key);
+  if(!el)return;
+  const val=el.value.trim();
+  const db=_db();if(!db)return;
+  try{
+    await db.from('annie_memory').upsert({key,value:val,source:'manual',updated_at:new Date().toISOString()},{onConflict:'key'});
+    _annieMemory=null; // bust cache so next chat picks up new value
+    showToast('Memory saved — Annie will use this in her next response');
+  }catch(e){showToast('Save failed: '+e.message,'error');}
+}
 
 function openGeneralAnnieChat(query){
   _leadCtx=null;_actionCtx=null;window._seoCtx=null;

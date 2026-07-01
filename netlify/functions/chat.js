@@ -48,6 +48,28 @@ async function braveSearch(query, type = 'web', count = 5) {
   } catch { return []; }
 }
 
+// ── Load Annie's persistent memory ───────────────────────────────────────────
+async function loadAnnieMemory() {
+  const rows = await supaGet('annie_memory?select=key,value&order=key');
+  if (!rows || !rows.length) return '';
+  const labels = {
+    priority_targets: 'Priority BD targets',
+    sectors_focus: 'Sectors to focus on',
+    current_strategy: 'Current VSG strategy',
+    style_rules: "Michael's communication style",
+    relationship_notes: 'Relationship notes',
+    sectors_avoid: 'Sectors/companies to avoid',
+    recent_wins: 'Recent wins',
+    open_mandates: 'Open mandates',
+  };
+  const parts = rows
+    .filter(r => r.value && r.value.trim())
+    .map(r => `${labels[r.key] || r.key}: ${r.value}`);
+  return parts.length
+    ? "\n\n--- ANNIE'S MEMORY (learned from past sessions) ---\n" + parts.join('\n') + '\n--- END MEMORY ---'
+    : '';
+}
+
 // ── Load user preferences from Supabase ──────────────────────────────────────
 async function loadPreferences() {
   const prefs = await supaGet('user_preferences?order=confidence.desc&limit=20');
@@ -237,14 +259,14 @@ exports.handler = async (event) => {
     }
 
     // Full VSG brain path (no systemOverride) — load all context, run agentic loop
-    const [prefsText, pipelineText] = await Promise.all([loadPreferences(), loadPipelineContext()]);
+    const [prefsText, pipelineText, memoryText] = await Promise.all([loadPreferences(), loadPipelineContext(), loadAnnieMemory()]);
 
     // Build system prompt
     let systemPrompt;
     if (systemOverride) {
-      systemPrompt = systemOverride + prefsText + pipelineText;
+      systemPrompt = systemOverride + prefsText + pipelineText + memoryText;
     } else {
-      systemPrompt = VSG_BRAIN + prefsText + pipelineText;
+      systemPrompt = VSG_BRAIN + prefsText + pipelineText + memoryText;
       if (contactContext) {
         systemPrompt += '\n\nCONTACT YOU ARE DISCUSSING:\nName: ' + (contactContext.name || 'Unknown') +
           '\nTitle: ' + (contactContext.title || 'Unknown') +
