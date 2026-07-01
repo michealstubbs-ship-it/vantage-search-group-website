@@ -27,32 +27,56 @@ exports.handler = async (event) => {
   const companySlug = company ? company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : null;
   const firstName = (name || '').split(' ')[0].toLowerCase();
 
-  const [profileResult, companyResult, peopleResult, apolloResult, newsResult, jobsResult] = await Promise.allSettled([
-    // 1. Unipile profile
-    identifier ? fetchWithTimeout(`${UNIPILE_BASE}/api/v1/users/${identifier}?account_id=${UNIPILE_ACCOUNT}`, {
-      headers: { 'X-API-KEY': UNIPILE_KEY, 'Accept': 'application/json' },
-    }).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null),
+  // Step 1: fetch LinkedIn profile first so we can extract company if blank
+  let resolvedCompany = company || '';
+  let profileData = null;
+  if (identifier) {
+    try {
+      const pr = await fetchWithTimeout(`${UNIPILE_BASE}/api/v1/users/${identifier}?account_id=${UNIPILE_ACCOUNT}`, {
+        headers: { 'X-API-KEY': UNIPILE_KEY, 'Accept': 'application/json' },
+      });
+      if (pr.ok) profileData = await pr.json();
+    } catch { /* silent */ }
+  }
 
+  // Extract current company from LinkedIn positions if company field is blank
+  if (!resolvedCompany && profileData) {
+    // Try positions array (various Unipile field names)
+    const positions = profileData.positions || profileData.experience || profileData.work_experience || [];
+    if (positions.length > 0) {
+      const current = positions.find(p => !p.end_date && !p.end_year) || positions[0];
+      resolvedCompany = current.company_name || current.company || current.organization_name || '';
+    }
+    // Fallback: parse "at [Company]" from headline
+    if (!resolvedCompany && profileData.headline) {
+      const m = profileData.headline.match(/\bat\s+(.+)$/i);
+      if (m) resolvedCompany = m[1].trim().replace(/[,·|].*/,'').trim();
+    }
+  }
+
+  const resolvedCompanySlug = resolvedCompany ? resolvedCompany.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : null;
+
+  const [companyResult, peopleResult, apolloResult, newsResult, jobsResult] = await Promise.allSettled([
     // 2. Unipile company
-    companySlug ? fetchWithTimeout(`${UNIPILE_BASE}/api/v1/linkedin/company/${companySlug}?account_id=${UNIPILE_ACCOUNT}`, {
+    resolvedCompanySlug ? fetchWithTimeout(`${UNIPILE_BASE}/api/v1/linkedin/company/${resolvedCompanySlug}?account_id=${UNIPILE_ACCOUNT}`, {
       headers: { 'X-API-KEY': UNIPILE_KEY, 'Accept': 'application/json' },
     }).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null),
 
     // 3. Unipile people at company
-    company ? fetchWithTimeout(`${UNIPILE_BASE}/api/v1/linkedin/search?account_id=${UNIPILE_ACCOUNT}&limit=10`, {
+    resolvedCompany ? fetchWithTimeout(`${UNIPILE_BASE}/api/v1/linkedin/search?account_id=${UNIPILE_ACCOUNT}&limit=10`, {
       method: 'POST',
       headers: { 'X-API-KEY': UNIPILE_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ api: 'classic', category: 'people', advanced_keywords: { company } }),
+      body: JSON.stringify({ api: 'classic', category: 'people', advanced_keywords: { company: resolvedCompany } }),
     }).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null),
 
     // 4. Apollo people search
-    APOLLO_KEY && company ? apolloPeopleSearch(company_domain || company).catch(() => null) : Promise.resolve(null),
+    APOLLO_KEY && resolvedCompany ? apolloPeopleSearch(company_domain || resolvedCompany).catch(() => null) : Promise.resolve(null),
 
     // 5. Brave news
-    BRAVE_KEY && company ? braveFetch(`${company} funding hiring growth 2025 2026`, 'news').catch(() => []) : Promise.resolve([]),
+    BRAVE_KEY && resolvedCompany ? braveFetch(`${resolvedCompany} funding hiring growth 2025 2026`, 'news').catch(() => []) : Promise.resolve([]),
 
     // 6. Brave jobs
-    BRAVE_KEY && company ? braveFetch(`${company} jobs open roles hiring executives`, 'web').catch(() => []) : Promise.resolve([]),
+    BRAVE_KEY && resolvedCompany ? braveFetch(`${resolvedCompany} jobs open roles hiring executives`, 'web').catch(() => []) : Promise.resolve([]),
   ]);
 
   const sections = [];
