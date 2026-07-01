@@ -5164,7 +5164,7 @@ function openChatFromLead(l){
     }).catch(()=>{});
   }
   currentChatContact={name:l.full_name||'Lead',company:l.company||'',title:l.title||'',industry:'',stage:'',lastContact:'',followupDate:'',linkedin:l.linkedin_url||'',notes:''};
-  chatContactId=null;
+  chatContactId=l.id?'lead_'+l.id:null;
   chatMessages=[];
   const av=document.getElementById('chat-av');
   if(av){av.textContent=(l.full_name||'L')[0].toUpperCase();av.style.background='#0077b5';av.style.color='#fff';}
@@ -5175,7 +5175,15 @@ function openChatFromLead(l){
   if(l.qualification_score) welcomeParts.push(`Qualification: ${l.qualification_score}/5 — ${l.qualification_score>=4?'Pursue':l.qualification_score===3?'Nurture':'Pass'}${l.qualification_notes?' ('+l.qualification_notes+')':''}`);
   if(l.reply_summary) welcomeParts.push(`Their reply: ${l.reply_summary}`);
   welcomeParts.push(`What would you like to do? Ask for research, refine your approach, or set a monitoring rule (e.g. "watch if they move company").`);
-  renderChatMessages([{role:'assistant',content:welcomeParts.join('\n\n')}]);
+  const welcomeMsg=welcomeParts.join('\n\n');
+  // Load chat history from Supabase — show welcome only if no prior conversation
+  if(chatContactId){
+    loadChatHistory(chatContactId).then(()=>{
+      if(chatMessages.length===0) renderChatMessages([{role:'assistant',content:welcomeMsg}]);
+    });
+  } else {
+    renderChatMessages([{role:'assistant',content:welcomeMsg}]);
+  }
   const co=(l.company||'this company').replace(/'/g,"\\'");
   const ct=(l.full_name||'this person').replace(/'/g,"\\'");
   document.getElementById('chat-chips').innerHTML=`
