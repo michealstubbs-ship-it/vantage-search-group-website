@@ -2,6 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://vantagesearchgroup.me/</loc>
+    <lastmod>2026-07-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -47,6 +48,18 @@
   </url>
   <url>
     <loc>https://vantagesearchgroup.me/insights/executive-retention-uae-2026/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vantagesearchgroup.me/insights/why-executives-change-jobs-uae/</loc>
+    <lastmod>2026-07-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vantagesearchgroup.me/insights/cfo-search-dubai/</loc>
+    <lastmod>2026-07-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
