@@ -473,6 +473,11 @@ textarea{resize:vertical;min-height:80px}
 .chat-msg.user{background:var(--navy);color:#fff;align-self:flex-end;border-radius:12px 12px 2px 12px}
 .chat-msg.assistant{background:var(--bg);border:1px solid var(--border);color:var(--text);align-self:flex-start;border-radius:12px 12px 12px 2px}
 .chat-msg.typing{color:var(--muted);font-style:italic}
+.annie-dots{display:inline-flex;gap:3px;align-items:center}
+.annie-dots span{display:inline-block;width:6px;height:6px;background:var(--muted);border-radius:50%;animation:anniedot 1.2s infinite both}
+.annie-dots span:nth-child(2){animation-delay:.2s}
+.annie-dots span:nth-child(3){animation-delay:.4s}
+@keyframes anniedot{0%,80%,100%{transform:scale(0.7);opacity:.4}40%{transform:scale(1);opacity:1}}
 .chat-chips{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px 0}
 .chat-chip{font-size:11px;font-weight:600;padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--navy);cursor:pointer;transition:all .1s}
 .chat-chip:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
@@ -669,6 +674,7 @@ textarea{resize:vertical;min-height:80px}
     <div class="cmd-results" id="cmd-results"></div>
   </div>
   <div class="bar-actions">
+    <button class="btn btn-sm btn-gold" onclick="openGeneralAnnieChat()" title="Ask Annie anything — research, strategy, email lookup, BD brainstorm" style="font-weight:700"><i class="ti ti-sparkles"></i> Ask Annie</button>
     <button class="btn btn-sm btn-green" onclick="saveBackup()" title="Save backup"><i class="ti ti-device-floppy"></i></button>
     <label class="btn btn-sm btn-ghost-inv" style="cursor:pointer;margin-right:8px" title="Restore backup"><i class="ti ti-upload"></i><input type="file" accept=".json" style="display:none" onchange="restoreBackup(event)"></label>
     <button class="btn btn-sm btn-ghost-inv" onclick="openAdd()"><i class="ti ti-user-plus"></i> Contact</button>
@@ -4526,7 +4532,13 @@ function renderChatMessages(msgs){
   const el=document.getElementById('chat-messages');
   if(!el)return;
   const toRender=msgs||chatMessages;
-  el.innerHTML=toRender.map(m=>`<div class="chat-msg ${m.role} ${m.role==='assistant'&&m.typing?'typing':''}">${esc(m.content)}</div>`).join('');
+  el.innerHTML=toRender.map(m=>{
+    const isTyping=m.role==='assistant'&&m.typing;
+    if(isTyping) return `<div class="chat-msg assistant typing"><span class="annie-dots"><span>.</span><span>.</span><span>.</span></span></div>`;
+    // Convert newlines to <br> for readable multi-line responses
+    const html=esc(m.content).replace(/\n/g,'<br>');
+    return `<div class="chat-msg ${m.role}">${html}</div>`;
+  }).join('');
   el.scrollTop=el.scrollHeight;
 }
 
@@ -4541,7 +4553,7 @@ async function sendChat(){
   if(!text||(chatContactId!=='general'&&!currentChatContact))return;
   input.value='';
   addChatMessage('user',text);
-  addChatMessage('assistant','Thinking...',true);
+  addChatMessage('assistant','···',true);
   try{
     const mem=await loadAnnieMemory();
     let fetchBody;
@@ -4578,6 +4590,7 @@ Never expose this tag in your conversational response — only output it as the 
         messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
         systemOverride:sys,
         maxTokens:1024,
+        isContactChat:true,
         model:'claude-sonnet-4-6'
       };
     } else if(_actionCtx){
@@ -4598,6 +4611,7 @@ Help Michael: refine or rewrite the message, find a different angle, provide com
         messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
         systemOverride:sys,
         maxTokens:1024,
+        isContactChat:true,
         model:'claude-sonnet-4-6'
       };
     } else if(window._seoCtx&&currentChatContact&&currentChatContact.name==='SEO Assistant'){
@@ -4613,31 +4627,10 @@ Give Michael specific, actionable SEO advice. Suggest keywords, content ideas, t
         model:'claude-sonnet-4-6'
       };
     } else if(chatContactId==='general'){
-      const generalSys=`You are Annie, the commercial brain for Vantage Search Group — a boutique executive search firm in Dubai placing C-suite and senior leaders across the GCC (UAE, Saudi Arabia, Qatar, Kuwait, Bahrain, Oman).
-
-VSG's track record: placements at Mubadala, PIF, TAQA, Red Sea Global, Diriyah Gate, ADNOC, Accenture, Kearney, FAB, Emirates NBD and many others.
-
-VSG's focus functions: Strategy | Digital & Technology | AI & Data | Finance & Investments | Commercial & Sales | Operations | Transformation | HR & Talent | Risk & Compliance | Marketing
-
-You are Michael's strategic thinking partner. Help him:
-- Identify which GCC companies to target and why
-- Figure out how to get into specific accounts with no relationship
-- Plan outreach angles and conversation hooks
-- Think through sector trends and where leadership hiring is happening
-- Draft or refine messaging for any situation
-- Prioritise his BD activity for the week
-
-Rules:
-- Be direct and opinionated — give your best recommendation immediately
-- No bullet-point lists for every answer — use prose where natural
-- No em-dashes, no corporate language, no "Id love to help"
-- Never criticise UAE, Saudi Arabia, or any GCC government
-- If you need live market data, say so briefly — Michael knows you don't have real-time web access in this mode
-- Keep responses tight — Michael is in the middle of his workday`+mem;
+      // Full agentic path — no systemOverride so server uses VSG_BRAIN with all tools
+      // (web search, Apollo email lookup, pipeline lookup, signals, add contact)
       fetchBody={
         messages:chatMessages.filter(m=>!m.typing).map(m=>({role:m.role,content:m.content})),
-        systemOverride:generalSys,
-        maxTokens:2048,
         model:'claude-sonnet-4-6'
       };
     } else {
@@ -4881,11 +4874,11 @@ async function runTodaysActions(){
   const fourteenDaysAgo=new Date(Date.now()-14*864e5).toISOString();
   const sevenDaysAgo=new Date(Date.now()-7*864e5).toISOString().slice(0,10);
 
-  let overdueFollowUps=[], staleContacts=[], liveSignals=[], liLeads=[], activeMandates=[], newConnections=[], pendingSequences=[], myConnections=[], styleRules=[], followUpContacts=[];
+  let overdueFollowUps=[], staleContacts=[], liveSignals=[], newsSignals=[], liLeads=[], activeMandates=[], newConnections=[], pendingSequences=[], myConnections=[], styleRules=[], followUpContacts=[];
 
   if(db){
     try{
-      const [fuRes,staleRes,sigRes,liRes,jobsRes,connRes,seqRes,myConnRes,styleRulesRes,followUpRes]=await Promise.all([
+      const [fuRes,staleRes,sigRes,newsRes,liRes,jobsRes,connRes,seqRes,myConnRes,styleRulesRes,followUpRes]=await Promise.all([
         db.from('contacts').select('name,title,company,stage,last_contact,follow_up_date,notes,linkedin,email')
           .not('stage','in','("lost","rejected","not_interested","placed")')
           .lt('follow_up_date',todayStr).not('follow_up_date','is',null)
@@ -4897,6 +4890,9 @@ async function runTodaysActions(){
         db.from('company_signals').select('company_name,signal_type,title,summary,importance,created_at,named_contact,named_contact_title,named_contact_linkedin')
           .eq('actioned',false).neq('signal_type','news').gte('created_at',fourteenDaysAgo)
           .order('importance',{ascending:false}).order('created_at',{ascending:false}).limit(12),
+        db.from('company_signals').select('company_name,signal_type,title,summary,importance,created_at,named_contact,named_contact_title,named_contact_linkedin')
+          .eq('actioned',false).eq('signal_type','news').gte('created_at',fourteenDaysAgo)
+          .order('importance',{ascending:false}).order('created_at',{ascending:false}).limit(8),
         db.from('linkedin_leads').select('full_name,title,company,reply_summary,follow_up_date,days_since_reply,linkedin_url,qualification_score,qualification_notes,qualification_hooks,outreach_reason,suggested_message')
           .or('follow_up_date.lt.'+todayStr+',follow_up_date.is.null')
           .order('days_since_reply',{ascending:false}).limit(8),
@@ -4912,6 +4908,7 @@ async function runTodaysActions(){
       overdueFollowUps=fuRes.data||[];
       staleContacts=staleRes.data||[];
       liveSignals=sigRes.data||[];
+      newsSignals=newsRes.data||[];
       liLeads=liRes.data||[];
       activeMandates=jobsRes.data||[];
       newConnections=connRes.data||[];
@@ -4934,6 +4931,10 @@ async function runTodaysActions(){
 
   const signalsCtx=liveSignals.length
     ? liveSignals.map(s=>`- [${s.importance?.toUpperCase()||'MED'}] ${s.company_name} | ${s.signal_type} | ${s.title} (${fmt(s.created_at)})${s.summary?' — '+s.summary.substring(0,150):''}${s.named_contact?' | Role-matched contact: '+s.named_contact+(s.named_contact_title?' ('+s.named_contact_title+')':'')+(s.named_contact_linkedin?' '+s.named_contact_linkedin:''):''}`).join('\n')
+    : 'None';
+
+  const newsSignalsCtx=newsSignals.length
+    ? newsSignals.map(s=>`- [${s.importance?.toUpperCase()||'MED'}] ${s.company_name} | ${s.title} (${fmt(s.created_at)})${s.summary?' — '+s.summary.substring(0,200):''}${s.named_contact?' | Suggested contact: '+s.named_contact+(s.named_contact_title?' ('+s.named_contact_title+')':'')+(s.named_contact_linkedin?' '+s.named_contact_linkedin:''):''}`).join('\n')
     : 'None';
 
   const liLeadsCtx=liLeads.length
@@ -5006,6 +5007,10 @@ ${liLeadsCtx}
 UNACTIONED INTELLIGENCE SIGNALS (last 14 days):
 ${signalsCtx}
 
+INTELLIGENCE FEED — NEWS & MARKET SIGNALS (last 14 days, requires outreach conversion):
+${newsSignalsCtx}
+These are live market developments seen in the Intelligence Feed. For each one, identify the most commercially relevant person to contact at that company (use "Suggested contact" if populated, otherwise infer: CDO/CPO for digital/AI news, CFO for funding news, CEO for strategic expansion news). Draft a personalised outreach message using the news as the hook — not a generic message. Only convert news signals where a clear commercial reason exists: hiring surge, leadership change, expansion, or funding that creates a need for executive talent VSG can fill.
+
 PENDING SEQUENCE MESSAGES (drafted, awaiting Michael's review):
 ${sequencesCtx}
 
@@ -5055,7 +5060,7 @@ Output a JSON array. Each action object:
 - priority: "critical" | "high" | "medium" | "low"
 - conviction_level: "low" | "medium" | "high" | "critical"
 - ejf_classification: "TODAY_ACTIONS" | "OPPORTUNITY_FLAG" | "STANDING_REVIEW" | "CHALLENGE"
-- type: "Reply needed" | "Follow-up overdue" | "New connection" | "Opportunity trigger" | "Relationship check-in" | "Sequence review" | "Mandate delivery"
+- type: "Reply needed" | "Follow-up overdue" | "New connection" | "Opportunity trigger" | "Relationship check-in" | "Sequence review" | "Mandate delivery" | "News intelligence"
 - title: short action title (max 12 words)
 - contact: name of person (from the data above, or null)
 - company: company name (from the data above, or null)
@@ -5857,14 +5862,14 @@ function openGeneralAnnieChat(query){
   document.getElementById('chat-name').textContent='Annie';
   document.getElementById('chat-co').textContent='VSG BD Brain — strategy, research, brainstorm';
   document.getElementById('chat-chips').innerHTML=`
-    <button class="chat-chip" onclick="quickChat('What GCC companies should VSG be targeting for new mandates right now, and why?')"><i class="ti ti-target"></i> New targets</button>
-    <button class="chat-chip" onclick="quickChat('Which sectors in the GCC are hiring senior executives most actively right now?')"><i class="ti ti-trending-up"></i> Hot sectors</button>
-    <button class="chat-chip" onclick="quickChat('Help me plan a focused BD push for this week — what should I prioritise?')"><i class="ti ti-calendar"></i> Plan my week</button>
-    <button class="chat-chip" onclick="quickChat('How should I approach a target company where we have no existing relationship?')"><i class="ti ti-route"></i> Cold approach</button>
+    <button class="chat-chip" onclick="quickChat('What GCC companies should VSG be targeting for new mandates right now, and why? Search for recent news and hiring signals.')"><i class="ti ti-target"></i> New targets</button>
+    <button class="chat-chip" onclick="quickChat('Which sectors in the GCC are hiring senior executives most actively right now? Search for latest signals.')"><i class="ti ti-trending-up"></i> Hot sectors</button>
+    <button class="chat-chip" onclick="quickChat('Help me plan a focused BD push for this week — check the pipeline and tell me what to prioritise.')"><i class="ti ti-calendar"></i> Plan my week</button>
+    <button class="chat-chip" onclick="quickChat('Look up recent news and hiring signals at a company I should be targeting — pick the highest-signal one from the pipeline.')"><i class="ti ti-search"></i> Research a target</button>
   `;
   loadChatHistory('general').then(()=>{
     if(chatMessages.length===0){
-      renderChatMessages([{role:'assistant',content:'Hi Michael. Ask me anything — company strategy, how to get into a specific account, what to say to someone, sector intel, or help planning your week. What are you thinking about?'}]);
+      renderChatMessages([{role:'assistant',content:'Hi Michael. Ask me anything and I\'ll get it done — look up company news, find someone\'s email, check the pipeline, draft a message, research a target, or plan your week. I can search the web and your database in real time. What do you need?'}]);
     }
   });
   document.getElementById('chatPanel').classList.add('open');
@@ -5930,10 +5935,14 @@ function cmdRun(gi,ii){
 function cmdKey(e){
   const box=document.getElementById('cmd-results');
   const items=box.querySelectorAll('.cmd-item');
-  if(!items.length)return;
-  if(e.key==='ArrowDown'){e.preventDefault();_cmdIdx=Math.min(_cmdIdx+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('cmd-active',i===_cmdIdx));}
-  else if(e.key==='ArrowUp'){e.preventDefault();_cmdIdx=Math.max(_cmdIdx-1,0);items.forEach((el,i)=>el.classList.toggle('cmd-active',i===_cmdIdx));}
+  if(e.key==='ArrowDown'&&items.length){e.preventDefault();_cmdIdx=Math.min(_cmdIdx+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('cmd-active',i===_cmdIdx));}
+  else if(e.key==='ArrowUp'&&items.length){e.preventDefault();_cmdIdx=Math.max(_cmdIdx-1,0);items.forEach((el,i)=>el.classList.toggle('cmd-active',i===_cmdIdx));}
   else if(e.key==='Enter'&&_cmdIdx>=0){e.preventDefault();items[_cmdIdx]?.click();}
+  else if(e.key==='Enter'&&_cmdIdx<0){
+    // No item selected — send text straight to Annie
+    const q=(document.getElementById('cmd-input')?.value||'').trim();
+    if(q){e.preventDefault();cmdClose();setTimeout(()=>openGeneralAnnieChat(q),80);}
+  }
   else if(e.key==='Escape'){cmdClose();}
 }
 
