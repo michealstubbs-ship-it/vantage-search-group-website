@@ -1,0 +1,88 @@
+VSG SEO CONTENT ENGINE — THURSDAY BRIEF
+Date: 2026-07-09
+
+ARTICLE PUBLISHED (locally, push pending — see note below)
+Title: Emiratisation Executive Search: Building UAE National Leadership Pipelines in 2026
+URL (once live): https://vantagesearchgroup.me/insights/emiratisation-executive-search-uae/
+Target keyword: Emiratisation executive search
+Word count: 845
+Internal links: why-executives-change-jobs-uae, cfo-search-dubai, what-senior-professionals-want-dubai-2026
+
+---
+ACTION NEEDED: GITHUB PUSH FAILED
+This sandbox session had no GitHub credentials configured, so the article and updated
+sitemap.xml could not be pushed to the live repo. Both files are saved locally in
+vsg-deploy/insights/emiratisation-executive-search-uae/index.html and vsg-deploy/sitemap.xml.
+To publish, either push manually from a machine with GitHub access, or set up a stored
+credential/token for this workspace so future scheduled runs can push automatically.
+
+---
+LINKEDIN POST DRAFT
+
+The Emiratisation deadline passed on June 30. Most companies treated it as a headcount
+exercise: hit 9 percent Emirati representation in skilled roles, avoid the fine, move on.
+
+That's the wrong read. The real test is starting now.
+
+A company can meet its quota entirely through graduate and analyst hires and still have
+zero UAE nationals anywhere near a P&L, a board seat, or a succession plan. Regulators
+are counting skilled roles. Boards should be asking a harder question: who is our next
+Emirati CFO, COO, or country manager, and are we developing them or just filling a form.
+
+The data on retention is the real warning sign. Roughly half of Emirati private sector
+hires leave because there's no visible next step. Some firms hire 200 graduates a year
+and keep fewer than 20 after twelve months. Compliance without a leadership pipeline is
+an expensive way to stand still.
+
+Emiratisation executive search is a different discipline entirely. It means mapping
+which Emirati professionals already have the credibility and sector depth to move into
+director or VP roles within 12 to 18 months, not five years, and structuring those roles
+so people actually stay. Nafis salary support now makes senior Emirati talent genuinely
+cost-competitive too, which changes the calculation for a lot of employers.
+
+The firms ahead on this stopped treating it as HR compliance about two years ago. Everyone
+else is still catching up.
+
+#Emiratisation #ExecutiveSearch #UAEHiring
+
+---
+EMAIL DRAFT (send manually — no email-sending tool available in this session)
+
+To: micheal.stubbs@gmail.com
+Subject: Thursday SEO article ready — Emiratisation Executive Search (push pending)
+
+Hi Michael,
+
+This week's Thursday article is written and saved, but I hit a snag getting it live —
+more on that below.
+
+Article: Emiratisation Executive Search: Building UAE National Leadership Pipelines in 2026
+Target keyword: Emiratisation executive search
+Word count: 845
+URL once live: https://vantagesearchgroup.me/insights/emiratisation-executive-search-uae/
+
+Why this topic: this is the Week 3 slot in the Thursday rotation (GCC-market specific
+topics). The June 30 Emiratisation deadline just passed, and industry coverage is
+already shifting to retention as the harder problem, which made this a timely, low-
+competition angle distinct from Monday's CFO search piece and the earlier "why
+executives change jobs" article.
+
+Two things need your attention:
+
+1. GitHub push failed. This sandbox session didn't have GitHub credentials available,
+   so I couldn't push the new article and sitemap update to the live repo. Both files
+   are saved in your vsg-deploy folder (insights/emiratisation-executive-search-uae/
+   and sitemap.xml) and are ready to go — they just need a manual push, or a stored
+   credential set up so this doesn't happen on future scheduled runs.
+
+2. No email-sending tool was available in this session, so I couldn't send this
+   summary automatically either. You're reading it because I saved it to a file
+   instead: vsg-deploy/insights/emiratisation-executive-search-uae/thursday-brief.txt
+
+LinkedIn post is drafted below and in that same file, ready to post once the article
+is live.
+
+Let me know if you'd like me to also set up the GitHub credential so this runs fully
+hands-off going forward.
+
+— VSG SEO Content Engine
