@@ -29,7 +29,7 @@ cd /d "%WORK%"
 git config user.email "micheal.stubbs@gmail.com"
 git config user.name "michealstubbs-ship-it"
 git add -A
-git commit -m "Annie v8: full agentic mode — web search, Apollo email, signals, pipeline lookup + typing dots + search bar fix"
+git commit -m "Fix Today's Actions stale cache + Annie v8 agentic mode + search bar + topbar button"
 if %errorlevel% neq 0 (echo Nothing to commit. & goto done)
 
 echo [4/4] Pushing...

@@ -4756,11 +4756,12 @@ window.openDetail=function(id){
 /* ═══════════════════════════════════════════════════
    TODAY'S ACTIONS
 ════════════════════════════════════════════════════ */
-let _actionsGenerated=false;
+let _actionsLoadedAt=0;let _actionsLoadedDate='';
 async function loadTodaysActions(){
-  if(_actionsGenerated)return;
+  const today=new Date().toISOString().slice(0,10);
+  const age=Date.now()-_actionsLoadedAt;
+  if(_actionsLoadedDate===today && age<30*60*1000)return;
   try{
-    const today=new Date().toISOString().slice(0,10);
     const yesterday=new Date(Date.now()-864e5).toISOString().slice(0,10);
     const db=_db();
     if(db){
@@ -4792,7 +4793,7 @@ async function loadTodaysActions(){
         }
         renderTodaysActions({mode:row.mode,daily_effort_total:row.daily_effort_total,actions},modeData);
         fetchAndRenderPendingWelcomes();
-        _actionsGenerated=true;
+        _actionsLoadedAt=Date.now();_actionsLoadedDate=today;
         const ts=new Date(row.generated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
         const src=row.source==='scheduled'?' (auto)':'';
         document.getElementById('actions-timestamp').textContent='Generated '+ts+src;
@@ -4801,7 +4802,7 @@ async function loadTodaysActions(){
       } else if(carried.length){
         // No today's actions yet — show yesterday's unfinished items
         renderTodaysActions({mode:'prospecting',daily_effort_total:0,actions:carried},{mode:'prospecting',jobs:0,pipeline:0});
-        _actionsGenerated=true;
+        _actionsLoadedAt=Date.now();_actionsLoadedDate=today;
         document.getElementById('actions-timestamp').textContent='Carried from yesterday — generate fresh when ready';
         document.getElementById('run-actions-btn').innerHTML='<i class="ti ti-bolt"></i> Generate today\'s actions';
         return;
@@ -5111,7 +5112,7 @@ Rules:
     }
 
     renderTodaysActions(parsed,modeData);
-    _actionsGenerated=true;
+    _actionsLoadedAt=Date.now();_actionsLoadedDate=today;
     fetchAndRenderPendingWelcomes();
     document.getElementById('actions-timestamp').textContent='Generated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
     try{
