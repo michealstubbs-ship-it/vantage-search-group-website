@@ -2,9 +2,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://vantagesearchgroup.me/</loc>
-    <lastmod>2026-07-13</lastmod>
+    <lastmod>2026-08-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://vantagesearchgroup.me/insights/real-estate-executive-search-dubai/</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://vantagesearchgroup.me/insights/leadership-in-the-gcc/</loc>
@@ -72,6 +78,30 @@
   <url>
     <loc>https://vantagesearchgroup.me/insights/healthcare-executive-search-dubai/</loc>
     <lastmod>2026-07-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vantagesearchgroup.me/insights/fintech-executive-search-dubai/</loc>
+    <lastmod>2026-07-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vantagesearchgroup.me/insights/attracting-c-suite-talent-dubai/</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vantagesearchgroup.me/insights/family-office-executive-search-dubai/</loc>
+    <lastmod>2026-07-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vantagesearchgroup.me/insights/board-director-search-dubai/</loc>
+    <lastmod>2026-08-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
