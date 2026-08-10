@@ -217,7 +217,7 @@ exports.handler = async (event) => {
     const useContactPath = isContactChatFlag === true || (systemOverride && (maxTokens || 0) > 0 && (maxTokens || 0) < 2048);
     if (useContactPath) {
       const prefsText = _ctxCache.ts ? _ctxCache.prefs : await loadPreferences();
-      const systemPrompt = systemOverride + prefsText + '\n\nRULES: Never ask Michael to check LinkedIn or any external source. Use plain conversational text. Be direct and opinionated. If setting a monitoring rule, output [MONITOR:{...}] tag on its own line at the end only.';
+      const systemPrompt = systemOverride + prefsText + '\n\nRULES: Never ask Michael to check LinkedIn or any external source. Use plain conversational text. Be direct and opinionated. If setting a monitoring rule, output [MONITOR:{...}] tag on its own line at the end only. CRITICAL: You have NO tools. Do NOT output <function_calls>, XML tags, or any tool call syntax. Plain text only.';
       const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 700, system: systemPrompt, messages: messages || [{ role: 'user', content: 'Hello' }] }) });
       if (!r.ok) { const e = await r.text(); throw new Error('Claude API error: ' + r.status + ' - ' + e); }
       const d = await r.json();
@@ -235,7 +235,7 @@ exports.handler = async (event) => {
       if (contactContext) {
         systemPrompt += '\n\nCONTACT CONTEXT:\nName: ' + (contactContext.name||'Unknown') + '\nTitle: ' + (contactContext.title||'Unknown') + '\nCompany: ' + (contactContext.company||'Unknown') + '\nStage: ' + (contactContext.stage||'Unknown') + '\nLinkedIn: ' + (contactContext.linkedin||'Not provided') + '\nEmail: ' + (contactContext.email||'Not provided') + '\nNotes: ' + (contactContext.notes||'None');
       }
-      if (mode === 'draft_message') systemPrompt += '\n\nDraft a LinkedIn outreach message for this contact. Personalised, human, specific to their role. Under 150 words. No em-dashes.';
+      if (mode === 'draft_message') systemPrompt += '\n\nTASK: Draft a LinkedIn outreach message for this contact. BEFORE drafting, use web_search to find: (1) recent news or activity about their company, (2) anything about their background or recent role change. Then use that to make the message specific and relevant. Message must be under 150 words, human, direct, no em-dashes, no corporate language. Do NOT ask Michael to check LinkedIn or paste anything — research it yourself first.';
     }
 
     const searchLog = [];
