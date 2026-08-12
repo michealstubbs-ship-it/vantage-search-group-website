@@ -5101,14 +5101,25 @@ Rules:
     let parsed;
     try{
       const raw=data.content||data.response||'';
-      // Strip markdown code fences (handle all newline styles and trailing content)
-      let cleaned=raw.trim().replace(/^```(?:json|JSON)?\s*/,'').replace(/\s*```[\s\S]*$/,'').trim();
-      const jsonMatch=cleaned.match(/\{[\s\S]*\}/);
-      let jsonStr=jsonMatch?jsonMatch[0]:cleaned;
-      jsonStr=jsonStr.replace(/,(\s*[}\]])/g,'$1');
-      parsed=JSON.parse(jsonStr);
+      // Multi-pass JSON extraction — handles fences, preamble text, and trailing content
+      let jsonStr='';
+      // Pass 1: try raw parse first (fastest, model behaved correctly)
+      try{ parsed=JSON.parse(raw); } catch(_){}
+      if(!parsed){
+        // Pass 2: strip ALL code fences anywhere in string, then extract JSON object
+        let cleaned=raw
+          .replace(/```(?:json|JSON)?[\r\n]*/g,'')  // remove opening fences
+          .replace(/```[\s\S]*?(?=\{|$)/g,'')        // remove closing fences before {
+          .replace(/```[\r\n\s]*$/,'')               // remove trailing fence
+          .trim();
+        // Pass 3: find outermost { ... } regardless of surrounding text
+        const jsonMatch=cleaned.match(/\{[\s\S]*\}/);
+        jsonStr=jsonMatch?jsonMatch[0]:cleaned;
+        jsonStr=jsonStr.replace(/,(\s*[}\]])/g,'$1'); // fix trailing commas
+        parsed=JSON.parse(jsonStr);
+      }
     }catch(e){
-      parsed={mode:modeData.mode,daily_effort_total:45,actions:[{rank:1,priority:'high',type:'System',title:'Actions generated — review below',contact:null,company:null,why:'AI returned content in unexpected format. Try regenerating.',suggested_message:data.content||data.response||'No response received',effort_mins:5,effort_label:'5 min'}]};
+      parsed={mode:modeData.mode,daily_effort_total:45,actions:[{rank:1,priority:'high',type:'System',title:'Actions generated — review below',contact:null,company:null,why:'AI returned content in unexpected format. Try regenerating.',suggested_message:'Parse error — please regenerate.',effort_mins:5,effort_label:'5 min'}]};
     }
 
     renderTodaysActions(parsed,modeData);
