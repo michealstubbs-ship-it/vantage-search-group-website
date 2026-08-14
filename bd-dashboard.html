@@ -4136,7 +4136,7 @@ async function loadIntelligence(){
     const db=_db(); if(!db)return;
     const [ar,sr]=await Promise.all([
       db.from('agent_outputs').select('*').order('created_at',{ascending:false}).limit(100),
-      db.from('company_signals').select('*').order('created_at',{ascending:false}).limit(100)
+      db.from('company_signals').select('*').gte('created_at',new Date(Date.now()-7*864e5).toISOString()).order('created_at',{ascending:false}).limit(100)
     ]);
     agentOutputs=(ar.data||[]);
     companySignals=(sr.data||[]);
@@ -4184,10 +4184,12 @@ function renderIntelligence(){
     const iconStr=getIntelIcon(item.agent_type||item.signal_type||'news');
     const [iconClass,iconName]=iconStr.split(' ');
     const actionBtn=item.action_required&&!item.actioned?`<button class="intel-action-btn" onclick="actionIntelItem(${item.id},'${item._src}')">Take action</button>`:'';
+    const isNewToday=item.created_at&&new Date(item.created_at)>new Date(Date.now()-864e5);
+    const newBadge=isNewToday?`<span class="b b-high" style="font-size:9px;padding:1px 6px;vertical-align:middle;margin-left:4px">NEW</span>`:'';
     return `<div class="intel-item ${!item.actioned&&item.action_required?'unread':''}" onclick="expandIntelItem(this)">
       <div class="intel-icon ${iconClass}"><i class="ti ${iconName}"></i></div>
       <div class="intel-body">
-        <div class="intel-title">${esc(item.title)}</div>
+        <div class="intel-title">${esc(item.title)}${newBadge}</div>
         ${item.summary?`<div class="intel-summary">${esc(item.summary)}</div>`:''}
         <div class="intel-meta">
           <span class="intel-time">${timeAgo(item.created_at)}</span>
@@ -4868,6 +4870,20 @@ async function runTodaysActions(){
     }
   }catch(e){console.warn('learning history fetch:',e);}
 
+  // ── Fetch yesterday's generated actions to avoid repetition ──────────────
+  let yesterdayActionsContext='No previous actions on record — generate fresh.';
+  try{
+    const dbY=_db();
+    if(dbY){
+      const yesterday=new Date(Date.now()-864e5).toISOString().slice(0,10);
+      const {data:yData}=await dbY.from('todays_actions').select('actions').eq('action_date',yesterday).order('generated_at',{ascending:false}).limit(1);
+      if(yData&&yData.length>0&&yData[0].actions&&yData[0].actions.length>0){
+        const yLines=yData[0].actions.map(a=>`- ${a.title||'?'} | ${a.contact||'?'} at ${a.company||'?'} | status: ${a.status||'unseen'}`);
+        yesterdayActionsContext=`Yesterday you generated these ${yData[0].actions.length} actions:\n${yLines.join('\n')}\n\nDo NOT repeat these unless: (1) a new event has occurred since yesterday, (2) the contact has replied, or (3) 48+ hours have passed with no action on a critical item. Vary your recommendations — surface different contacts, companies, and signal types today.`;
+      }
+    }
+  }catch(e){console.warn('yesterday actions fetch:',e);}
+
   // ── Fetch real pipeline data from Supabase ────────────────────────────────
   const db=_db();
   const todayStr=new Date().toISOString().slice(0,10);
@@ -5023,6 +5039,9 @@ ${myConnectionsCtx}
 
 ━━━ OUTCOME MEMORY — what has worked ━━━
 ${outcomesContext}
+
+━━━ YESTERDAY'S ACTIONS — do not repeat without new evidence ━━━
+${yesterdayActionsContext}
 
 ━━━ LEARNING LAYER — Michael's last 7 days of actions ━━━
 ${learningContext}
