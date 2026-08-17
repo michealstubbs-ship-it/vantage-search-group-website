@@ -674,6 +674,7 @@ textarea{resize:vertical;min-height:80px}
     <button class="nav-btn" onclick="goPage('pipeline',this)" data-tip="Your full BD contact pipeline.track every relationship from first touch through to mandate"><i class="ti ti-layout-columns"></i>Pipeline</button>
     <button class="nav-btn" onclick="goPage('followups',this)" data-tip="Contacts scheduled for a follow-up.anyone overdue appears here first so nothing slips"><span class="nav-badge" id="nb-fu" style="display:none"></span><i class="ti ti-bell"></i>Follow-ups</button>
     <button class="nav-btn" onclick="goPage('reengage',this)" data-tip="Contacts who haven't heard from you in 90+ days.worth a warm re-activation before the relationship goes cold"><i class="ti ti-refresh-alert"></i>Re-engage<span class="nav-badge amber" id="nb-re" style="display:none"></span></button>
+    <button class="nav-btn" onclick="goPage('replyqueue',this);loadReplyQueue()" data-tip="Replies needing a response — prioritised by client BD, new roles and candidate inbounds. Annie drafts the response, you approve it."><i class="ti ti-message-reply"></i>Reply Queue<span class="nav-badge red" id="nb-rq" style="display:none"></span></button>
     <button class="nav-btn" onclick="goPage('contacts',this)" data-tip="Your complete contact database.search, filter and manage every relationship in one place"><i class="ti ti-users"></i>All contacts</button>
     <button class="nav-btn" onclick="goPage('emails',this)" data-tip="BD-relevant emails from your inbox, automatically flagged and summarised so you never miss a commercial signal"><i class="ti ti-mail-search"></i>Email alerts<span class="nav-badge" id="nb-em" style="display:none"></span></button>
     <button class="nav-btn" onclick="goPage('linkedin',this)" data-tip="Your LinkedIn outreach pipeline.connection requests sent, acceptances, replies and scheduled follow-ups all in one view"><i class="ti ti-brand-linkedin"></i>LinkedIn Pipeline<span class="nav-badge" id="nb-li" style="display:none"></span></button>
@@ -1078,6 +1079,96 @@ textarea{resize:vertical;min-height:80px}
           </select>
         </div>
         <div class="card-b p0" id="inv-list"></div>
+      </div>
+    </div>
+
+    <!-- REPLY QUEUE PAGE -->
+    <div id="p-replyqueue" class="page">
+      <div class="ph" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <h1><i class="ti ti-message-reply" style="color:var(--gold)"></i> Reply Queue</h1>
+          <p>Replies needing a response — Annie drafts it, you approve and send</p>
+        </div>
+        <button class="btn btn-gold" onclick="openLogReply()"><i class="ti ti-plus"></i> Log a reply</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="dash-metrics" style="margin-bottom:20px">
+        <div class="m red"><div class="m-icon" style="background:#fdecea;color:var(--red)"><i class="ti ti-urgent"></i></div><div class="m-val" id="rq-stat-client">0</div><div class="m-lbl">Client BD</div><div class="m-sub">highest priority</div></div>
+        <div class="m amber"><div class="m-icon" style="background:#fff8e1;color:#b37400"><i class="ti ti-briefcase"></i></div><div class="m-val" id="rq-stat-role">0</div><div class="m-lbl">New roles</div><div class="m-sub">from existing clients</div></div>
+        <div class="m navy"><div class="m-icon" style="background:#e8ecf4;color:var(--navy)"><i class="ti ti-users"></i></div><div class="m-val" id="rq-stat-cand">0</div><div class="m-lbl">Candidate</div><div class="m-sub">lower priority</div></div>
+        <div class="m green"><div class="m-icon" style="background:#e8f5e9;color:#2e7d32"><i class="ti ti-checks"></i></div><div class="m-val" id="rq-stat-done">0</div><div class="m-lbl">Responded</div><div class="m-sub">this week</div></div>
+      </div>
+
+      <!-- Filter tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn btn-xs btn-ghost on" id="rqf-pending" onclick="filterRQ('pending',this)">Pending</button>
+        <button class="btn btn-xs btn-ghost" id="rqf-client_bd" onclick="filterRQ('client_bd',this)">Client BD</button>
+        <button class="btn btn-xs btn-ghost" id="rqf-new_role" onclick="filterRQ('new_role',this)">New roles</button>
+        <button class="btn btn-xs btn-ghost" id="rqf-candidate" onclick="filterRQ('candidate',this)">Candidates</button>
+        <button class="btn btn-xs btn-ghost" id="rqf-done" onclick="filterRQ('done',this)">Responded</button>
+      </div>
+
+      <div id="rq-list"><div class="empty"><i class="ti ti-message-off"></i><p>No replies yet. When contacts reply to your outreach, they'll appear here with a suggested response.</p></div></div>
+    </div>
+
+    <!-- LOG REPLY OVERLAY -->
+    <div id="logReplyOv" class="overlay" style="display:none" onclick="if(event.target===this)closeLogReplyOv()">
+      <div class="ov-box" style="max-width:600px">
+        <div class="ov-head">
+          <h2>Log a Reply</h2>
+          <button class="ov-close" onclick="closeLogReplyOv()"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="ov-body" style="display:flex;flex-direction:column;gap:14px">
+          <div class="g2">
+            <div>
+              <label class="form-label">Contact name *</label>
+              <input id="lr-name" class="form-input" placeholder="e.g. Ahmed Al-Rashid" list="lr-contacts-dl" oninput="autoFillLRContact(this.value)">
+              <datalist id="lr-contacts-dl"></datalist>
+            </div>
+            <div>
+              <label class="form-label">Channel *</label>
+              <select id="lr-channel" class="form-input">
+                <option value="linkedin">LinkedIn</option>
+                <option value="email">Email</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="phone">Phone / call</option>
+              </select>
+            </div>
+          </div>
+          <div class="g2">
+            <div>
+              <label class="form-label">Title / role</label>
+              <input id="lr-title" class="form-input" placeholder="e.g. CFO">
+            </div>
+            <div>
+              <label class="form-label">Company</label>
+              <input id="lr-company" class="form-input" placeholder="e.g. ADCB">
+            </div>
+          </div>
+          <div>
+            <label class="form-label">Priority</label>
+            <select id="lr-priority" class="form-input">
+              <option value="client_bd">🔴 Client BD reply (potential mandate)</option>
+              <option value="new_role">🟡 Existing client — new role</option>
+              <option value="candidate">🔵 Candidate inbound</option>
+              <option value="unknown">⚪ Unknown / other</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Their reply *</label>
+            <textarea id="lr-reply" class="form-input" rows="4" placeholder="Paste what they said…"></textarea>
+          </div>
+          <div>
+            <label class="form-label">Original message you sent (optional — helps Annie draft better)</label>
+            <textarea id="lr-original" class="form-input" rows="3" placeholder="Paste your original outreach message…"></textarea>
+          </div>
+          <input type="hidden" id="lr-edit-id">
+        </div>
+        <div class="ov-foot">
+          <button class="btn btn-ghost" onclick="closeLogReplyOv()">Cancel</button>
+          <button class="btn btn-gold" onclick="saveLoggedReply()"><i class="ti ti-device-floppy"></i> Save &amp; Generate Response</button>
+        </div>
       </div>
     </div>
 
@@ -5881,6 +5972,342 @@ async function checkNewConnections(){
       if(typeof loadSignals==='function')setTimeout(loadSignals,500);
     }
   }catch(e){console.warn('checkNewConnections:',e);}
+}
+
+/* ══════════════════════════════════════════════════
+   REPLY QUEUE
+══════════════════════════════════════════════════ */
+let _allReplies=[];
+let _rqFilter='pending';
+
+async function loadReplyQueue(){
+  const db=_db();if(!db)return;
+  try{
+    // Pull LinkedIn outreach replies + manually logged replies
+    const[{data:li},{data:ol}]=await Promise.all([
+      db.from('linkedin_outreach')
+        .select('id,full_name,title,company,reply_text,custom_welcome_msg,reply_classification,date_replied,linkedin_url,status,firm_id')
+        .eq('status','replied')
+        .not('reply_text','is',null)
+        .order('date_replied',{ascending:false})
+        .limit(100),
+      db.from('outreach_log')
+        .select('*')
+        .not('reply_text','is',null)
+        .eq('archived',false)
+        .order('reply_at',{ascending:false})
+        .limit(50)
+    ]);
+    // Normalise LinkedIn rows
+    const liRows=(li||[]).map(r=>({
+      id:'li_'+r.id,
+      _rawId:r.id,
+      _source:'linkedin_outreach',
+      contact_name:r.full_name,
+      contact_title:r.title,
+      contact_company:r.company,
+      channel:'linkedin',
+      reply_text:r.reply_text,
+      message_sent:r.custom_welcome_msg||null,
+      reply_at:r.date_replied,
+      reply_priority:r.reply_classification==='candidate'?'candidate':'client_bd',
+      suggested_response:null,
+      response_approved:false,
+      linkedin_url:r.linkedin_url
+    }));
+    // Normalise outreach_log rows (manually logged)
+    const olRows=(ol||[]).map(r=>({...r,_source:'outreach_log'}));
+    // Merge, deduplicate by contact name
+    _allReplies=[...liRows,...olRows.filter(o=>!liRows.find(l=>l.contact_name&&o.contact_name&&l.contact_name.toLowerCase()===o.contact_name.toLowerCase()))];
+    _renderRQ();
+    _updateRQStats();
+    _updateRQBadge();
+  }catch(e){console.error('loadReplyQueue:',e);}
+}
+
+function _updateRQBadge(){
+  const pending=_allReplies.filter(r=>!r.response_approved).length;
+  const badge=document.getElementById('nb-rq');
+  if(badge){badge.textContent=pending||'';badge.style.display=pending?'':'none';}
+}
+
+function _updateRQStats(){
+  const thisWeekStart=new Date(Date.now()-7*864e5).toISOString();
+  document.getElementById('rq-stat-client').textContent=_allReplies.filter(r=>r.reply_priority==='client_bd'&&!r.response_approved).length;
+  document.getElementById('rq-stat-role').textContent=_allReplies.filter(r=>r.reply_priority==='new_role'&&!r.response_approved).length;
+  document.getElementById('rq-stat-cand').textContent=_allReplies.filter(r=>r.reply_priority==='candidate'&&!r.response_approved).length;
+  document.getElementById('rq-stat-done').textContent=_allReplies.filter(r=>r.response_approved&&r.responded_at&&r.responded_at>=thisWeekStart).length;
+}
+
+function filterRQ(f,btn){
+  _rqFilter=f;
+  document.querySelectorAll('#p-replyqueue .btn-xs').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  _renderRQ();
+}
+
+const _rqPriorityLabel={client_bd:'Client BD',new_role:'New role',candidate:'Candidate',unknown:'Other'};
+const _rqPriorityColour={client_bd:'red',new_role:'amber',candidate:'navy',unknown:''};
+const _rqChannelIcon={linkedin:'<i class="ti ti-brand-linkedin"></i>',email:'<i class="ti ti-mail"></i>',whatsapp:'<i class="ti ti-brand-whatsapp"></i>',phone:'<i class="ti ti-phone"></i>'};
+
+function _renderRQ(){
+  let list=_allReplies;
+  if(_rqFilter==='pending') list=list.filter(r=>!r.response_approved);
+  else if(_rqFilter==='done') list=list.filter(r=>r.response_approved);
+  else list=list.filter(r=>r.reply_priority===_rqFilter&&!r.response_approved);
+  // Sort: client_bd first, then new_role, then others
+  const order={client_bd:0,new_role:1,candidate:2,unknown:3};
+  list=[...list].sort((a,b)=>(order[a.reply_priority]||3)-(order[b.reply_priority]||3));
+  const el=document.getElementById('rq-list');
+  if(!list.length){el.innerHTML='<div class="empty"><i class="ti ti-checks"></i><p>Queue is clear.</p></div>';return;}
+  el.innerHTML=list.map(r=>{
+    const pColour=_rqPriorityColour[r.reply_priority]||'navy';
+    const pLabel=_rqPriorityLabel[r.reply_priority]||'Other';
+    const chanIcon=_rqChannelIcon[r.channel||'linkedin']||'';
+    const timeAgo=r.reply_at?_timeAgo(r.reply_at):'';
+    const hasDraft=!!(r.suggested_response);
+    const safeId=r.id.toString().replace(/[^a-zA-Z0-9_-]/g,'_');
+    return `<div class="card" style="margin-bottom:14px" id="rqcard_${safeId}">
+      <div style="padding:16px 20px">
+        <!-- Header -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span class="badge badge-${pColour}" style="font-size:10px">${pLabel}</span>
+              <span style="font-size:12px;color:var(--muted)">${chanIcon} ${r.channel||'LinkedIn'}</span>
+              ${timeAgo?`<span style="font-size:11px;color:var(--muted)">${timeAgo}</span>`:''}
+            </div>
+            <div style="font-size:15px;font-weight:700;color:var(--navy)">${r.contact_name||'Unknown'}</div>
+            ${r.contact_title||r.contact_company?`<div style="font-size:12px;color:var(--muted)">${[r.contact_title,r.contact_company].filter(Boolean).join(' · ')}</div>`:''}
+          </div>
+          ${r.response_approved?`<span style="font-size:11px;color:var(--green);font-weight:700"><i class="ti ti-check"></i> Responded</span>`:''}
+        </div>
+
+        <!-- Their reply -->
+        <div style="background:var(--bg);border-left:3px solid var(--border);padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:12px;font-size:13px;color:var(--text)">${r.reply_text||''}</div>
+
+        ${r.message_sent?`<details style="margin-bottom:12px"><summary style="font-size:11px;color:var(--muted);cursor:pointer">Your original message</summary><div style="background:var(--border-soft);padding:10px 14px;border-radius:6px;margin-top:6px;font-size:12px;color:var(--muted)">${r.message_sent}</div></details>`:''}
+
+        <!-- Suggested response -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px"><i class="ti ti-sparkles"></i> Annie's suggested response</div>
+          ${hasDraft
+            ?`<textarea id="rqdraft_${safeId}" class="form-input" rows="4" style="font-size:13px">${r.suggested_response}</textarea>`
+            :`<div style="display:flex;align-items:center;gap:8px"><button class="btn btn-xs btn-ghost" id="rqgenbtn_${safeId}" onclick="generateRQResponse('${r.id}','${safeId}')"><i class="ti ti-sparkles"></i> Generate response</button><span style="font-size:11px;color:var(--muted)">Annie will draft this in your style</span></div>`
+          }
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${hasDraft&&!r.response_approved?`<button class="btn btn-xs btn-gold" onclick="copyRQResponse('${safeId}')"><i class="ti ti-copy"></i> Copy</button>`:''}
+          ${!r.response_approved?`<button class="btn btn-xs btn-ghost" style="color:var(--green)" onclick="markRQResponded('${r.id}','${safeId}')"><i class="ti ti-check"></i> Mark responded</button>`:''}
+          ${r.linkedin_url?`<a href="${r.linkedin_url}" target="_blank" class="btn btn-xs btn-ghost"><i class="ti ti-brand-linkedin"></i> Open profile</a>`:''}
+          <button class="btn btn-xs btn-ghost" style="color:var(--muted)" onclick="archiveRQ('${r.id}','${safeId}')"><i class="ti ti-archive"></i></button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _timeAgo(ts){
+  const d=new Date(ts);const now=new Date();
+  const diff=Math.floor((now-d)/60000);
+  if(diff<60)return diff+'m ago';
+  if(diff<1440)return Math.floor(diff/60)+'h ago';
+  return Math.floor(diff/1440)+'d ago';
+}
+
+async function generateRQResponse(id,safeId){
+  const r=_allReplies.find(x=>x.id==id||x.id===id);if(!r)return;
+  const btn=document.getElementById('rqgenbtn_'+safeId);
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2"></i> Drafting…';}
+  // Fetch writing style from firm_settings
+  let style='Direct and concise. No buzzwords. Opens with a specific reference. Closes with one clear question.';
+  try{
+    const db=_db();
+    if(db){
+      const fid=await _getFirmId();
+      if(fid){
+        const{data:s}=await db.from('firm_settings').select('writing_style,sender_name').eq('firm_id',fid).maybeSingle();
+        if(s&&s.writing_style)style=s.writing_style;
+      }
+    }
+  }catch(e){}
+  const priorityCtx={
+    client_bd:'This is a BD prospect who has replied to outreach. The goal is to move towards a meeting or mandate discussion.',
+    new_role:'This is an existing client who has shared a new role or mandate. Acknowledge, confirm you understand the brief, and ask for the key details.',
+    candidate:'This is a candidate reaching out about roles. Acknowledge their interest, ask a qualifying question about their situation.',
+    unknown:'Reply helpfully and professionally.'
+  };
+  const prompt=`You are drafting a reply on behalf of Michael Stubbs, a senior executive search recruiter at Vantage Search Group in the UAE, specialising in financial services and FinTech.
+
+Writing style: ${style}
+
+Context: ${priorityCtx[r.reply_priority]||'Reply professionally.'}
+
+Contact: ${r.contact_name}${r.contact_title?' ('+r.contact_title+')':''}${r.contact_company?' at '+r.contact_company:''}
+
+${r.message_sent?`Original outreach Michael sent:\n"${r.message_sent}"\n`:''}
+Their reply:\n"${r.reply_text}"
+
+Write a short, natural reply from Michael. No subject line. No "Hi [Name]" placeholder — use their actual name. No sign-off needed. Max 4 sentences. Do not use em-dashes. Never criticise UAE, Saudi Arabia or any GCC government.`;
+  try{
+    const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    const draft=data.content||data.response||'';
+    if(!draft)throw new Error('No response');
+    // Save to DB if it's an outreach_log row
+    if(r._source==='outreach_log'){
+      const db=_db();
+      if(db)await db.from('outreach_log').update({suggested_response:draft}).eq('id',id);
+    }
+    // Update local state
+    r.suggested_response=draft;
+    // Re-render just this card
+    const cardEl=document.getElementById('rqcard_'+safeId);
+    if(cardEl){
+      const draftArea=document.createElement('textarea');
+      draftArea.id='rqdraft_'+safeId;
+      draftArea.className='form-input';
+      draftArea.rows=4;
+      draftArea.style.fontSize='13px';
+      draftArea.value=draft;
+      const genDiv=btn?btn.closest('div'):null;
+      if(genDiv){
+        genDiv.innerHTML='';
+        genDiv.appendChild(draftArea);
+        // Add copy button
+        const actionsDiv=cardEl.querySelector('[style*="display:flex;gap:8px"]');
+        if(actionsDiv&&!actionsDiv.querySelector('.rq-copy-btn')){
+          const copyBtn=document.createElement('button');
+          copyBtn.className='btn btn-xs btn-gold rq-copy-btn';
+          copyBtn.innerHTML='<i class="ti ti-copy"></i> Copy';
+          copyBtn.onclick=()=>copyRQResponse(safeId);
+          actionsDiv.prepend(copyBtn);
+        }
+      }
+    }
+  }catch(e){
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-sparkles"></i> Generate response';}
+    showToast('Could not generate response: '+e.message);
+  }
+}
+
+function copyRQResponse(safeId){
+  const ta=document.getElementById('rqdraft_'+safeId);
+  if(!ta)return;
+  navigator.clipboard.writeText(ta.value).then(()=>showToast('Copied to clipboard — paste into LinkedIn or email')).catch(()=>{ta.select();document.execCommand('copy');showToast('Copied');});
+}
+
+async function markRQResponded(id,safeId){
+  const r=_allReplies.find(x=>x.id===id);if(!r)return;
+  const ta=document.getElementById('rqdraft_'+safeId);
+  const finalDraft=ta?ta.value:r.suggested_response;
+  const db=_db();
+  if(db){
+    try{
+      if(r._source==='linkedin_outreach'){
+        await db.from('linkedin_outreach').update({status:'responded'}).eq('id',r._rawId);
+      }else if(r._source==='outreach_log'){
+        await db.from('outreach_log').update({
+          response_approved:true,
+          suggested_response:finalDraft||r.suggested_response,
+          responded_at:new Date().toISOString(),
+          status:'responded'
+        }).eq('id',id);
+      }
+    }catch(e){console.warn(e);}
+  }
+  r.response_approved=true;
+  r.responded_at=new Date().toISOString();
+  _updateRQStats();_updateRQBadge();
+  showToast('Marked as responded');
+  const card=document.getElementById('rqcard_'+safeId);
+  if(card){card.style.opacity='0.4';card.style.pointerEvents='none';}
+  setTimeout(()=>{if(_rqFilter==='pending')_renderRQ();},1000);
+}
+
+async function archiveRQ(id,safeId){
+  const r=_allReplies.find(x=>x.id===id);
+  if(r)r.archived=true;
+  const db=_db();
+  if(db&&r){
+    try{
+      if(r._source==='linkedin_outreach') await db.from('linkedin_outreach').update({status:'archived'}).eq('id',r._rawId);
+      else if(r._source==='outreach_log') await db.from('outreach_log').update({archived:true}).eq('id',id);
+    }catch(e){}
+  }
+  const card=document.getElementById('rqcard_'+safeId);
+  if(card)card.remove();
+  _updateRQStats();_updateRQBadge();
+  showToast('Archived');
+}
+
+function openLogReply(){
+  document.getElementById('lr-name').value='';
+  document.getElementById('lr-title').value='';
+  document.getElementById('lr-company').value='';
+  document.getElementById('lr-channel').value='linkedin';
+  document.getElementById('lr-priority').value='client_bd';
+  document.getElementById('lr-reply').value='';
+  document.getElementById('lr-original').value='';
+  document.getElementById('lr-edit-id').value='';
+  // Populate contacts datalist
+  const dl=document.getElementById('lr-contacts-dl');
+  if(dl){const names=[...new Set((contacts||[]).map(c=>c.name).filter(Boolean))];dl.innerHTML=names.map(n=>`<option value="${n}">`).join('');}
+  document.getElementById('logReplyOv').style.display='flex';
+}
+
+function closeLogReplyOv(){document.getElementById('logReplyOv').style.display='none';}
+
+function autoFillLRContact(val){
+  if(!val)return;
+  const match=(contacts||[]).find(c=>c.name&&c.name.toLowerCase()===val.toLowerCase());
+  if(match){
+    if(match.title&&!document.getElementById('lr-title').value) document.getElementById('lr-title').value=match.title;
+    if(match.company&&!document.getElementById('lr-company').value) document.getElementById('lr-company').value=match.company;
+    // Auto-suggest priority based on contact stage
+    const bdStages=['prospect','meeting','mandate','pitch'];
+    if(match.stage&&bdStages.includes(match.stage)) document.getElementById('lr-priority').value='client_bd';
+  }
+}
+
+async function saveLoggedReply(){
+  const name=document.getElementById('lr-name').value.trim();
+  const reply=document.getElementById('lr-reply').value.trim();
+  if(!name||!reply){showToast('Contact name and their reply are required');return;}
+  const db=_db();if(!db){showToast('Not connected');return;}
+  const fid=await _getFirmId();
+  const row={
+    contact_name:name,
+    contact_title:document.getElementById('lr-title').value.trim()||null,
+    contact_company:document.getElementById('lr-company').value.trim()||null,
+    channel:document.getElementById('lr-channel').value,
+    reply_text:reply,
+    reply_at:new Date().toISOString(),
+    message_sent:document.getElementById('lr-original').value.trim()||null,
+    reply_priority:document.getElementById('lr-priority').value,
+    response_approved:false,
+    archived:false,
+    status:'replied',
+    created_at:new Date().toISOString()
+  };
+  if(fid)row.firm_id=fid;
+  try{
+    const{data,error}=await db.from('outreach_log').insert(row).select().single();
+    if(error)throw error;
+    closeLogReplyOv();
+    showToast('Reply logged — generating suggested response…');
+    await loadReplyQueue();
+    // Auto-generate response for the new entry
+    if(data){
+      const newR=_allReplies.find(x=>x.id===data.id);
+      if(newR){
+        const safeId=data.id.toString().replace(/[^a-zA-Z0-9_-]/g,'_');
+        setTimeout(()=>generateRQResponse(data.id,safeId),500);
+      }
+    }
+  }catch(e){showToast('Save failed: '+e.message);}
 }
 
 /* ══════════════════════════════════════════════════

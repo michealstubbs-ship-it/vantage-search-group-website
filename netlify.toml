@@ -29,5 +29,4 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
 
-# env var added: SUPABASE_SERVICE_KEY
-# redeploy: trigger fresh build
+# env vars needed: SUPABASE_SERVICE_KEY, CLAUDE_API_KEY
