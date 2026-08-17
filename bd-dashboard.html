@@ -675,6 +675,7 @@ textarea{resize:vertical;min-height:80px}
     <button class="nav-btn" onclick="goPage('followups',this)" data-tip="Contacts scheduled for a follow-up.anyone overdue appears here first so nothing slips"><span class="nav-badge" id="nb-fu" style="display:none"></span><i class="ti ti-bell"></i>Follow-ups</button>
     <button class="nav-btn" onclick="goPage('reengage',this)" data-tip="Contacts who haven't heard from you in 90+ days.worth a warm re-activation before the relationship goes cold"><i class="ti ti-refresh-alert"></i>Re-engage<span class="nav-badge amber" id="nb-re" style="display:none"></span></button>
     <button class="nav-btn" onclick="goPage('replyqueue',this);loadReplyQueue()" data-tip="Replies needing a response — prioritised by client BD, new roles and candidate inbounds. Annie drafts the response, you approve it."><i class="ti ti-message-reply"></i>Reply Queue<span class="nav-badge red" id="nb-rq" style="display:none"></span></button>
+    <button class="nav-btn" onclick="goPage('outreachqueue',this);loadOutreachQueue()" data-tip="Annie's drafted outreach messages waiting for your approval. Review, edit and approve before anything is sent."><i class="ti ti-send"></i>Outreach Queue<span class="nav-badge amber" id="nb-oq" style="display:none"></span></button>
     <button class="nav-btn" onclick="goPage('contacts',this)" data-tip="Your complete contact database.search, filter and manage every relationship in one place"><i class="ti ti-users"></i>All contacts</button>
     <button class="nav-btn" onclick="goPage('emails',this)" data-tip="BD-relevant emails from your inbox, automatically flagged and summarised so you never miss a commercial signal"><i class="ti ti-mail-search"></i>Email alerts<span class="nav-badge" id="nb-em" style="display:none"></span></button>
     <button class="nav-btn" onclick="goPage('linkedin',this)" data-tip="Your LinkedIn outreach pipeline.connection requests sent, acceptances, replies and scheduled follow-ups all in one view"><i class="ti ti-brand-linkedin"></i>LinkedIn Pipeline<span class="nav-badge" id="nb-li" style="display:none"></span></button>
@@ -697,6 +698,7 @@ textarea{resize:vertical;min-height:80px}
     <div class="nav-section">Analytics</div>
     <button class="nav-btn" onclick="goPage('outreach-perf',this);loadOutreachPerf()" data-tip="LinkedIn and email outreach analytics. Connection rates, reply rates and which messages are converting best"><i class="ti ti-target"></i>Outreach Performance</button>
     <button class="nav-btn" onclick="goPage('bd-perf',this);loadBDPerf()" data-tip="Your BD revenue metrics.mandates won, pipeline conversion rates, average deal size and velocity"><i class="ti ti-chart-bar"></i>BD Performance</button>
+    <button class="nav-btn" onclick="goPage('bd-funnel',this);loadBDFunnel()" data-tip="Full BD funnel — conversion rates at every stage, channel performance and signal attribution. Where are your mandates really coming from?"><i class="ti ti-filter"></i>BD Funnel Report</button>
     <button class="nav-btn" onclick="goPage('network',this)" data-tip="Strategic network overview.identify relationship gaps, potential warm introductions and underutilised connections"><i class="ti ti-network"></i>Network Map</button>
     <div class="nav-section">Finance</div>
     <button class="nav-btn" onclick="goPage('finance',this)" data-tip="Invoicing and finance.raise, track and manage all your placement fee invoices and payment status"><i class="ti ti-receipt"></i>Invoices<span class="nav-badge amber" id="nb-inv" style="display:none"></span></button>
@@ -1079,6 +1081,92 @@ textarea{resize:vertical;min-height:80px}
           </select>
         </div>
         <div class="card-b p0" id="inv-list"></div>
+      </div>
+    </div>
+
+    <!-- OUTREACH QUEUE PAGE -->
+    <div id="p-outreachqueue" class="page">
+      <div class="ph" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <h1><i class="ti ti-send" style="color:var(--gold)"></i> Outreach Queue</h1>
+          <p>Annie's drafted messages — review, edit and approve before anything goes out</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" id="oq-gen-btn" onclick="generateOutreachQueue()"><i class="ti ti-sparkles"></i> Generate drafts</button>
+        </div>
+      </div>
+
+      <div class="dash-metrics" style="margin-bottom:20px">
+        <div class="m amber"><div class="m-icon" style="background:#fff8e1;color:#b37400"><i class="ti ti-clock"></i></div><div class="m-val" id="oq-stat-pending">0</div><div class="m-lbl">Pending</div><div class="m-sub">awaiting review</div></div>
+        <div class="m green"><div class="m-icon" style="background:#e8f5e9;color:#2e7d32"><i class="ti ti-checks"></i></div><div class="m-val" id="oq-stat-approved">0</div><div class="m-lbl">Approved</div><div class="m-sub">this week</div></div>
+        <div class="m navy"><div class="m-icon" style="background:#e8ecf4;color:var(--navy)"><i class="ti ti-send"></i></div><div class="m-val" id="oq-stat-sent">0</div><div class="m-lbl">Sent</div><div class="m-sub">this week</div></div>
+        <div class="m red"><div class="m-icon" style="background:#fdecea;color:var(--red)"><i class="ti ti-x"></i></div><div class="m-val" id="oq-stat-dismissed">0</div><div class="m-lbl">Dismissed</div></div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn btn-xs btn-ghost on" onclick="filterOQ('pending',this)">Pending</button>
+        <button class="btn btn-xs btn-ghost" onclick="filterOQ('approved',this)">Approved</button>
+        <button class="btn btn-xs btn-ghost" onclick="filterOQ('sent',this)">Sent</button>
+        <button class="btn btn-xs btn-ghost" onclick="filterOQ('dismissed',this)">Dismissed</button>
+        <button class="btn btn-xs btn-ghost" onclick="filterOQ('all',this)">All</button>
+      </div>
+
+      <div id="oq-loading" style="display:none;text-align:center;padding:48px 20px">
+        <div style="font-size:32px;margin-bottom:12px">✍️</div>
+        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px">Annie is drafting your outreach...</div>
+        <div style="font-size:13px;color:var(--muted)" id="oq-loading-sub">Scanning pipeline for contacts needing attention</div>
+        <div style="margin-top:16px;height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div id="oq-progress" style="height:100%;background:linear-gradient(90deg,var(--navy),var(--gold));border-radius:2px;width:0%;transition:width .6s"></div></div>
+      </div>
+
+      <div id="oq-list"><div class="empty"><i class="ti ti-send"></i><p>No drafts yet. Click "Generate drafts" and Annie will scan your pipeline for contacts that need outreach today.</p></div></div>
+    </div>
+
+    <!-- BD FUNNEL REPORT PAGE -->
+    <div id="p-bd-funnel" class="page">
+      <div class="ph" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <h1><i class="ti ti-filter" style="color:var(--gold)"></i> BD Funnel Report</h1>
+          <p>Where your mandates come from and how your pipeline converts</p>
+        </div>
+        <button class="btn btn-ghost" onclick="loadBDFunnel()"><i class="ti ti-refresh"></i> Refresh</button>
+      </div>
+
+      <!-- Funnel -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-h"><h3><i class="ti ti-filter"></i> Pipeline funnel</h3></div>
+        <div class="card-b" id="funnel-viz" style="padding:20px"></div>
+      </div>
+
+      <div class="g2" style="margin-bottom:16px">
+        <!-- Channel performance -->
+        <div class="card">
+          <div class="card-h"><h3><i class="ti ti-chart-bar"></i> Channel performance</h3></div>
+          <div class="card-b" id="funnel-channels" style="padding:16px"></div>
+        </div>
+        <!-- Signal attribution -->
+        <div class="card">
+          <div class="card-h"><h3><i class="ti ti-antenna"></i> Signal attribution</h3></div>
+          <div class="card-b" id="funnel-signals" style="padding:16px"></div>
+        </div>
+      </div>
+
+      <div class="g2" style="margin-bottom:16px">
+        <!-- Outcome breakdown -->
+        <div class="card">
+          <div class="card-h"><h3><i class="ti ti-trophy"></i> Meeting outcomes</h3></div>
+          <div class="card-b" id="funnel-outcomes" style="padding:16px"></div>
+        </div>
+        <!-- Top companies -->
+        <div class="card">
+          <div class="card-h"><h3><i class="ti ti-building"></i> Top BD companies</h3></div>
+          <div class="card-b" id="funnel-companies" style="padding:16px"></div>
+        </div>
+      </div>
+
+      <!-- Key metrics row -->
+      <div class="card">
+        <div class="card-h"><h3><i class="ti ti-math"></i> Key ratios</h3></div>
+        <div class="card-b" id="funnel-ratios" style="padding:16px"></div>
       </div>
     </div>
 
@@ -5972,6 +6060,416 @@ async function checkNewConnections(){
       if(typeof loadSignals==='function')setTimeout(loadSignals,500);
     }
   }catch(e){console.warn('checkNewConnections:',e);}
+}
+
+/* ══════════════════════════════════════════════════
+   OUTREACH QUEUE
+══════════════════════════════════════════════════ */
+let _allOQ=[];
+let _oqFilter='pending';
+
+async function loadOutreachQueue(){
+  const db=_db();if(!db)return;
+  try{
+    const{data,error}=await db.from('outreach_queue').select('*').order('created_at',{ascending:false}).limit(200);
+    if(error)throw error;
+    _allOQ=data||[];
+    _renderOQ();
+    _updateOQStats();
+    _updateOQBadge();
+  }catch(e){console.error('loadOutreachQueue:',e);}
+}
+
+function _updateOQBadge(){
+  const n=_allOQ.filter(r=>r.status==='pending').length;
+  const b=document.getElementById('nb-oq');
+  if(b){b.textContent=n||'';b.style.display=n?'':'none';}
+}
+
+function _updateOQStats(){
+  const weekAgo=new Date(Date.now()-7*864e5).toISOString();
+  document.getElementById('oq-stat-pending').textContent=_allOQ.filter(r=>r.status==='pending').length;
+  document.getElementById('oq-stat-approved').textContent=_allOQ.filter(r=>r.status==='approved'&&r.approved_at>=weekAgo).length;
+  document.getElementById('oq-stat-sent').textContent=_allOQ.filter(r=>r.status==='sent'&&r.sent_at>=weekAgo).length;
+  document.getElementById('oq-stat-dismissed').textContent=_allOQ.filter(r=>r.status==='dismissed').length;
+}
+
+function filterOQ(f,btn){
+  _oqFilter=f;
+  document.querySelectorAll('#p-outreachqueue .btn-xs').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  _renderOQ();
+}
+
+function _renderOQ(){
+  const list=_oqFilter==='all'?_allOQ:_allOQ.filter(r=>r.status===_oqFilter);
+  const el=document.getElementById('oq-list');if(!el)return;
+  if(!list.length){
+    el.innerHTML='<div class="empty"><i class="ti ti-send"></i><p>'+(
+      _oqFilter==='pending'?'Queue is clear. Click "Generate drafts" to create new outreach.':
+      'No messages in this category.'
+    )+'</p></div>';return;
+  }
+  const priColour={high:'red',medium:'amber',low:'navy'};
+  const chanIcon={linkedin:'<i class="ti ti-brand-linkedin"></i>',email:'<i class="ti ti-mail"></i>'};
+  el.innerHTML=list.map(r=>{
+    const safeId=r.id.replace(/-/g,'_');
+    const isPending=r.status==='pending';
+    return `<div class="card" style="margin-bottom:12px" id="oqcard_${safeId}">
+      <div style="padding:16px 20px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+              <span class="badge badge-${priColour[r.priority]||'navy'}" style="font-size:10px">${r.priority||'medium'}</span>
+              <span style="font-size:12px;color:var(--muted)">${chanIcon[r.channel]||''} ${r.channel||'LinkedIn'}</span>
+            </div>
+            <div style="font-size:15px;font-weight:700;color:var(--navy)">${r.contact_name}</div>
+            ${r.contact_title||r.contact_company?`<div style="font-size:12px;color:var(--muted)">${[r.contact_title,r.contact_company].filter(Boolean).join(' · ')}</div>`:''}
+          </div>
+          ${r.status!=='pending'?`<span style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase">${r.status}</span>`:''}
+        </div>
+        ${r.reason?`<div style="font-size:11px;color:var(--muted);margin-bottom:10px;padding:6px 10px;background:var(--bg);border-radius:6px"><i class="ti ti-bulb"></i> ${r.reason}</div>`:''}
+        <textarea id="oqdraft_${safeId}" class="form-input" rows="4" style="font-size:13px;margin-bottom:10px"${!isPending?' readonly':''} >${r.draft_message||''}</textarea>
+        ${isPending?`<div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-xs btn-gold" onclick="approveOQ('${r.id}','${safeId}')"><i class="ti ti-check"></i> Approve</button>
+          <button class="btn btn-xs btn-ghost" onclick="copyOQDraft('${safeId}')"><i class="ti ti-copy"></i> Copy</button>
+          ${r.contact_linkedin?`<a href="${r.contact_linkedin}" target="_blank" class="btn btn-xs btn-ghost"><i class="ti ti-brand-linkedin"></i> Open profile</a>`:''}
+          <button class="btn btn-xs btn-ghost" style="color:var(--red);margin-left:auto" onclick="dismissOQ('${r.id}','${safeId}')"><i class="ti ti-x"></i> Dismiss</button>
+        </div>`:`<div style="display:flex;gap:8px">
+          ${r.contact_linkedin?`<a href="${r.contact_linkedin}" target="_blank" class="btn btn-xs btn-ghost"><i class="ti ti-brand-linkedin"></i> Open profile</a>`:''}
+          ${r.status==='approved'?`<button class="btn btn-xs btn-ghost" onclick="markOQSent('${r.id}','${safeId}')"><i class="ti ti-send"></i> Mark sent</button>`:''}
+        </div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function copyOQDraft(safeId){
+  const ta=document.getElementById('oqdraft_'+safeId);if(!ta)return;
+  navigator.clipboard.writeText(ta.value).then(()=>showToast('Copied — paste into LinkedIn')).catch(()=>{ta.select();document.execCommand('copy');showToast('Copied');});
+}
+
+async function approveOQ(id,safeId){
+  const db=_db();if(!db)return;
+  // Save any edits the user made
+  const ta=document.getElementById('oqdraft_'+safeId);
+  const edited=ta?ta.value:null;
+  try{
+    await db.from('outreach_queue').update({
+      status:'approved',
+      draft_message:edited||undefined,
+      approved_at:new Date().toISOString(),
+      updated_at:new Date().toISOString()
+    }).eq('id',id);
+    const r=_allOQ.find(x=>x.id===id);
+    if(r){r.status='approved';r.approved_at=new Date().toISOString();if(edited)r.draft_message=edited;}
+    _updateOQStats();_updateOQBadge();
+    showToast('Approved — copy it and send');
+    // Copy to clipboard automatically
+    if(edited)navigator.clipboard.writeText(edited).catch(()=>{});
+    const card=document.getElementById('oqcard_'+safeId);
+    if(card&&_oqFilter==='pending'){card.style.opacity='0.4';card.style.pointerEvents='none';setTimeout(()=>_renderOQ(),800);}
+  }catch(e){showToast('Error: '+e.message);}
+}
+
+async function markOQSent(id,safeId){
+  const db=_db();if(!db)return;
+  try{
+    await db.from('outreach_queue').update({status:'sent',sent_at:new Date().toISOString()}).eq('id',id);
+    const r=_allOQ.find(x=>x.id===id);if(r)r.status='sent';
+    _updateOQStats();showToast('Marked as sent');_renderOQ();
+  }catch(e){showToast('Error: '+e.message);}
+}
+
+async function dismissOQ(id,safeId){
+  const db=_db();if(!db)return;
+  try{
+    await db.from('outreach_queue').update({status:'dismissed',dismissed_at:new Date().toISOString()}).eq('id',id);
+    const r=_allOQ.find(x=>x.id===id);if(r)r.status='dismissed';
+    _updateOQStats();_updateOQBadge();
+    const card=document.getElementById('oqcard_'+safeId);
+    if(card)card.remove();
+  }catch(e){showToast('Error: '+e.message);}
+}
+
+async function generateOutreachQueue(){
+  const db=_db();if(!db)return;
+  const btn=document.getElementById('oq-gen-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2"></i> Generating...';}
+  const loadEl=document.getElementById('oq-loading');
+  const progEl=document.getElementById('oq-progress');
+  const subEl=document.getElementById('oq-loading-sub');
+  const listEl=document.getElementById('oq-list');
+  if(loadEl)loadEl.style.display='block';
+  if(listEl)listEl.style.display='none';
+
+  try{
+    // Find contacts that need outreach
+    const needsOutreach=(contacts||[]).filter(c=>{
+      if(!['prospect','cold','followup','replied'].includes(c.stage||''))return false;
+      if(!c.name||!c.company)return false;
+      // Already in queue as pending
+      if(_allOQ.find(q=>q.status==='pending'&&q.contact_name===c.name))return false;
+      // Last contacted check
+      if(c.last_contact){
+        const days=(Date.now()-new Date(c.last_contact))/864e5;
+        if(days<5)return false; // touched recently
+      }
+      return true;
+    }).sort((a,b)=>{
+      // Prioritise: high priority first, then most overdue
+      const pa=a.priority==='high'?0:a.priority==='medium'?1:2;
+      const pb=b.priority==='high'?0:b.priority==='medium'?1:2;
+      return pa-pb;
+    }).slice(0,8); // max 8 drafts at a time
+
+    if(!needsOutreach.length){
+      showToast('No contacts need outreach right now');
+      if(loadEl)loadEl.style.display='none';
+      if(listEl)listEl.style.display='';
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-sparkles"></i> Generate drafts';}
+      return;
+    }
+
+    // Fetch writing style
+    let writingStyle='Direct and concise. No buzzwords. Opener references something specific. Closes with one clear question.';
+    const fid=await _getFirmId();
+    if(fid){
+      const{data:s}=await db.from('firm_settings').select('writing_style').eq('firm_id',fid).maybeSingle();
+      if(s&&s.writing_style)writingStyle=s.writing_style;
+    }
+
+    const progress=p=>{if(progEl)progEl.style.width=p+'%';};
+    progress(10);
+
+    const drafted=[];
+    for(let i=0;i<needsOutreach.length;i++){
+      const c=needsOutreach[i];
+      if(subEl)subEl.textContent=`Drafting message ${i+1} of ${needsOutreach.length}: ${c.name}…`;
+      progress(10+Math.round((i/needsOutreach.length)*80));
+
+      // Determine reason and priority
+      const daysSince=c.last_contact?Math.round((Date.now()-new Date(c.last_contact))/864e5):null;
+      const reason=c.stage==='followup'?`Due for follow-up${daysSince?' ('+daysSince+' days since last contact)':''}`:
+        c.stage==='replied'?'Replied to previous outreach — advance to a call':
+        c.stage==='cold'?'Cold prospect — worth a first touch':
+        `In pipeline at "${c.stage}" stage${daysSince?' — last contact '+daysSince+' days ago':''}`;
+
+      const prompt=`You are drafting a LinkedIn outreach message on behalf of Michael Stubbs, Founder of Vantage Search Group, a boutique executive search firm in Dubai specialising in financial services, FinTech and GCC markets.
+
+Writing style: ${writingStyle}
+
+Contact: ${c.name}${c.title?' ('+c.title+')':''}${c.company?' at '+c.company:''}${c.industry?' — '+c.industry+' sector':''}
+Current stage: ${c.stage||'prospect'}
+Reason for outreach: ${reason}
+
+Write one LinkedIn outreach message from Michael. Under 120 words. No subject line. No sign-off. Start with their name. Reference something specific about their company or sector. End with one clear question that invites a response. No em-dashes. No buzzwords. Sound human. Never criticise UAE, Saudi or any GCC government.`;
+
+      try{
+        const resp=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],maxTokens:400})});
+        const data=await resp.json();
+        const msg=(data.content||data.response||'').trim();
+        if(!msg)continue;
+
+        drafted.push({
+          firm_id:fid||undefined,
+          contact_name:c.name,
+          contact_title:c.title||null,
+          contact_company:c.company||null,
+          contact_linkedin:c.linkedin||null,
+          contact_email:c.email||null,
+          channel:'linkedin',
+          draft_message:msg,
+          reason,
+          priority:c.priority||'medium',
+          hook_type:c.stage,
+          status:'pending'
+        });
+      }catch(e){console.warn('Draft failed for',c.name,e);}
+    }
+
+    progress(95);
+    if(drafted.length){
+      const{error}=await db.from('outreach_queue').insert(drafted);
+      if(error)throw error;
+    }
+    progress(100);
+    await loadOutreachQueue();
+    showToast(`${drafted.length} draft${drafted.length!==1?'s':''} ready for review`);
+  }catch(e){
+    showToast('Generation failed: '+e.message);
+    console.error(e);
+  }finally{
+    if(loadEl)loadEl.style.display='none';
+    if(listEl)listEl.style.display='';
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-sparkles"></i> Generate drafts';}
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   BD FUNNEL REPORT
+══════════════════════════════════════════════════ */
+async function loadBDFunnel(){
+  const db=_db();if(!db)return;
+  try{
+    // Load all data in parallel
+    const[{data:allContacts},{data:allMeetings},{data:allInvoices},{data:liStats},{data:allSignals}]=await Promise.all([
+      db.from('contacts').select('stage,source,priority,company,industry,contact_type,created_at'),
+      db.from('meetings').select('outcome,meeting_type,contact_company,mandate_value,meeting_date'),
+      db.from('invoices').select('amount,status,created_at,contact_company').limit(500),
+      db.from('linkedin_outreach').select('status,date_requested,date_connected,date_replied,reply_classification').limit(2000),
+      db.from('company_signals').select('signal_type,importance,actioned,company_name').limit(500)
+    ]);
+
+    _renderFunnel(allContacts||[],allMeetings||[],allInvoices||[],liStats||[],allSignals||[]);
+  }catch(e){console.error('loadBDFunnel:',e);showToast('Could not load funnel data');}
+}
+
+function _renderFunnel(contacts,meetings,invoices,liStats,signals){
+  // ── Funnel stages ───────────────────────────────────────────
+  const stageOrder=['prospect','cold','followup','replied','meeting','mandate','pitch','placed','closed'];
+  const stageCounts={};
+  stageOrder.forEach(s=>stageCounts[s]=0);
+  contacts.forEach(c=>{if(stageCounts[c.stage]!==undefined)stageCounts[c.stage]++;});
+  const totalTop=contacts.length||1;
+
+  const stageLabel={prospect:'Prospects',cold:'Cold outreach',followup:'Follow-up',replied:'Replied',meeting:'Meeting booked',mandate:'Mandate',pitch:'Pitch',placed:'Placed',closed:'Closed / lost'};
+  const stageColour={prospect:'#e8ecf4',cold:'#e8ecf4',followup:'#fff3cd',replied:'#d4edda',meeting:'#cce5ff',mandate:'#d4af37',pitch:'#d4af37',placed:'#28a745',closed:'#f8d7da'};
+
+  const funnelEl=document.getElementById('funnel-viz');
+  if(funnelEl){
+    const rows=stageOrder.filter(s=>stageCounts[s]>0).map(s=>{
+      const count=stageCounts[s];
+      const pct=Math.round((count/totalTop)*100);
+      const barW=Math.max(pct,4);
+      return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <div style="width:130px;font-size:12px;color:var(--muted);text-align:right;flex-shrink:0">${stageLabel[s]||s}</div>
+        <div style="flex:1;background:var(--border);border-radius:4px;height:28px;position:relative;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${barW}%;background:${stageColour[s]||'#e8ecf4'};border-radius:4px;transition:width .5s;border:1px solid rgba(0,0,0,.06)"></div>
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:700;color:var(--navy);z-index:1">${count} (${pct}%)</span>
+        </div>
+      </div>`;
+    }).join('');
+    funnelEl.innerHTML=rows||'<p style="color:var(--muted);font-size:13px">No pipeline data yet.</p>';
+  }
+
+  // ── Channel performance ─────────────────────────────────────
+  const chanEl=document.getElementById('funnel-channels');
+  if(chanEl){
+    const total=liStats.length||1;
+    const connected=liStats.filter(r=>r.status!=='pending'&&r.status!=='requested').length;
+    const replied=liStats.filter(r=>['replied','connected'].includes(r.status)&&r.date_replied).length;
+    const connRate=total?Math.round((connected/total)*100):0;
+    const replyRate=connected?Math.round((replied/connected)*100):0;
+
+    const sources={};
+    contacts.forEach(c=>{const s=c.source||'direct';sources[s]=(sources[s]||0)+1;});
+    const sourceRows=Object.entries(sources).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([s,n])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-soft);font-size:13px"><span>${s}</span><strong>${n}</strong></div>`).join('');
+
+    chanEl.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:14px">
+        <div style="padding:12px;border-right:1px solid var(--border-soft);text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--navy)">${connRate}%</div>
+          <div style="font-size:11px;color:var(--muted)">LinkedIn connection rate</div>
+          <div style="font-size:11px;color:var(--muted)">(${connected} of ${total})</div>
+        </div>
+        <div style="padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--gold)">${replyRate}%</div>
+          <div style="font-size:11px;color:var(--muted)">Reply rate</div>
+          <div style="font-size:11px;color:var(--muted)">(${replied} of ${connected})</div>
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Contact sources</div>
+      ${sourceRows||'<p style="font-size:13px;color:var(--muted)">No source data yet.</p>'}`;
+  }
+
+  // ── Signal attribution ──────────────────────────────────────
+  const sigEl=document.getElementById('funnel-signals');
+  if(sigEl){
+    const byType={};
+    signals.forEach(s=>{
+      const t=s.signal_type||'unknown';
+      if(!byType[t])byType[t]={total:0,actioned:0};
+      byType[t].total++;
+      if(s.actioned)byType[t].actioned++;
+    });
+    const sigRows=Object.entries(byType).sort((a,b)=>b[1].total-a[1].total).slice(0,6).map(([t,v])=>{
+      const rate=v.total?Math.round((v.actioned/v.total)*100):0;
+      return `<div style="padding:8px 0;border-bottom:1px solid var(--border-soft)">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">
+          <span>${t.replace(/_/g,' ')}</span><span style="color:var(--muted)">${v.total} signals</span>
+        </div>
+        <div style="height:4px;background:var(--border);border-radius:2px"><div style="height:100%;width:${rate}%;background:var(--gold);border-radius:2px"></div></div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${rate}% converted to action</div>
+      </div>`;
+    }).join('');
+    sigEl.innerHTML=sigRows||'<p style="font-size:13px;color:var(--muted)">No signal data yet.</p>';
+  }
+
+  // ── Meeting outcomes ────────────────────────────────────────
+  const outEl=document.getElementById('funnel-outcomes');
+  if(outEl){
+    const outMap={mandate_received:'Mandate received',shortlist_requested:'Shortlist requested',follow_up_agreed:'Follow-up agreed',warm_relationship:'Warm — keep in touch',not_hiring:'Not hiring',referral_given:'Referral given',other:'Other'};
+    const outColour={mandate_received:'var(--green)',shortlist_requested:'var(--navy)',follow_up_agreed:'var(--amber)',not_hiring:'var(--red)',warm_relationship:'var(--amber)',referral_given:'var(--blue)',other:'var(--muted)'};
+    const byCome={};
+    meetings.forEach(m=>{const o=m.outcome||'unknown';byCome[o]=(byCome[o]||0)+1;});
+    const total=meetings.length||1;
+    const rows=Object.entries(byCome).sort((a,b)=>b[1]-a[1]).map(([o,n])=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-soft)">
+      <div style="width:8px;height:8px;border-radius:50%;background:${outColour[o]||'var(--muted)'};flex-shrink:0"></div>
+      <span style="flex:1;font-size:13px">${outMap[o]||o}</span>
+      <strong style="font-size:13px">${n}</strong>
+      <span style="font-size:11px;color:var(--muted);width:36px;text-align:right">${Math.round((n/total)*100)}%</span>
+    </div>`).join('');
+    const mandateVal=meetings.filter(m=>m.mandate_value).reduce((s,m)=>s+Number(m.mandate_value||0),0);
+    outEl.innerHTML=(rows||'<p style="font-size:13px;color:var(--muted)">No meetings logged yet.</p>')
+      +(mandateVal?`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-soft);font-size:13px">Total mandate value from meetings: <strong style="color:var(--green)">AED ${mandateVal.toLocaleString()}</strong></div>`:'');
+  }
+
+  // ── Top BD companies ────────────────────────────────────────
+  const coEl=document.getElementById('funnel-companies');
+  if(coEl){
+    const byCompany={};
+    contacts.filter(c=>c.contact_type!=='candidate').forEach(c=>{
+      if(!c.company)return;
+      if(!byCompany[c.company])byCompany[c.company]={contacts:0,hotStage:false};
+      byCompany[c.company].contacts++;
+      if(['mandate','meeting','pitch','placed'].includes(c.stage))byCompany[c.company].hotStage=true;
+    });
+    const rows=Object.entries(byCompany).sort((a,b)=>b[1].contacts-a[1].contacts).slice(0,8).map(([co,v])=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border-soft);font-size:13px">
+      <span style="font-weight:${v.hotStage?'700':'400'};color:${v.hotStage?'var(--navy)':'var(--text)'}">${co}</span>
+      <span style="font-size:11px;color:var(--muted)">${v.contacts} contact${v.contacts!==1?'s':''}${v.hotStage?' <span style="color:var(--gold)">●</span>':''}</span>
+    </div>`).join('');
+    coEl.innerHTML=(rows||'<p style="font-size:13px;color:var(--muted)">No company data yet.</p>')
+      +`<div style="font-size:10px;color:var(--muted);margin-top:8px"><span style="color:var(--gold)">●</span> Active mandate or meeting</div>`;
+  }
+
+  // ── Key ratios ──────────────────────────────────────────────
+  const ratioEl=document.getElementById('funnel-ratios');
+  if(ratioEl){
+    const totalContacts=contacts.length||1;
+    const meetings_count=meetings.length;
+    const mandates=contacts.filter(c=>['mandate','pitch','placed'].includes(c.stage)).length;
+    const placed=contacts.filter(c=>c.stage==='placed').length;
+    const totalRevenue=invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+Number(i.amount||0),0);
+    const outreachToMeeting=liStats.length?Math.round((meetings_count/Math.max(liStats.length,1))*100):0;
+    const meetingToMandate=meetings_count?Math.round((mandates/meetings_count)*100):0;
+    const avgFee=placed?Math.round(totalRevenue/placed):0;
+
+    ratioEl.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--border)">
+      ${[
+        ['Outreach → meeting',outreachToMeeting+'%','Contacts that became meetings'],
+        ['Meeting → mandate',meetingToMandate+'%','Meetings that became mandates'],
+        ['Total mandates',mandates,'Active + placed + pitched'],
+        ['Placements',placed,'Completed placements'],
+        ['Total revenue','AED '+totalRevenue.toLocaleString(),'From paid invoices'],
+        ['Avg placement fee',avgFee?'AED '+avgFee.toLocaleString():'—','Per placed candidate'],
+      ].map(([label,val,sub])=>`<div style="padding:16px;background:var(--surface)">
+        <div style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:3px">${val}</div>
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${label}</div>
+        <div style="font-size:11px;color:var(--muted)">${sub}</div>
+      </div>`).join('')}
+    </div>`;
+  }
 }
 
 /* ══════════════════════════════════════════════════
