@@ -691,6 +691,7 @@ textarea{resize:vertical;min-height:80px}
     <button class="nav-btn" onclick="goPage('candidates',this);loadCandidates()" data-tip="Your candidate database.manage shortlists, track availability, notice periods and placement status"><i class="ti ti-users"></i>Candidates<span class="nav-badge amber" id="nb-cands" style="display:none"></span></button>
     <button class="nav-btn" onclick="goPage('netmap',this);loadNetworkMap()" data-tip="Visual map of your professional network.see relationship clusters, connection strength and coverage gaps"><i class="ti ti-topology-star"></i>Network Map</button>
     <button class="nav-btn" onclick="goPage('tasks',this)" data-tip="Your BD to-do list.scheduled call-backs, follow-up reminders and time-sensitive actions in priority order"><i class="ti ti-checkbox"></i>Tasks<span class="nav-badge amber" id="nb-tasks" style="display:none"></span></button>
+    <button class="nav-btn" onclick="goPage('meetings',this);loadMeetings()" data-tip="Log and track all your BD meetings. Calls, video, in-person — with outcomes, next steps and follow-up reminders"><i class="ti ti-calendar-event"></i>Meetings<span class="nav-badge amber" id="nb-meetings" style="display:none"></span></button>
     <button class="nav-btn" onclick="goPage('checkin',this);loadCheckins()" data-tip="Automated check-ins with recently placed candidates.monitor satisfaction and generate referrals from successful placements"><i class="ti ti-refresh"></i>Candidate Check-in</button>
     <div class="nav-section">Analytics</div>
     <button class="nav-btn" onclick="goPage('outreach-perf',this);loadOutreachPerf()" data-tip="LinkedIn and email outreach analytics. Connection rates, reply rates and which messages are converting best"><i class="ti ti-target"></i>Outreach Performance</button>
@@ -1161,6 +1162,136 @@ textarea{resize:vertical;min-height:80px}
 
       <div style="margin-top:20px;display:flex;gap:10px">
         <button class="btn btn-gold" onclick="saveSettings()"><i class="ti ti-device-floppy"></i> Save Settings</button>
+      </div>
+    </div>
+
+    <!-- MEETINGS PAGE -->
+    <div id="p-meetings" class="page">
+      <div class="ph" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div><h1><i class="ti ti-calendar-event" style="color:var(--gold)"></i> Meetings</h1><p>Log and track every BD meeting, call and conversation</p></div>
+        <button class="btn btn-gold" onclick="openAddMeeting()"><i class="ti ti-plus"></i> Log Meeting</button>
+      </div>
+
+      <!-- Stats row -->
+      <div class="dash-metrics" style="margin-bottom:20px">
+        <div class="m navy"><div class="m-icon" style="background:#e8ecf4;color:var(--navy)"><i class="ti ti-calendar-stats"></i></div><div class="m-val" id="meet-stat-total">0</div><div class="m-lbl">Total logged</div></div>
+        <div class="m gold"><div class="m-icon" style="background:var(--gold-bg);color:#92680a"><i class="ti ti-calendar-month"></i></div><div class="m-val" id="meet-stat-month">0</div><div class="m-lbl">This month</div></div>
+        <div class="m amber"><div class="m-icon" style="background:#fff8e1;color:#b37400"><i class="ti ti-bell"></i></div><div class="m-val" id="meet-stat-followups">0</div><div class="m-lbl">Follow-ups due</div></div>
+        <div class="m green"><div class="m-icon" style="background:#e8f5e9;color:#2e7d32"><i class="ti ti-trophy"></i></div><div class="m-val" id="meet-stat-mandates">0</div><div class="m-lbl">Mandates discussed</div></div>
+      </div>
+
+      <!-- Filters -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn btn-xs btn-ghost on" id="mf-all" onclick="filterMeetings('all',this)">All</button>
+        <button class="btn btn-xs btn-ghost" id="mf-followup" onclick="filterMeetings('followup',this)">Follow-ups due</button>
+        <button class="btn btn-xs btn-ghost" id="mf-month" onclick="filterMeetings('month',this)">This month</button>
+        <button class="btn btn-xs btn-ghost" id="mf-call" onclick="filterMeetings('call',this)">Calls</button>
+        <button class="btn btn-xs btn-ghost" id="mf-video" onclick="filterMeetings('video',this)">Video</button>
+        <button class="btn btn-xs btn-ghost" id="mf-inperson" onclick="filterMeetings('inperson',this)">In-person</button>
+      </div>
+
+      <!-- Meeting list -->
+      <div id="meetings-list"><div class="empty"><i class="ti ti-calendar-off"></i><p>No meetings logged yet. Click Log Meeting to add your first one.</p></div></div>
+    </div>
+
+    <!-- ADD / EDIT MEETING OVERLAY -->
+    <div id="meetingOv" class="overlay" style="display:none" onclick="if(event.target===this)closeMeetingOv()">
+      <div class="ov-box" style="max-width:620px">
+        <div class="ov-head">
+          <h2 id="meet-ov-title">Log Meeting</h2>
+          <button class="ov-close" onclick="closeMeetingOv()"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="ov-body" style="display:flex;flex-direction:column;gap:14px">
+
+          <div class="g2">
+            <div>
+              <label class="form-label">Contact name *</label>
+              <input id="meet-contact-name" class="form-input" placeholder="e.g. Sarah Al-Mansouri" list="meet-contacts-dl" oninput="autoFillMeetingContact(this.value)">
+              <datalist id="meet-contacts-dl"></datalist>
+            </div>
+            <div>
+              <label class="form-label">Meeting date *</label>
+              <input id="meet-date" class="form-input" type="date">
+            </div>
+          </div>
+
+          <div class="g2">
+            <div>
+              <label class="form-label">Title / role</label>
+              <input id="meet-contact-title" class="form-input" placeholder="e.g. CFO">
+            </div>
+            <div>
+              <label class="form-label">Company</label>
+              <input id="meet-contact-company" class="form-input" placeholder="e.g. Emirates NBD">
+            </div>
+          </div>
+
+          <div class="g2">
+            <div>
+              <label class="form-label">Meeting type</label>
+              <select id="meet-type" class="form-input">
+                <option value="call">📞 Call</option>
+                <option value="video">💻 Video call</option>
+                <option value="inperson">🤝 In-person</option>
+                <option value="coffee">☕ Coffee</option>
+                <option value="event">🎟 Event / networking</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Time (optional)</label>
+              <input id="meet-time" class="form-input" type="time">
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">Notes</label>
+            <textarea id="meet-notes" class="form-input" rows="3" placeholder="What was discussed? Key topics, context, anything useful…"></textarea>
+          </div>
+
+          <div>
+            <label class="form-label">Outcome</label>
+            <select id="meet-outcome" class="form-input">
+              <option value="">— Select outcome —</option>
+              <option value="mandate_received">✅ Mandate received</option>
+              <option value="shortlist_requested">📋 Shortlist requested</option>
+              <option value="follow_up_agreed">🔄 Follow-up agreed</option>
+              <option value="not_hiring">❌ Not hiring right now</option>
+              <option value="warm_relationship">🤝 Warm — keep in touch</option>
+              <option value="referral_given">➡️ Referral given</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="form-label">Next steps</label>
+            <textarea id="meet-next-steps" class="form-input" rows="2" placeholder="e.g. Send shortlist by Thursday, intro to their Head of HR…"></textarea>
+          </div>
+
+          <div style="background:var(--gold-bg);border:1px solid #e8c84a33;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:12px">
+            <div style="font-size:12px;font-weight:700;color:#92680a;text-transform:uppercase;letter-spacing:.05em"><i class="ti ti-bell"></i> Follow-up reminder</div>
+            <div class="g2">
+              <div>
+                <label class="form-label">Follow-up date</label>
+                <input id="meet-followup-date" class="form-input" type="date">
+              </div>
+              <div>
+                <label class="form-label">Follow-up action</label>
+                <input id="meet-followup-action" class="form-input" placeholder="e.g. Send shortlist, check in, etc.">
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">Mandate value (AED, optional)</label>
+            <input id="meet-mandate-value" class="form-input" type="number" placeholder="e.g. 120000">
+          </div>
+
+          <input type="hidden" id="meet-edit-id">
+        </div>
+        <div class="ov-foot">
+          <button class="btn btn-ghost" onclick="closeMeetingOv()">Cancel</button>
+          <button class="btn btn-gold" onclick="saveMeeting()"><i class="ti ti-device-floppy"></i> Save Meeting</button>
+        </div>
       </div>
     </div>
 
@@ -5750,6 +5881,211 @@ async function checkNewConnections(){
       if(typeof loadSignals==='function')setTimeout(loadSignals,500);
     }
   }catch(e){console.warn('checkNewConnections:',e);}
+}
+
+/* ══════════════════════════════════════════════════
+   MEETINGS LOGGER
+══════════════════════════════════════════════════ */
+let _allMeetings=[];
+let _meetFilter='all';
+
+async function loadMeetings(){
+  const db=_db();if(!db)return;
+  try{
+    const{data,error}=await db.from('meetings')
+      .select('*')
+      .order('meeting_date',{ascending:false});
+    if(error)throw error;
+    _allMeetings=data||[];
+    _renderMeetings();
+    _updateMeetingStats();
+    _populateMeetingContactsDL();
+    _updateMeetingsBadge();
+  }catch(e){console.error('loadMeetings:',e);}
+}
+
+function _updateMeetingsBadge(){
+  const today=new Date().toISOString().slice(0,10);
+  const due=_allMeetings.filter(m=>m.follow_up_date&&m.follow_up_date<=today).length;
+  const badge=document.getElementById('nb-meetings');
+  if(badge){badge.textContent=due||'';badge.style.display=due?'':'none';}
+}
+
+function _updateMeetingStats(){
+  const today=new Date();
+  const thisMonth=today.toISOString().slice(0,7);
+  const todayStr=today.toISOString().slice(0,10);
+  document.getElementById('meet-stat-total').textContent=_allMeetings.length;
+  document.getElementById('meet-stat-month').textContent=_allMeetings.filter(m=>m.meeting_date&&m.meeting_date.startsWith(thisMonth)).length;
+  document.getElementById('meet-stat-followups').textContent=_allMeetings.filter(m=>m.follow_up_date&&m.follow_up_date<=todayStr).length;
+  document.getElementById('meet-stat-mandates').textContent=_allMeetings.filter(m=>m.mandate_value&&m.mandate_value>0).length;
+}
+
+function filterMeetings(f,btn){
+  _meetFilter=f;
+  document.querySelectorAll('#p-meetings .btn-xs').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  _renderMeetings();
+}
+
+function _renderMeetings(){
+  const today=new Date().toISOString().slice(0,10);
+  const thisMonth=today.slice(0,7);
+  let list=_allMeetings;
+  if(_meetFilter==='followup') list=list.filter(m=>m.follow_up_date&&m.follow_up_date<=today);
+  if(_meetFilter==='month') list=list.filter(m=>m.meeting_date&&m.meeting_date.startsWith(thisMonth));
+  if(_meetFilter==='call') list=list.filter(m=>m.meeting_type==='call');
+  if(_meetFilter==='video') list=list.filter(m=>m.meeting_type==='video');
+  if(_meetFilter==='inperson') list=list.filter(m=>m.meeting_type==='inperson');
+  const el=document.getElementById('meetings-list');
+  if(!list.length){el.innerHTML='<div class="empty"><i class="ti ti-calendar-off"></i><p>No meetings match this filter.</p></div>';return;}
+  const typeIcon={call:'📞',video:'💻',inperson:'🤝',coffee:'☕',event:'🎟'};
+  const outcomeLabel={mandate_received:'Mandate received',shortlist_requested:'Shortlist requested',follow_up_agreed:'Follow-up agreed',not_hiring:'Not hiring',warm_relationship:'Warm — keep in touch',referral_given:'Referral given',other:'Other'};
+  const outcomeColour={mandate_received:'green',shortlist_requested:'navy',follow_up_agreed:'amber',not_hiring:'red',warm_relationship:'amber',referral_given:'blue',other:''};
+  el.innerHTML=list.map(m=>{
+    const isOverdue=m.follow_up_date&&m.follow_up_date<today;
+    const isDueToday=m.follow_up_date&&m.follow_up_date===today;
+    const followupHtml=m.follow_up_date?`<div style="margin-top:8px;display:flex;align-items:center;gap:6px;font-size:12px;color:${isOverdue?'var(--red)':isDueToday?'#b37400':'var(--muted)'}"><i class="ti ti-bell" style="font-size:13px"></i><strong>${isOverdue?'Overdue:':isDueToday?'Due today:':'Follow-up:'}</strong> ${_fmtDate(m.follow_up_date)}${m.follow_up_action?' — '+m.follow_up_action:''}</div>`:'';
+    const badgeHtml=m.outcome?`<span class="badge badge-${outcomeColour[m.outcome]||'navy'}" style="font-size:10px">${outcomeLabel[m.outcome]||m.outcome}</span>`:'';
+    const mandateHtml=m.mandate_value?`<span style="font-size:11px;font-weight:700;color:var(--green)">AED ${Number(m.mandate_value).toLocaleString()}</span>`:'';
+    return `<div class="card" style="margin-bottom:12px;cursor:default">
+      <div style="padding:16px 20px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span style="font-size:16px">${typeIcon[m.meeting_type]||'📅'}</span>
+              <strong style="font-size:15px;color:var(--navy)">${m.contact_name}</strong>
+              ${m.contact_title?`<span style="font-size:12px;color:var(--muted)">${m.contact_title}${m.contact_company?' · '+m.contact_company:''}</span>`:''}
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${_fmtDate(m.meeting_date)}${m.meeting_time?' · '+m.meeting_time.slice(0,5):''}</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${badgeHtml}${mandateHtml}</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-xs btn-ghost" onclick="openEditMeeting('${m.id}')"><i class="ti ti-edit"></i> Edit</button>
+            <button class="btn btn-xs btn-ghost" style="color:var(--red)" onclick="deleteMeeting('${m.id}')"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>
+        ${m.notes?`<div style="font-size:13px;color:var(--text);margin-top:10px;padding-top:10px;border-top:1px solid var(--border-soft)">${m.notes}</div>`:''}
+        ${m.next_steps?`<div style="font-size:12px;margin-top:8px"><strong style="color:var(--navy)">Next steps:</strong> <span style="color:var(--text)">${m.next_steps}</span></div>`:''}
+        ${followupHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _fmtDate(d){
+  if(!d)return '';
+  const dt=new Date(d+'T00:00:00');
+  return dt.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+
+function _populateMeetingContactsDL(){
+  const dl=document.getElementById('meet-contacts-dl');
+  if(!dl)return;
+  const names=[...new Set((contacts||[]).map(c=>c.name).filter(Boolean))];
+  dl.innerHTML=names.map(n=>`<option value="${n}">`).join('');
+}
+
+function autoFillMeetingContact(val){
+  if(!val)return;
+  const match=(contacts||[]).find(c=>c.name&&c.name.toLowerCase()===val.toLowerCase());
+  if(match){
+    if(match.title&&!document.getElementById('meet-contact-title').value)
+      document.getElementById('meet-contact-title').value=match.title;
+    if(match.company&&!document.getElementById('meet-contact-company').value)
+      document.getElementById('meet-contact-company').value=match.company;
+  }
+}
+
+function openAddMeeting(){
+  document.getElementById('meet-ov-title').textContent='Log Meeting';
+  document.getElementById('meet-edit-id').value='';
+  document.getElementById('meet-contact-name').value='';
+  document.getElementById('meet-contact-title').value='';
+  document.getElementById('meet-contact-company').value='';
+  document.getElementById('meet-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('meet-time').value='';
+  document.getElementById('meet-type').value='call';
+  document.getElementById('meet-notes').value='';
+  document.getElementById('meet-outcome').value='';
+  document.getElementById('meet-next-steps').value='';
+  document.getElementById('meet-followup-date').value='';
+  document.getElementById('meet-followup-action').value='';
+  document.getElementById('meet-mandate-value').value='';
+  _populateMeetingContactsDL();
+  document.getElementById('meetingOv').style.display='flex';
+}
+
+function openEditMeeting(id){
+  const m=_allMeetings.find(x=>x.id===id);if(!m)return;
+  document.getElementById('meet-ov-title').textContent='Edit Meeting';
+  document.getElementById('meet-edit-id').value=id;
+  document.getElementById('meet-contact-name').value=m.contact_name||'';
+  document.getElementById('meet-contact-title').value=m.contact_title||'';
+  document.getElementById('meet-contact-company').value=m.contact_company||'';
+  document.getElementById('meet-date').value=m.meeting_date||'';
+  document.getElementById('meet-time').value=m.meeting_time?m.meeting_time.slice(0,5):'';
+  document.getElementById('meet-type').value=m.meeting_type||'call';
+  document.getElementById('meet-notes').value=m.notes||'';
+  document.getElementById('meet-outcome').value=m.outcome||'';
+  document.getElementById('meet-next-steps').value=m.next_steps||'';
+  document.getElementById('meet-followup-date').value=m.follow_up_date||'';
+  document.getElementById('meet-followup-action').value=m.follow_up_action||'';
+  document.getElementById('meet-mandate-value').value=m.mandate_value||'';
+  _populateMeetingContactsDL();
+  document.getElementById('meetingOv').style.display='flex';
+}
+
+function closeMeetingOv(){document.getElementById('meetingOv').style.display='none';}
+
+async function saveMeeting(){
+  const db=_db();if(!db){showToast('Not connected');return;}
+  const name=document.getElementById('meet-contact-name').value.trim();
+  const date=document.getElementById('meet-date').value;
+  if(!name||!date){showToast('Contact name and date are required');return;}
+  const id=document.getElementById('meet-edit-id').value;
+  const fid=await _getFirmId();
+  const row={
+    contact_name:name,
+    contact_title:document.getElementById('meet-contact-title').value.trim()||null,
+    contact_company:document.getElementById('meet-contact-company').value.trim()||null,
+    meeting_date:date,
+    meeting_time:document.getElementById('meet-time').value||null,
+    meeting_type:document.getElementById('meet-type').value||'call',
+    notes:document.getElementById('meet-notes').value.trim()||null,
+    outcome:document.getElementById('meet-outcome').value||null,
+    next_steps:document.getElementById('meet-next-steps').value.trim()||null,
+    follow_up_date:document.getElementById('meet-followup-date').value||null,
+    follow_up_action:document.getElementById('meet-followup-action').value.trim()||null,
+    mandate_value:parseFloat(document.getElementById('meet-mandate-value').value)||null,
+    updated_at:new Date().toISOString()
+  };
+  if(fid)row.firm_id=fid;
+  try{
+    if(id){
+      const{error}=await db.from('meetings').update(row).eq('id',id);
+      if(error)throw error;
+      showToast('Meeting updated');
+    }else{
+      row.created_at=new Date().toISOString();
+      const{error}=await db.from('meetings').insert(row);
+      if(error)throw error;
+      showToast('Meeting logged');
+    }
+    closeMeetingOv();
+    await loadMeetings();
+  }catch(e){showToast('Save failed: '+e.message);}
+}
+
+async function deleteMeeting(id){
+  if(!confirm('Delete this meeting?'))return;
+  const db=_db();if(!db)return;
+  try{
+    const{error}=await db.from('meetings').delete().eq('id',id);
+    if(error)throw error;
+    showToast('Meeting deleted');
+    await loadMeetings();
+  }catch(e){showToast('Delete failed: '+e.message);}
 }
 
 /* ══════════════════════════════════════════════════
