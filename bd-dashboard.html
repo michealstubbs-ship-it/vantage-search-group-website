@@ -1313,8 +1313,15 @@ textarea{resize:vertical;min-height:80px}
           <h3><i class="ti ti-writing"></i> Writing Style</h3>
           <span style="font-size:11px;color:var(--muted)">Used by Annie to match your tone in outreach</span>
         </div>
-        <div class="card-b">
+        <div class="card-b" style="display:flex;flex-direction:column;gap:12px">
           <textarea id="set-style" class="form-input" rows="6" placeholder="Describe your outreach style — tone, typical opener, what to avoid, preferred length.&#10;&#10;e.g. Direct and concise. No buzzwords. Opener references a specific detail about the person. Closing asks one clear question."></textarea>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <button class="btn-secondary" onclick="analyseWritingStyle()" id="btn-analyse-style">
+              <i class="ti ti-sparkles"></i> Analyse from my LinkedIn messages
+            </button>
+            <span id="style-analyse-status" style="font-size:12px;color:var(--muted)"></span>
+          </div>
+          <div style="font-size:11px;color:var(--muted)">Annie reads your sent outreach messages, identifies your patterns, and builds a style profile automatically. Run this monthly to keep it current.</div>
         </div>
       </div>
 
@@ -7060,6 +7067,39 @@ async function loadSettings(){
     }
     _settingsLoaded=true;
   }catch(e){console.error('loadSettings:',e);showToast('Could not load settings');}
+}
+
+async function analyseWritingStyle(){
+  const btn=document.getElementById('btn-analyse-style');
+  const statusEl=document.getElementById('style-analyse-status');
+  btn.disabled=true;
+  btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Analysing…';
+  statusEl.textContent='Reading your sent messages…';
+  try{
+    const fid=await _getFirmId();
+    const res=await fetch('/.netlify/functions/analyse-style',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({firm_id:fid||null})
+    });
+    const data=await res.json();
+    if(!res.ok||!data.success){
+      statusEl.style.color='var(--red)';
+      statusEl.textContent=data.message||data.error||'Analysis failed';
+    }else{
+      // Update the textarea with the generated profile
+      document.getElementById('set-style').value=data.style;
+      statusEl.style.color='var(--green)';
+      statusEl.textContent=`Done — analysed ${data.messages_analysed} message${data.messages_analysed!==1?'s':''}. Style saved to Annie's memory.`;
+      showToast('Writing style updated');
+    }
+  }catch(e){
+    statusEl.style.color='var(--red)';
+    statusEl.textContent='Error: '+e.message;
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='<i class="ti ti-sparkles"></i> Analyse from my LinkedIn messages';
+  }
 }
 
 async function saveSettings(){

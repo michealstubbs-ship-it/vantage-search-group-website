@@ -23,6 +23,9 @@
 [functions."qualify-leads"]
   timeout = 26
 
+[functions."analyse-style"]
+  timeout = 26
+
 [[headers]]
   for = "/*"
   [headers.values]
