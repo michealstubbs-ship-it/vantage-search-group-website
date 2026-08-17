@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>annie — sign in</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0c0e14;
+  --surface: #13151e;
+  --border: #1e2230;
+  --border-focus: #c9a84c;
+  --navy: #1b2a4a;
+  --gold: #c9a84c;
+  --gold2: #e0b84e;
+  --text: #f0f2f7;
+  --muted: #7a8299;
+  --subtle: #3d4259;
+  --red: #ef4444;
+  --r: 12px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Background texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201,168,76,.08) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 80% 80%, rgba(27,42,74,.4) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 24px 64px rgba(0,0,0,.5), 0 0 0 1px rgba(201,168,76,.06);
+}
+
+/* Gold top accent line */
+.card::before {
+  content: '';
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+.card-body {
+  padding: 40px 36px 36px;
+}
+
+/* Logo / wordmark */
+.brand {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.wordmark {
+  font-size: 38px;
+  font-weight: 300;
+  letter-spacing: -1px;
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.wordmark span {
+  color: var(--gold);
+}
+
+.tagline {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 28px;
+}
+
+/* Form */
+.form-group {
+  margin-bottom: 16px;
+}
+
+label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+
+input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .15s;
+}
+
+input::placeholder { color: var(--subtle); }
+
+input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(201,168,76,.1);
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 12px;
+  background: var(--gold);
+  color: #0c0e14;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all .15s;
+  letter-spacing: .3px;
+}
+
+.btn-submit:hover { background: var(--gold2); }
+.btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Error message */
+.error {
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #f87171;
+  margin-bottom: 16px;
+  display: none;
+}
+.error.show { display: block; }
+
+/* Loading state */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(12,14,20,.3);
+  border-top-color: #0c0e14;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Footer */
+.card-footer {
+  padding: 16px 36px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.card-footer p {
+  font-size: 11px;
+  color: var(--subtle);
+}
+
+.card-footer a {
+  color: var(--gold);
+  text-decoration: none;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="card-body">
+
+    <div class="brand">
+      <div class="wordmark">annie</div>
+      <div class="tagline">BD intelligence platform</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="error" id="error-msg"></div>
+
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>Email address</label>
+        <input type="email" id="email" placeholder="you@yourfirm.com" required autocomplete="email" />
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password" />
+      </div>
+
+      <button type="submit" class="btn-submit" id="submit-btn">
+        Sign in
+      </button>
+    </form>
+
+  </div>
+
+  <div class="card-footer">
+    <p>Trouble signing in? Contact <a href="mailto:michael@meetannie.ai">michael@meetannie.ai</a></p>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://mkqbegnqrgveiygrycyg.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcWJlZ25xcmd2ZWl5Z3J5Y3lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjE3NjAsImV4cCI6MjA5Nzc5Nzc2MH0.0Qprp9wRW8iPhmqPbmXEkp0toz3z8TGXoVEESkP6Tp4';
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// If already logged in, redirect to dashboard
+async function checkExistingSession() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    window.location.href = 'bd-dashboard.html';
+  }
+}
+checkExistingSession();
+
+async function handleLogin(e) {
+  e.preventDefault();
+
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('submit-btn');
+  const errorEl = document.getElementById('error-msg');
+
+  // Reset error
+  errorEl.classList.remove('show');
+
+  // Loading state
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Signing in...';
+
+  try {
+    const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+    if (error) throw error;
+
+    // Get user profile to determine role
+    const { data: profile } = await db
+      .from('user_profiles')
+      .select('role, firm_id')
+      .eq('id', data.user.id)
+      .single();
+
+    // Store role in session storage for dashboard use
+    if (profile) {
+      sessionStorage.setItem('annie_role', profile.role);
+      sessionStorage.setItem('annie_firm_id', profile.firm_id);
+    }
+
+    // Redirect to dashboard
+    window.location.href = 'bd-dashboard.html';
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerHTML = 'Sign in';
+
+    let msg = 'Something went wrong. Please try again.';
+    if (err.message?.includes('Invalid login')) msg = 'Incorrect email or password.';
+    if (err.message?.includes('Email not confirmed')) msg = 'Please confirm your email first.';
+
+    errorEl.textContent = msg;
+    errorEl.classList.add('show');
+  }
+}
+</script>
+
+</body>
+</html>
