@@ -698,6 +698,8 @@ textarea{resize:vertical;min-height:80px}
     <button class="nav-btn" onclick="goPage('network',this)" data-tip="Strategic network overview.identify relationship gaps, potential warm introductions and underutilised connections"><i class="ti ti-network"></i>Network Map</button>
     <div class="nav-section">Finance</div>
     <button class="nav-btn" onclick="goPage('finance',this)" data-tip="Invoicing and finance.raise, track and manage all your placement fee invoices and payment status"><i class="ti ti-receipt"></i>Invoices<span class="nav-badge amber" id="nb-inv" style="display:none"></span></button>
+    <div class="nav-section">Account</div>
+    <button class="nav-btn" onclick="goPage('settings',this);loadSettings()" data-tip="Firm profile, outreach defaults, writing style and user management"><i class="ti ti-settings"></i>Settings</button>
     <div class="sidebar-footer">
       <p><strong>Tip:</strong> Hit Save backup after every session. Download the JSON and keep it safe.</p>
     </div>
@@ -1075,6 +1077,90 @@ textarea{resize:vertical;min-height:80px}
           </select>
         </div>
         <div class="card-b p0" id="inv-list"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div id="p-settings" class="page">
+      <div class="ph">
+        <h1><i class="ti ti-settings" style="color:var(--gold)"></i> Settings</h1>
+        <p>Firm profile, outreach defaults and configuration</p>
+      </div>
+
+      <div class="g2">
+        <!-- Firm Profile -->
+        <div class="card">
+          <div class="card-h"><h3><i class="ti ti-building"></i> Firm Profile</h3></div>
+          <div class="card-b" style="display:flex;flex-direction:column;gap:14px">
+            <div>
+              <label class="form-label">Firm name</label>
+              <input id="set-firm-name" class="form-input" placeholder="e.g. Vantage Search Group">
+            </div>
+            <div>
+              <label class="form-label">Website</label>
+              <input id="set-website" class="form-input" placeholder="https://...">
+            </div>
+            <div>
+              <label class="form-label">Industry focus</label>
+              <input id="set-industry" class="form-input" placeholder="e.g. Financial Services, FinTech, Payments">
+            </div>
+          </div>
+        </div>
+
+        <!-- Outreach Defaults -->
+        <div class="card">
+          <div class="card-h"><h3><i class="ti ti-send"></i> Outreach Defaults</h3></div>
+          <div class="card-b" style="display:flex;flex-direction:column;gap:14px">
+            <div>
+              <label class="form-label">Sender name</label>
+              <input id="set-sender" class="form-input" placeholder="e.g. Michael Stubbs">
+            </div>
+            <div>
+              <label class="form-label">Follow-up after (days)</label>
+              <input id="set-followup" class="form-input" type="number" min="1" max="90" placeholder="7">
+            </div>
+            <div>
+              <label class="form-label">Email signature</label>
+              <textarea id="set-sig" class="form-input" rows="4" placeholder="Best regards,&#10;Michael Stubbs&#10;Vantage Search Group"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Writing Style -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-h">
+          <h3><i class="ti ti-writing"></i> Writing Style</h3>
+          <span style="font-size:11px;color:var(--muted)">Used by Annie to match your tone in outreach</span>
+        </div>
+        <div class="card-b">
+          <textarea id="set-style" class="form-input" rows="6" placeholder="Describe your outreach style — tone, typical opener, what to avoid, preferred length.&#10;&#10;e.g. Direct and concise. No buzzwords. Opener references a specific detail about the person. Closing asks one clear question."></textarea>
+        </div>
+      </div>
+
+      <!-- LinkedIn -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-h"><h3><i class="ti ti-brand-linkedin"></i> LinkedIn</h3></div>
+        <div class="card-b" style="display:flex;flex-direction:column;gap:14px">
+          <div id="set-li-status" style="font-size:13px;color:var(--muted)">Checking connection status…</div>
+          <div>
+            <label class="form-label">LinkedIn cookie (li_at)</label>
+            <input id="set-li-cookie" class="form-input" type="password" placeholder="Paste your li_at cookie value here" autocomplete="off">
+            <div style="font-size:11px;color:var(--muted);margin-top:6px">⚠ Keep this private. Used only for reading messages — nothing sends until you explicitly click Send.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-h"><h3><i class="ti ti-users"></i> Team Access</h3></div>
+        <div class="card-b">
+          <div id="set-users-list" style="font-size:13px;color:var(--muted)">Loading…</div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;display:flex;gap:10px">
+        <button class="btn btn-gold" onclick="saveSettings()"><i class="ti ti-device-floppy"></i> Save Settings</button>
       </div>
     </div>
 
@@ -5653,4 +5739,96 @@ async function checkNewConnections(){
     const signals=data.map(p=>({
       company_name:p.company||'LinkedIn',
       signal_type:'news',
-      title:`${p.full_name} acc
+      title:`${p.full_name} accepted your connection request`,
+      summary:`${p.full_name}${p.title?' – '+p.title:''}${p.company?' at '+p.company:''} connected on LinkedIn. Consider sending a follow-up message. CONTACT: ${p.full_name}`,
+      importance:'medium',
+      actioned:false
+    }));
+    if(signals.length>0){
+      await db.from('company_signals').insert(signals);
+      showToast(`${signals.length} new LinkedIn connection${signals.length!==1?'s':''} added to Signals`);
+      if(typeof loadSignals==='function')setTimeout(loadSignals,500);
+    }
+  }catch(e){console.warn('checkNewConnections:',e);}
+}
+
+/* ══════════════════════════════════════════════════
+   SETTINGS PAGE
+══════════════════════════════════════════════════ */
+let _settingsLoaded=false;
+
+async function _getFirmId(){
+  const db=_db();if(!db)return null;
+  try{
+    const{data,error}=await db.rpc('get_my_firm_id');
+    if(error||!data)throw error||new Error('no firm');
+    return data;
+  }catch(e){console.warn('_getFirmId:',e);return null;}
+}
+
+async function loadSettings(){
+  const db=_db();if(!db)return;
+  try{
+    const fid=await _getFirmId();
+    if(!fid)return;
+    const{data:s,error}=await db.from('firm_settings').select('*').eq('firm_id',fid).maybeSingle();
+    if(error)throw error;
+    if(s){
+      document.getElementById('set-firm-name').value=s.firm_name||'';
+      document.getElementById('set-website').value=s.website||'';
+      document.getElementById('set-industry').value=s.industry_focus||'';
+      document.getElementById('set-sender').value=s.sender_name||'';
+      document.getElementById('set-followup').value=s.followup_days||7;
+      document.getElementById('set-sig').value=s.email_signature||'';
+      document.getElementById('set-style').value=s.writing_style||'';
+      const hasCookie=!!(s.linkedin_cookie);
+      document.getElementById('set-li-cookie').value=hasCookie?'••••••••••':'';
+      document.getElementById('set-li-status').innerHTML=hasCookie
+        ?'<span style="color:var(--green)"><i class="ti ti-check"></i> LinkedIn cookie saved</span>'
+        :'<span style="color:var(--muted)">No LinkedIn cookie saved</span>';
+    }else{
+      document.getElementById('set-li-status').innerHTML='<span style="color:var(--muted)">No LinkedIn cookie saved</span>';
+    }
+    // Load team members
+    const{data:users}=await db.from('user_profiles').select('email,role,full_name,created_at').eq('firm_id',fid).order('created_at');
+    const ul=document.getElementById('set-users-list');
+    if(users&&users.length){
+      ul.innerHTML=users.map(u=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft)"><span style="font-size:13px">${u.full_name||u.email}</span><span style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase">${u.role||'member'}</span></div>`).join('');
+    }else{
+      ul.innerHTML='<span style="color:var(--muted)">No team members found</span>';
+    }
+    _settingsLoaded=true;
+  }catch(e){console.error('loadSettings:',e);showToast('Could not load settings');}
+}
+
+async function saveSettings(){
+  const db=_db();if(!db){showToast('Not connected');return;}
+  const fid=await _getFirmId();
+  if(!fid){showToast('Could not identify firm');return;}
+  const cookieInput=document.getElementById('set-li-cookie').value;
+  const row={
+    firm_id:fid,
+    firm_name:document.getElementById('set-firm-name').value.trim()||null,
+    website:document.getElementById('set-website').value.trim()||null,
+    industry_focus:document.getElementById('set-industry').value.trim()||null,
+    sender_name:document.getElementById('set-sender').value.trim()||null,
+    followup_days:parseInt(document.getElementById('set-followup').value)||7,
+    email_signature:document.getElementById('set-sig').value.trim()||null,
+    writing_style:document.getElementById('set-style').value.trim()||null,
+    updated_at:new Date().toISOString()
+  };
+  // Only update cookie if a new value was typed (not the masked placeholder)
+  if(cookieInput&&cookieInput!=='••••••••••')row.linkedin_cookie=cookieInput;
+  try{
+    const{error}=await db.from('firm_settings').upsert(row,{onConflict:'firm_id'});
+    if(error)throw error;
+    showToast('Settings saved');
+    const hasCookie=!!(row.linkedin_cookie||(cookieInput&&cookieInput!=='••••••••••'));
+    document.getElementById('set-li-status').innerHTML=hasCookie
+      ?'<span style="color:var(--green)"><i class="ti ti-check"></i> LinkedIn cookie saved</span>'
+      :'<span style="color:var(--muted)">No LinkedIn cookie saved</span>';
+  }catch(e){showToast('Save failed: '+e.message);}
+}
+</script>
+</body>
+</html>
