@@ -5705,10 +5705,13 @@ async function loadLeads(){
       :l.status==='engaged'?'<span class="b b-active" style="background:rgba(245,158,11,.12);color:#92400e">Engaged</span>'
       :'<span class="b b-cold">Pending</span>';
     const sourceTag=l._source==='contacts'?'<span class="b b-cold" style="font-size:9px;opacity:.6">All Contacts</span>':'<span class="b b-cold" style="font-size:9px;opacity:.6">LinkedIn reply</span>';
+    const leadCtx=JSON.stringify({name:l.full_name||'',title:l.title||'',company:l.company||'',notes:(l.reply_summary||l.notes||'').substring(0,200)}).replace(/"/g,'&quot;');
     const actionBtns=l.id
-      ?`<button class="btn btn-sm btn-green" onclick="markLeadContacted('${l.id}')"><i class="ti ti-check"></i> Mark contacted</button>
+      ?`<button class="btn btn-sm btn-outline" onclick="openChatFromLeadCtx(JSON.parse(this.dataset.ctx))" data-ctx="${leadCtx}"><i class="ti ti-message"></i> Draft message</button>
+         <button class="btn btn-sm btn-green" onclick="markLeadContacted('${l.id}')"><i class="ti ti-check"></i> Mark contacted</button>
          <button class="btn btn-sm btn-ghost" onclick="markLeadConverted('${l.id}')"><i class="ti ti-star"></i> Converted</button>`
-      :`<span style="font-size:11px;color:var(--muted)">Edit in All Contacts</span>`;
+      :`<button class="btn btn-sm btn-outline" onclick="openChatFromLeadCtx(JSON.parse(this.dataset.ctx))" data-ctx="${leadCtx}"><i class="ti ti-message"></i> Draft message</button>
+         <span style="font-size:11px;color:var(--muted)">Edit in All Contacts</span>`;
     return `<div class="fu ${isOverdue?'overdue':isSoon?'today':''}" style="${borderClass}">
       <div class="fu-top">
         <div class="fu-meta">
@@ -6014,6 +6017,31 @@ function openChatFromTrigger(t){
     <button class="chat-chip" onclick="quickChat('Rewrite the outreach with a completely different angle.reference something specific about what ${name} would be focused on as a new ${role}')"><i class="ti ti-refresh"></i> Different angle</button>
     <button class="chat-chip" onclick="quickChat('What should I know about ${name}\\'s career background and what their priorities likely are ${t.days||''} days into the ${role} role at ${co}?')"><i class="ti ti-user"></i> Background</button>
     <button class="chat-chip" onclick="quickChat('What senior hiring decisions would ${name} likely be facing right now as the new ${role} at ${co}? Be specific.')"><i class="ti ti-building"></i> Hiring intel</button>
+  `;
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatOverlay').classList.add('open');
+}
+
+function openChatFromLeadCtx(l){
+  currentChatContact={name:l.name,company:l.company||'',title:l.title||'',industry:'',stage:'linkedin',notes:l.notes||''};
+  chatContactId=null;chatMessages=[];
+  const av=document.getElementById('chat-av');
+  if(av){av.textContent=(l.name||'L')[0].toUpperCase();av.style.background='#0077b5';av.style.color='#fff';}
+  document.getElementById('chat-name').textContent=l.name||'Lead';
+  document.getElementById('chat-co').textContent=(l.title?l.title+' · ':'')+( l.company||'LinkedIn Lead');
+  const welcomeParts=[`I have the context on this LinkedIn lead.`];
+  if(l.title&&l.company)welcomeParts.push(`${l.name} is ${l.title} at ${l.company}.`);
+  if(l.notes)welcomeParts.push(`Reply context: "${l.notes.substring(0,200)}"`);
+  welcomeParts.push(`Ask me to draft a follow-up LinkedIn message, explore a BD angle, or get company intel.`);
+  renderChatMessages([{role:'assistant',content:welcomeParts.join('\n\n')}]);
+  const name=(l.name||'').replace(/'/g,"\\'");
+  const co=(l.company||'their company').replace(/'/g,"\\'");
+  const title=(l.title||'their role').replace(/'/g,"\\'");
+  document.getElementById('chat-chips').innerHTML=`
+    <button class="chat-chip" onclick="quickChat('Draft a personalised LinkedIn follow-up message for ${name}, ${title} at ${co}. Warm, specific, no pitch yet. Under 80 words. No em-dashes.')"><i class="ti ti-message"></i> Draft follow-up</button>
+    <button class="chat-chip" onclick="quickChat('What is the best BD angle to open a conversation with ${name} at ${co}? Be specific to their role and company.')"><i class="ti ti-target"></i> BD angle</button>
+    <button class="chat-chip" onclick="quickChat('What senior hires might ${co} need based on what a ${title} would be focused on right now?')"><i class="ti ti-building"></i> Company intel</button>
+    <button class="chat-chip" onclick="quickChat('Rewrite the message with a completely different opening line and angle for ${name} at ${co}.')"><i class="ti ti-refresh"></i> Try again</button>
   `;
   document.getElementById('chatPanel').classList.add('open');
   document.getElementById('chatOverlay').classList.add('open');
